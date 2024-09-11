@@ -24,7 +24,7 @@ data.alp = 1;
 
 %% INITIAL DISEASE PARAMETERS:
 
-%addpath('diseases');
+addpath('diseases');
 
 if strcmp(inp2,'Influenza 2009');
     dis = p2Params_Flu2009;
