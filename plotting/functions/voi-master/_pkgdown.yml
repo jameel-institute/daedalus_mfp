@@ -1,0 +1,42 @@
+url: https://chjackson.github.io/voi/
+template:
+  bootstrap: 5
+reference:
+- title: Package overview
+- contents:
+  - voi-package
+- title: Calculating the expected value of information 
+- contents:
+  - evpi
+  - evppi
+  - evppi_mc
+  - evppivar
+  - plot.evppi
+  - evsi
+  - evsivar
+  - enbs
+  - enbs_opt
+  - pop_voi
+- title: Utilities
+- contents:
+  - import_heemod
+  - all_interactions
+  - check_regression
+- title: Example decision models
+- contents:
+  - chemo_cea
+  - chemo_nb
+  - chemo_pars
+  - chemo_pars_fn
+  - chemo_model_nb
+  - chemo_model_cea
+  - chemo_model_lor_nb
+  - chemo_model_lor_cea
+footer:
+  structure:
+    left: FALSE
+    right: built_with
+home:
+  links:
+  - text: Questions, suggestions
+    href: https://github.com/chjackson/voi/issues
