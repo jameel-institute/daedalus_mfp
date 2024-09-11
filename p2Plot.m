@@ -10,16 +10,23 @@ numThresh = length(thresh);
 t1    = f1(:,1); 
 I1    = f1(:,2);
 h1    = f1(:,3);
-d1    = f1(:,4);
-ddiff = diff(d1,1);
-tdiff = diff(t1,1);
-d1    = [0;ddiff./tdiff];
-p3    = f1(:,5);
-beta  = f1(:,6);
-v1    = f1(:,7);
-v2    = f1(:,8);
-v3    = f1(:,9);
-v4    = f1(:,10);
+d1    = sum(f1(:,16:19),2);
+% ddiff = diff(d1,1);
+% tdiff = diff(t1,1);
+% d1    = [0;ddiff./tdiff];
+asc_a = f1(:,5);
+asc_s = f1(:,6);
+beta  = f1(:,7);
+v1    = f1(:,8);
+v2    = f1(:,9);
+v3    = f1(:,10);
+v4    = f1(:,11);
+
+isoasyu = g1(:,1+2*lx+0*ln+[1:ln]);
+isoasyv = g1(:,1+2*lx+1*ln+[1:ln]);
+isosymu = g1(:,1+2*lx+2*ln+[1:ln]);
+isosymv = g1(:,1+2*lx+3*ln+[1:ln]);
+Q       = sum(isoasyu+isoasyv+isosymu+isosymv,2);
 
 scal4 = sum(data.Npop)/(10^4);
 scal5 = sum(data.Npop)/(10^5);
@@ -28,7 +35,7 @@ scal7 = sum(data.Npop)/(10^7);
 scal8 = sum(data.Npop)/(10^8);
 scal9 = sum(data.Npop)/(10^9);
 %maxY  = max([100000,(5/4)*d1'/scal5,(5/4)*thresh/scal4,(5/4)*h1'/scal4,(5/4)*I1'/scal3]);
-maxY  = 60000;%ceil(max([d1'/scal5,thresh/scal4,h1'/scal4,I1'/scal3])/10000)*10000;
+maxY  = 100000;%ceil(max([d1'/scal5,thresh/scal4,h1'/scal4,I1'/scal3])/10000)*10000;
 
 T               = repmat(t1',lx+1,1);
 S               = 0.5:1:lx+0.5;
@@ -65,15 +72,16 @@ for i = 1:length(tvec)-1;
 end
 
 yyaxis left;
-hh3 = plot([-30,tvec(end)],[thresh,thresh]/scal8,'--','linewidth',lw,'color',0.5*[1,1,1]);
+hh3 = plot([0,tvec(end)],[thresh,thresh]/scal8,'--','linewidth',lw,'color',0.5*[1,1,1]);
 hh4 = plot(t1,d1/scal9,'-','linewidth',lw,'color','black');
 hh2 = plot(t1,h1/scal8,'-','linewidth',lw,'color','magenta');
-% hh1 = plot(t1,I1/scal3,'-','linewidth',lw,'color','red');
-
+%hh1 = plot(t1,Q/scal7,'-','linewidth',lw,'color','green');
+hh1 = plot(t1,(I1)/scal7,'-','linewidth',lw,'color','red');
+%hh0 = plot(t1,asc_a/scal8,'-','linewidth',lw,'color','blue');
+%hh0 = plot(t1,asc_s/scal8,'-','linewidth',lw,'color','green');
 yyaxis right;
-hh5 = plot(t1,100*(v1+v2+v3+v4)/sum(data.Npop),':','linewidth',lw,'color','cyan');
-
-xlim([-30 tvec(end)]);
+hh5 = plot(t1,100*(v1+v2+v3+v4)/sum(data.Npop),'-','linewidth',lw,'color','cyan');
+xlim([0 tvec(end)]);
 set(gca,'xtick',[[1,91,182,274],...
              365+[1,91,182,274],...
            2*365+[1,91,182,274]]);
@@ -82,24 +90,28 @@ set(gca,'xticklabels',{'Year 1','Apr','Jul','Oct',...
                        'Year 3','Apr','Jul','Oct'});
 xtickangle(45);
 yyaxis left;
-ylim([0 60000]);
-ax                   = gca;
+ylim([0 maxY]);
+ax = gca;
 ax.YAxis(1).Exponent = 3;
+ax.YColor = 'k';
 yyaxis right;
 ylim([0 100]);
 ylabel('\%');
 set(get(gca,'ylabel'),'Rotation',0);
 vec_pos = get(get(gca,'ylabel'),'Position');
 set(get(gca,'ylabel'),'Position',vec_pos + [-60 60 0]);
+ax = gca;
+ax.YColor = 'k';
 
 grid on;
 box on;
-legend([hh2,hh3,hh4,hh5],'Hospital Occupancy (per 100m)','Hospital Capacity (per 100m)',... %%%%%
-                         'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','north');
-t = text(-22.3,86.6,strvcat(inp1,inp2,inp3),'FontSize',fs);
-t.BackgroundColor = [1 1 1];
-t.EdgeColor       = [0 0 0];
+% legend([hh2,hh3,hh4,hh5],'Hospital Occupancy (per 100m)','Hospital Capacity (per 100m)',... %%%%%
+%                          'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','north');
+% t = text(-22.3,86.6,strvcat(inp1,inp2,inp3),'FontSize',fs);
+% t.BackgroundColor = [1 1 1];
+% t.EdgeColor       = [0 0 0];
 set(gca,'FontSize',fs);
+yyaxis left;
 
 %% MITIGATION MEASURES
 

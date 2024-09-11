@@ -23,7 +23,9 @@ data.alp = 1;
 [Dout,data] = p2MakeDs(data,data.NNs,ones(lx,1),zeros(1,lx));
 
 %% INITIAL DISEASE PARAMETERS:
-    
+
+%addpath('diseases');
+
 if strcmp(inp2,'Influenza 2009');
     dis = p2Params_Flu2009;
 elseif strcmp(inp2,'Influenza 1957');
@@ -64,8 +66,8 @@ dis.Ts = ((1-dis.ph).*dis.Tsr)   + (dis.ph.*dis.Tsh);
 dis.Th = ((1-dis.pd).*dis.Threc) + (dis.pd.*dis.Thd);
 
 %Rates
-dis.sig1 = (1-dis.ps)/dis.Tlat;
-dis.sig2 = dis.ps/dis.Tlat;
+dis.siga = (1-dis.ps)/dis.Tlat;
+dis.sigs = dis.ps/dis.Tlat;
 dis.g1   = 1/dis.Tay;
 dis.g2   = (1-dis.ph)./dis.Ts;
 dis.g3   = (1-dis.pd)./dis.Th;
@@ -74,27 +76,31 @@ dis.mu   = dis.pd./dis.Th;
 dis.nu   = 1/dis.Ti;
 
 %Transmission
-Deff  = Dout.*repmat(data.NNs,1,ntot)./repmat(data.NNs',ntot,1);
+F   = zeros(3*ntot,3*ntot);
+FOI = 1.*Dout./repmat(data.NNs',ntot,1).*repmat(data.NNs,1,ntot);
+
+F(1:ntot,ntot+1:end) = [dis.red*FOI,FOI];
+
 onesn = ones(ntot,1);
-F     = zeros(3*ntot,3*ntot);
-F(1:ntot,ntot+1:end)=[dis.red*Deff,Deff];
+vvec  = [(dis.siga+dis.sigs).*onesn;      dis.g1.*onesn;       (dis.g2+dis.h).*onesn];%g2 and h are vectors
+V     = diag(vvec);
 
-vvec = [(dis.sig1+dis.sig2).*onesn;      dis.g1.*onesn;       (dis.g2+dis.h).*onesn];%g2 and h are vectors
-V    = diag(vvec);
-V(ntot+1:2*ntot,1:ntot)   = diag(-dis.sig1.*onesn);
-V(2*ntot+1:3*ntot,1:ntot) = diag(-dis.sig2.*onesn);
+V(ntot+1:2*ntot,1:ntot) = diag(-dis.siga.*onesn);
+V(2*ntot+1:end,1:ntot)  = diag(-dis.sigs.*onesn);
 
-GD=F/V;
-d=eigs(GD,1);%largest in magnitude (+/-) 
-R0a=max(d); 
-dis.beta=dis.R0/R0a;%beta scales actual R0 to fitted R0
+NGM       = F/V;
+[Ev,R0a]  = eigs(NGM,1,'largestreal');
+%dis.beta = dis.R0/R0a;%beta scales actual R0 to desired R0
+dis.R0    = dis.beta*R0a;
+Ev        = abs(Ev(1:ntot));%corresponding eigenvector to seed exposed population
+dis.Ev    = Ev./sum(Ev);
 
 %Vaccination
-dis.hrv1 = 1/28;                       %time to develop v-acquired immunity
-dis.scv1 = 0.60;                       %infection-blocking efficacy
-dis.heff = 0.87;                       %severe-disease-blocking efficacy
+dis.hrv1 = 1/21;%1/28;                 %time to develop v-acquired immunity
+dis.scv1 = 0.70;%0.60;                 %infection-blocking efficacy
+dis.heff = 0.85;%0.87;                 %severe-disease-blocking efficacy
 dis.hv1  = 1-((1-dis.heff)/(1-dis.scv1)); 
-dis.trv1 = 0.52;                       %transmission-blocking efficacy
+dis.trv1 = 0.30;%0.52;                 %transmission-blocking efficacy
 dis.nuv1 = 1/365;                      %duration of v-acquired immunity
 
 dis.Ts_v1 = ((1-(1-dis.hv1)*dis.ph).*dis.Tsr)  +((1-dis.hv1)*dis.ph.*dis.Tsh);
@@ -120,12 +126,12 @@ J                                  = zeros(7*ntot,7*ntot);
 J(1:ntot,2*ntot+1:3*ntot)          = -dis.beta*dis.red*Dout;
 J(1:ntot,3*ntot+1:4*ntot)          = -dis.beta*Dout;
 J(1:ntot,5*ntot+1:6*ntot)          = diag(onesn.*dis.nu);
-J(ntot+1:2*ntot,1*ntot+1:2*ntot)   = diag(onesn.*(-dis.sig1-dis.sig2));
+J(ntot+1:2*ntot,1*ntot+1:2*ntot)   = diag(onesn.*(-dis.siga-dis.sigs));
 J(ntot+1:2*ntot,2*ntot+1:3*ntot)   = dis.beta*dis.red*Dout;
 J(ntot+1:2*ntot,3*ntot+1:4*ntot)   = dis.beta*Dout;
-J(2*ntot+1:3*ntot,1*ntot+1:2*ntot) = diag(onesn.*dis.sig1);
+J(2*ntot+1:3*ntot,1*ntot+1:2*ntot) = diag(onesn.*dis.siga);
 J(2*ntot+1:3*ntot,2*ntot+1:3*ntot) = diag(onesn.*-dis.g1);
-J(3*ntot+1:4*ntot,1*ntot+1:2*ntot) = diag(onesn.*dis.sig2);
+J(3*ntot+1:4*ntot,1*ntot+1:2*ntot) = diag(onesn.*dis.sigs);
 J(3*ntot+1:4*ntot,3*ntot+1:4*ntot) = diag(onesn.*(-dis.g2-dis.h));
 J(4*ntot+1:5*ntot,3*ntot+1:4*ntot) = diag(onesn.*dis.h);
 J(4*ntot+1:5*ntot,4*ntot+1:5*ntot) = diag(onesn.*(-dis.g3-dis.mu));
@@ -144,31 +150,31 @@ p2.Tres = data.tvec(1) + (-data.tvec(1) + p2.Tres)*Td/data.Td_CWT;
 
 %Test-Isolate-Trace
 p2.t_tit  = data.tvec(1) + (-data.tvec(1) + p2.t_tit)*Td/data.Td_CWT;
-p2.dur    = 1;
-p2.qg1    = 1/(dis.Tay-p2.dur);
-p2.qg2    = (1-dis.ph)./(dis.Ts-p2.dur);
-p2.qg2_v1 = (1-(1-dis.hv1)*dis.ph)./(dis.Ts_v1-p2.dur);
-p2.qh     = dis.ph./(dis.Ts-p2.dur);
-p2.qh_v1  = (1-dis.hv1)*dis.ph./(dis.Ts_v1-p2.dur);
+% p2.dur    = 1;
+% p2.qg1    = 1/(dis.Tay-p2.dur);
+% p2.qg2    = (1-dis.ph)./(dis.Ts-p2.dur);
+% p2.qg2_v1 = (1-(1-dis.hv1)*dis.ph)./(dis.Ts_v1-p2.dur);
+% p2.qh     = dis.ph./(dis.Ts-p2.dur);
+% p2.qh_v1  = (1-dis.hv1)*dis.ph./(dis.Ts_v1-p2.dur);
 
 %Hospital Capacity
 p2.thl   = max(1,0.25*p2.Hmax);%lower threshold can't be less than 1 occupant
-p2.Hmax  = max(4*p2.thl,p2.Hmax);
+%p2.Hmax  = max(4*p2.thl,p2.Hmax);
 p2.SHmax = 2*p2.Hmax;
 
 %Vaccine Uptake
 Npop    = data.Npop;
 NNage   = [Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:end))];
-puptake = min(0.99*(1-NNage(1)/sum(NNage)),puptake);%population uptake cannot be greater than full coverage in non-pre-school age groups
-up3fun  = @(u3) puptake*sum(NNage) - u3*(NNage(2)/2 + NNage(3)) - min(1.5*u3,1)*NNage(4);
+puptake = min(0.95*(1-NNage(1)/sum(NNage)),puptake);%population uptake cannot be greater than 95% coverage in non-pre-school age groups
+u1      = 0;
+up3fun  = @(u3) puptake*sum(NNage) - min(0.5*u3,0.95)*NNage(2) - min(u3,0.95)*NNage(3) - min(1.5*u3,0.95)*NNage(4);
 if up3fun(0)*up3fun(1)<=0;
     u3  = fzero(up3fun,[0 1]);
 else
     u3  = fminbnd(up3fun,0,1);
 end
-u4      = min(1.5*u3,1);
-u1      = 0;
-up2fun  = @(u2) u2*NNage(2) + u3*NNage(3) + u4*NNage(4) - puptake*sum(NNage);
+u4      = min(1.5*u3,0.95);
+up2fun  = @(u2) min(u2,0.95)*NNage(2) + u3*NNage(3) + u4*NNage(4) - puptake*sum(NNage);
 u2      = fzero(up2fun,[0 1]);
 uptake  = [u1,u2,u3,u4];
 % if ((uptake*NNage'/sum(NNage))-puptake)~=0;
@@ -200,9 +206,9 @@ p2.end     = tpoints(5);%End of Rollout
 %% COST PARAMETERS:
 
 na         = [data.Npop(1:16)',sum(data.Npop(17:end))];%length is 17 to match ifr
+napd       = na.*dis.ifr;
 la         = [data.la(1:16),...
               dot(data.la(17:end),[data.Npop(17),sum(data.Npop(18:end))])/sum(data.Npop(17:end))];
-napd       = na.*dis.ifr;
 lg         = [dot(la(1),napd(1))/sum(napd(1)),...
               dot(la(2:4),napd(2:4))/sum(napd(2:4)),...
               dot(la(5:13),napd(5:13))/sum(napd(5:13)),...

@@ -1,0 +1,11 @@
+INSTRUCTIONS:
+
+1. Remove all instances of addpath(), e.g. in p2Params.m
+2. Set taskdir = './'; and comment out mkdir(taskdir);
+3. Comment out p2SimRand arguments and define in script, select appropriate p2Rand function
+4. Run: mcc('-m', 'p2SimRand.m', 'p2Cost.m', 'p2MakeDs.m', 'p2OutTable.m', 'p2Params.m', 'p2Plot.m', 'p2RandCountry.m', 'p2RandIG.m', 'p2Run.m', 'p2Sim.m', 'p2Strat.m', ...
+	    'diseases/p2Params_CovidDE.m', 'diseases/p2Params_CovidOM.m', 'diseases/p2Params_CovidWT.m', 'diseases/p2Params_Flu1918.m', 'diseases/p2Params_Flu1957.m', 'diseases/p2Params_Flu2009.m', 'diseases/p2Params_SARS.m', ...
+            '-a','C:\Program Files\MATLAB\R2022a\toolbox*')
+5. Move p2SimRand.m (to track changes), created .exe file, countries directory, run and launch files to Q drive
+6. Update run and launch files accordingly
+7. Double-click launch file to run
