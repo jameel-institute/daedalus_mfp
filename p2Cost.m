@@ -1,5 +1,5 @@
 function [cost,ccost_t] = p2Cost(data,dis,p2,g)
-
+%comment
 t  = g(:,1);
 lx = length(data.obj);
 ln = lx+4;
