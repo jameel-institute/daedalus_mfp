@@ -1,262 +1,58 @@
 library(dplyr)
-library(whomapper)
+library(purrr)
+library(tidyr)
 library(stringr)
+sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
 library(ggplot2)
 library(ggh4x)
-library(ggpattern)
-library(patchwork)
+library(cowplot)
 source("functions/add_scenario_cols.R")
+source("functions/order_scenario_cols.R")
 source("functions/calc_cost_pc.R")
-source("functions/find_best_strat.R")
+source("functions/find_best_strats.R")
 source("functions/calc_cost_bdown.R")
+source("functions/parse_inputs.R")
+source("functions/voi_dec.R")
+source("functions/voi_fit.R")
 
-file_list  <- list.files(path = "../output/countries/", pattern = ".*_Influenza 2009_.*\\.csv$", full.names = TRUE)
-ctry_data  <- lapply(file_list, add_scenario_cols) %>% bind_rows() %>%
-              calc_cost_pc() %>% find_best_strat() %>% filter(best_strat == TRUE) %>% calc_cost_bdown()
-ctry_dat1  <- ctry_data %>% distinct(location) %>% slice(1:15) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat2  <- ctry_data %>% distinct(location) %>% slice(16) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat3  <- ctry_data %>% distinct(location) %>% slice(17) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat4  <- ctry_data %>% distinct(location) %>% slice(18) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat5  <- ctry_data %>% distinct(location) %>% slice(19) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat6  <- ctry_data %>% distinct(location) %>% slice(20) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat7  <- ctry_data %>% distinct(location) %>% slice(21) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat8  <- ctry_data %>% distinct(location) %>% slice(22) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat9  <- ctry_data %>% distinct(location) %>% slice(23) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat10 <- ctry_data %>% distinct(location) %>% slice(24) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat11 <- ctry_data %>% distinct(location) %>% slice(25) %>% 
-              inner_join(ctry_data, by = "location")
-ctry_dat12 <- ctry_data %>% distinct(location) %>% slice(26:40) %>% 
-              inner_join(ctry_data, by = "location")
+file_list <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
+arch_data <- lapply(file_list, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
+             calc_cost_pc() %>% find_best_strats() %>% filter(min_mean == TRUE) %>% parse_inputs()
+arch_voi  <- voi_est(arch_data, combn(c("Tres","t_tit","trate","sdb","sdl","Hmax","t_vax","arate","puptake"), 1, simplify = FALSE)) %>%
+             group_by(location, disease, strategy) %>% slice_max(order_by = res, n = 1) %>% ungroup()
+arch_data <- arch_data %>% left_join(arch_voi, by = c("location", "disease", "strategy")) %>%
+             rowwise() %>% mutate(xaxis = get(parameter)) %>% ungroup()
+arch_fit  <- voi_fit(arch_data) %>% mutate(l = pmax(0,l)) %>% rename(xaxis = x, SECpc = y, lower = l, upper = u)
+arch_lab  <- arch_fit %>% group_by(disease, location, strategy) %>% 
+             summarize(xlabel = unique(parameter), .groups = 'drop') %>%
+             mutate(xlabel = case_when(xlabel == "Tres" ~ "Response Time (day)",
+                                       xlabel == "t_tit" ~ "Testing Start-Time (day)",
+                                       xlabel == "trate" ~ "Testing Rate (per 100k/day)",
+                                       xlabel == "sdb" ~ "Distancing Sensitivity",
+                                       xlabel == "sdl" ~ "Distancing Maximum",
+                                       xlabel == "Hmax" ~ "Hospital Capacity (per 100k)",
+                                       xlabel == "t_vax" ~ "Vaccination Start-Time (day)",
+                                       xlabel == "arate" ~ "Vaccination Rate (per 100k/day)",
+                                       xlabel == "puptake" ~ "Vaccination Coverage (%)"),  
+                    xx = rep(c(0.16, 0.49, 0.82), 7),
+                    xy = rep(seq(0.838, 0, by = -0.1375), each = 3))
 
-who_adm0      <- pull_sfs(adm_level = 0, query_server = FALSE)
-who_adm0$adm0 <- who_adm0$adm0 %>% rename(location = adm0_name) %>% 
-                 mutate(location = str_to_title(location),
-                        location = case_when(location == "Brunei Darussalam" ~ "Brunei",
-                                             location == "Republic Of Korea" ~ "South Korea",
-                                             location == "Lao People's Democratic Republic" ~ "Laos",
-                                             location == "Netherlands (Kingdom Of The)" ~ "Netherlands",                           
-                                             location == "Russian Federation" ~ "Russia",
-                                             location == "Türki̇ye" ~ "Turkey",
-                                             location == "The United Kingdom" ~ "United Kingdom",
-                                             location == "United States Of America" ~ "United States",
-                                             location == "Viet Nam" ~ "Vietnam",
-                                             TRUE ~ location)) %>%
-                 left_join(ctry_data %>% select(location,strategy,mean_SECpc) %>% unique(), by = "location")
-
-gm <- ggplot() +
-      geom_sf_pattern(data = who_adm0$adm0, 
-                      linewidth = 0.1, col = "black", aes(pattern = strategy, fill = mean_SECpc),
-                      pattern_density = 0.35, pattern_size = 0.05, pattern_spacing = 0.008,   
-                      pattern_colour = "black", pattern_fill = "white") +
-      scale_pattern_manual(values = c("No Closures" = "none", "School Closures" = "crosshatch", 
-                                      "Economic Closures" = "circle", "Elimination" = "stripe", "NA" = "none"),
-                           breaks = c("No Closures", "School Closures", "Economic Closures", "Elimination"),
-                           labels = c("No Closures", "School Closures", "Economic Closures", "Elimination")) +
-      scale_fill_viridis_c(option = "magma", direction = -1, na.value = "grey80") + #, limits = c(0,850)) +
-      geom_sf(data = who_adm0$disp_border, linetype = "dashed", linewidth = 0.1, col = "black", fill = NA) +
-      geom_sf(data = who_adm0$disp_area %>% filter(grepl("Lake|Sea",name)), linewidth = 0.1, col = "black", fill = "white") +
+gg <- ggplot(data = arch_data, aes(x = xaxis, y = SECpc, shape = strategy, color = parameter)) +
+      facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
+      geom_ribbon(data = arch_fit, aes(ymin = lower, ymax = upper), color = NA, fill = "grey80", alpha = 0.5) +
+      geom_point(size = 1.25, stroke = 0.35, fill = NA) +
+      geom_line(data = arch_fit, linewidth = 0.75, color = "black") +
+      scale_shape_manual(values = c("No Closures" = 21, "School Closures" = 23, "Economic Closures" = 22, "Elimination" = 25)) +
+      scale_color_manual(values = c("t_tit" = "forestgreen", "trate" = "palegreen2", "sdb" = "slategray3", "Hmax" = "purple")) +
       theme_bw() +
-      coord_sf(xlim = c(-180,180), ylim = c(-60,90), expand = FALSE) +
-      scale_x_continuous(breaks = seq(-180, 180, by = 60)) +  
-      scale_y_continuous(breaks = seq(-60, 90, by = 30)) + 
-      theme(axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
-            axis.text.x = element_blank(), axis.text.y = element_blank()) +
-      guides(pattern = guide_legend(title = NULL, order = 1), fill = guide_colorbar(title = "%", order = 2)) + 
-      theme(legend.position = c(0.08, 0.28))
+      scale_x_log10(expand = c(0, 0), position = "bottom") +
+      scale_y_continuous(expand = c(0, 0), position = "right") +
+      #facetted_pos_scales(x = list(disease == "Covid-Omicron-X" & location == "HIC" ~ scale_x_continuous(labels = "Hospital Capacity"))) +   
+      theme(panel.spacing = unit(1.25, "lines")) +
+      labs(title = "", x = "", y = "Societal Loss (% of GDP)") +
+      guides(shape = guide_legend(title = NULL), color = "none") + 
+      theme(legend.position = c(0.29, 0.999), legend.justification = c(1, 1), legend.box.just = "right", 
+            legend.key.size = unit(0.5, "cm"), legend.text = element_text(size = 7))
+gg <- ggdraw(gg) + draw_text(arch_lab$xlabel, x = arch_lab$xx, y = arch_lab$xy, hjust = 0.5, vjust = 0.5, size = 9)
 
-gt <- ggplot(ctry_dat1, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-      #guides(fill = guide_legend(title = NULL)) +
-      #theme(legend.position = c(0.05, 0.998), legend.justification = c(1, 1), legend.box.just = "right") 
-
-g2 <- ggplot(ctry_dat2, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g3 <- ggplot(ctry_dat3, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g4 <- ggplot(ctry_dat4, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g5 <- ggplot(ctry_dat5, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g6 <- ggplot(ctry_dat6, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g7 <- ggplot(ctry_dat7, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g8 <- ggplot(ctry_dat8, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g9 <- ggplot(ctry_dat9, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g10<- ggplot(ctry_dat10, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-g11<- ggplot(ctry_dat11, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-gb <- ggplot(ctry_dat12, aes(x = strategy, y = SECpc, fill = factor(..fill..))) + 
-      facet_grid(cols = vars(location), scales = "free") +
-      geom_violin(aes(width = pLYL+pGDP+pSYL, fill = "red"), linewidth = 0.5) + 
-      geom_violin(aes(width = pGDP+pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pGDP+pSYL, fill = "yellow"), linewidth = 0.1) +
-      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0) +
-      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
-      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"),
-                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
-      theme_bw() + 
-      facetted_pos_scales(y = list(scale_y_continuous(position="right", expand=c(0,0)))) +
-      theme(panel.spacing = unit(1, "lines"), legend.position = "none") + 
-      labs(title = "", x = "", y = "")
-
-patch_left   <- (g2/g4/g6/g8/g10/g10)
-patch_right  <- (g3/g5/g7/g9/g11/g11)
-patch_middle <- (wrap_elements(patch_left)|wrap_elements(gm)|wrap_elements(patch_right)) + plot_layout(widths = c(1.6,10.8,1.6))
-patchwork    <- (wrap_elements(gt)/wrap_elements(patch_middle)/wrap_elements(gb)) + plot_layout(heights = c(1.5,7,1.5))
-
-
-patchwork    <- (wrap_elements(gt)/wrap_elements(gm)/wrap_elements(gb)) + 
-                 plot_layout(heights = c(1.5,6,1.5))
-
-ggsave("figure_4a.png", plot = patchwork, height = 10, width = 14)
-
-###
-# width and height
-# how to arrange countries?
-# area of densities ...
-# caxis and ylim scalings for each disease ...
+ggsave("figure_3.png", plot = gg, height = 14, width = 10)

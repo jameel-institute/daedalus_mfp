@@ -12,9 +12,8 @@ source("functions/calc_cost_pc.R")
 source("functions/find_best_strats.R")
 source("functions/calc_cost_bdown.R")
 source("functions/parse_inputs.R")
-source("functions/voi_est.R")
-source("functions/voi_est_fit.R")
 source("functions/voi_dec.R")
+source("functions/voi_fit.R")
 
 file_list <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
 arch_data <- lapply(file_list, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
@@ -29,7 +28,7 @@ arch_voi  <- voi_dec(arch_data, combn(c("mean_age", "sd_age", "skew_age", "le", 
              #                             TRUE ~ parameter)) %>%
              #select(-param1,-param2)
 arch_data <- arch_data %>% left_join(arch_voi, by = c("location", "disease")) 
-arch_fit  <- voi_est_fit(arch_data) %>% rename(xaxis = x, yaxis = y, SECpc = z) %>% 
+arch_fit  <- voi_fit(arch_data) %>% rename(xaxis = x, yaxis = y, SECpc = z) %>% 
              group_by(location, disease, xaxis, yaxis) %>%
              mutate(SECpc = ifelse(SECpc == min(SECpc, na.rm = TRUE), SECpc, NA)) %>%
              ungroup()

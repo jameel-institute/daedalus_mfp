@@ -1,4 +1,4 @@
-voi_est_fit <- function(inp_df) {
+voi_fit <- function(inp_df) {
   
   out_df <- inp_df %>% mutate(trate = log10(trate),
                               sdb   = log10(sdb),

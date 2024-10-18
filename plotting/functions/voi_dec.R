@@ -16,7 +16,7 @@ voi_dec <- function(inp_df, p_list) {
                                                                                               "SEC", "VLYL", "GDPL", "VSYL",
                                                                                               "SECpc", "VLYLpc", "GDPLpc", "VSYLpc"))),
                                                    pars       = p_list,
-                                                   verbose    = FALSE)$evppi) %>%
+                                                   verbose    = FALSE)$evppi / pmin(mean(-t1), mean(-t2), mean(-t3), mean(-t4))) %>%
                        arrange(res) %>% mutate(rank = letters[row_number(res)]) %>%
                        ungroup()
   return(out_df)
