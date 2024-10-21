@@ -50,7 +50,7 @@ gg <- ggplot(data = arch_prop , aes(x = vsl, y = proportion, fill = min_mean, pa
       guides(fill = "none", pattern_density = guide_legend(title = NULL, override.aes = list(fill = c("magenta4","navy","navy","darkgreen","goldenrod")))) +
       theme(legend.position = "top", legend.box.just = "right", legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
-ggsave("figure_4.png", plot = gg, height = 14, width = 10)
+ggsave("figure_5.png", plot = gg, height = 14, width = 10)
 
 # #alternative WTP plot
 #
@@ -84,4 +84,4 @@ ggsave("figure_4.png", plot = gg, height = 14, width = 10)
 #   theme(legend.position = c(0.1395, 0.999), legend.justification = c(1, 1), legend.box.just = "right", 
 #         legend.key.size = unit(0.5, "cm"), legend.text = element_text(size = 7))
 # 
-# ggsave("figure_S4.png", plot = gg, height = 14, width = 10)
+# ggsave("figure_S5.png", plot = gg, height = 14, width = 10)
