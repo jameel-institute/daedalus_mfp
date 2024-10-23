@@ -70,7 +70,7 @@ gg <- ggplot(data = arch_data, aes(x = xaxis, y = SECpc, color = strategy, alpha
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
       geom_ribbon(data = arch_fit %>% filter(alpha == 1), 
                   aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), color = NA, alpha = 0.25) +
-      geom_point(shape = 21, size = 0.1, stroke = 0.25, fill = NA) +
+      geom_point(shape = 19, size = 0.2, stroke = 0.25) +
       geom_line(data = arch_fit, linewidth = 0.7) +
       scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy", 
                                     "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +

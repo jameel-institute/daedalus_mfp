@@ -23,18 +23,18 @@ arch_data <- lapply(file_list, add_scenario_cols) %>% bind_rows() %>% order_scen
              crossing(vsl = seq(0, 200, by = 2)) %>% mutate(VLYL = VLYL*(vsl/160)) %>% mutate(SEC = VLYL + GDPL + VSYL) %>% 
              calc_cost_pc()
 arch_prop <- arch_data %>% group_by(location, disease, vsl, country) %>%
-             summarise(min_mean = if_else(sum(SECpc == min(SECpc)) > 1, 
-                                  paste(strategy[SECpc == min(SECpc)], collapse = ", "), 
-                                  strategy[which.min(SECpc)]), .groups = 'drop') %>%
+             summarise(min_strat = if_else(sum(SECpc == min(SECpc)) > 1, 
+                                   paste(strategy[SECpc == min(SECpc)], collapse = ", "), 
+                                   strategy[which.min(SECpc)]), .groups = 'drop') %>%
              group_by(location, disease, vsl) %>%
-             count(min_mean) %>% mutate(proportion = n / sum(n)) %>% ungroup() %>%
-             mutate(min_mean = case_when(min_mean %in% c("No Closures", "School Closures", "Economic Closures", "Elimination") ~ min_mean,
-                                         min_mean == "School Closures, Economic Closures" ~ "Untriggered Closures",
+             count(min_strat) %>% mutate(proportion = n / sum(n)) %>% ungroup() %>%
+             mutate(min_strat = case_when(min_strat %in% c("No Closures", "School Closures", "Economic Closures", "Elimination") ~ min_mean,
+                                          min_strat == "School Closures, Economic Closures" ~ "Untriggered Closures",
                                          TRUE ~ "Other")) %>%
-             mutate(min_mean = factor(min_mean, levels = c("No Closures", "Untriggered Closures", "School Closures", 
+             mutate(min_strat = factor(min_strat, levels = c("No Closures", "Untriggered Closures", "School Closures", 
                                                            "Economic Closures", "Elimination", "Other")))
 
-gg <- ggplot(data = arch_prop , aes(x = vsl, y = proportion, fill = min_mean, pattern_density = min_mean)) +
+gg <- ggplot(data = arch_prop , aes(x = vsl, y = proportion, fill = min_strat, pattern_density = min_strat)) +
       facet_grid2(disease ~ location, switch = "y", scales = "fixed") +
       geom_area_pattern(pattern = "stripe", pattern_color = "darkgreen", pattern_fill = "darkgreen") +
       scale_fill_manual(values = c("No Closures" = "magenta4", "Untriggered Closures" = "navy", "School Closures" = "navy",
