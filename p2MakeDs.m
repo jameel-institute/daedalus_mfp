@@ -1,88 +1,91 @@
 function [f,data]=p2MakeDs(data,NN,x,hw)
 
-%% COMMUNITY-COMMUNITY MATRIX:
-
-C        = data.CM;
+%define number of strata, sectors, adult index, population by age (compressed to 16)
+ln       = length(NN);
+lx       = length(x);
+adInd    = 3;
 Npop     = data.Npop;
 Npop(16) = sum(Npop(16:end));
 Npop     = Npop(1:16);
 
-C        = [C(:,1),sum(C(:,2:4),2),sum(C(:,5:13),2),sum(C(:,14:16),2)];%sum of the columns
-C        = [C(1,:);
-            Npop(2:4)'*C(2:4,:)/sum(Npop(2:4));
-            Npop(5:13)'*C(5:13,:)/sum(Npop(5:13));
-            Npop(14:16)'*C(14:16,:)/sum(Npop(14:16))];%weighted average of the rows
+%initialise contact matrices: notation consistent with SI of Haw et al. (2022)
+matAL = zeros(ln,ln);%household
+matAS = zeros(ln,ln);%school
+matAH = zeros(ln,ln);%hospitality
+matAT = zeros(ln,ln);%transport
+matB  = zeros(ln,ln);%worker-worker
+matC  = zeros(ln,ln);%consumer-worker
 
-Cav      = ([Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:16))]/sum(Npop))*sum(C,2);
-C        = data.comm*(C/Cav);
+%% matAL: household
 
-%%
+%start with 16x16 contact matrix, compress it to 4x4 and normalise it
+CM     = data.CM;
+CM     = [CM(:,1),sum(CM(:,2:4),2),sum(CM(:,5:13),2),sum(CM(:,14:16),2)];%sum of the columns
+CM     = [CM(1,:);
+          Npop(2:4)'*CM(2:4,:)/sum(Npop(2:4));
+          Npop(5:13)'*CM(5:13,:)/sum(Npop(5:13));
+          Npop(14:16)'*CM(14:16,:)/sum(Npop(14:16))];%weighted average of the rows
+CMnorm = ([Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:16))]/sum(Npop))*sum(CM,2);%norm of the matrix
+CM     = CM/CMnorm;
 
-adInd    = 3;%Adult index
-CworkRow = C(adInd,:);
-lx       = length(x);%Number of sectors
-ln       = length(NN);
+%expand CM into matAL, broadcast contacts from adults (columns) proportional to adult population
+adRow                    = CM(adInd,:);
+matAL(lx+1:end,lx+1:end) = CM;
+matAL(1:lx,lx+1:end)     = repmat(adRow,lx,1);
+NNrel                    = NN([1:lx,lx+adInd])/sum(NN([1:lx,lx+adInd]));%adult population proportion vector
+matAL(:,[1:lx,lx+adInd]) = repmat(matAL(:,lx+adInd),1,lx+1).*repmat(NNrel',ln,1);
 
-NNrep = repmat(NN'/sum(NN),ln,1);%total population proportion matrix
-NNrel = NN([1:lx,lx+adInd])/sum(NN([1:lx,lx+adInd]));%adult population proportion vector
+%specify magnitude of household contacts
+ALmag = data.comm;
+matAL = ALmag*matAL;
+
+%% matAS: school
+
+%school contacts are quadratic in x since we don't move people between strata
+matAS(lx+1,lx+1) = data.schoolA1*x(data.EdInd)^2;
+matAS(lx+2,lx+2) = data.schoolA2*x(data.EdInd)^2;
+
+%% matAH: hospitality
+
+%hospitality contacts split in proportion to total population (incl. pre-school), quadratic in x/psub since we don't move people between strata
+NNrep = NN'/sum(NN);%total population proportion vector
+psub  = data.NNs(data.HospInd);
+psub  = sum(psub.*x(data.HospInd))/sum(psub);%constant from 0-1, weighted measure of how much sectors are open
+
+matAH(lx+2,:)            = data.hospA2*NNrep*psub^2;
+matAH([1:lx,lx+adInd],:) = data.hospA3*repmat(NNrep,lx+1,1)*psub^2;
+matAH(ln,:)              = data.hospA4*NNrep*psub^2;
+
+%% matAT: transport
+
+%transport contacts split in proportion to workforce population, linear in x but quadratic in wfh
 NNrea = repmat(NN(1:lx)'/sum(NN(1:lx)),lx,1);%workforce population proportion matrix
 
-%Make A:
-matA                    = zeros(ln,ln);
-matA(lx+1:end,lx+1:end) = C;
-matA(1:lx,lx+1:end)     = repmat(CworkRow,lx,1);
-matA(:,[1:lx,lx+adInd]) = repmat(matA(:,lx+adInd),1,lx+1).*repmat(NNrel',ln,1);
+matAT(1:lx,1:lx) = data.travelA3.*NNrea.*repmat(x',lx,1).*repmat(1-hw,lx,1).*repmat(1-hw',1,lx);
 
-%%
+%% matB: worker-worker
 
-data.EdInd    = [41];%education sector index
-data.HospInd  = [32,43,44];%hospitality sector indices
-data.IntlInd  = [29];%international travel index, used for seeding
+%worker-worker contacts linear in x but quadratic in wfh
+matB(1:lx,1:lx) = diag(data.B.*x'.*(1-hw).*(1-hw));
 
-w             = x.^(1/data.alp);
-w(data.EdInd) = x(data.EdInd);
+%% matC: consumer-worker
 
-if lx==45
-    %Education:
-    matA(lx+1,lx+1)=    matA(lx+1,lx+1)+    w(data.EdInd)^2*  data.schoolA1;%mixing within age groups only
-    matA(lx+2,lx+2)=    matA(lx+2,lx+2)+    w(data.EdInd)^2*  data.schoolA2;
-    
-    %Hospitality:
-    psub=data.NNs(data.HospInd);
-    psub=sum(psub.*x(data.HospInd))/sum(psub);%constant from 0-1, weighted measure of how much sectors are open
-    matA([1:lx,lx+adInd],:)=    matA([1:lx,lx+adInd],:)+    psub^2*   data.hospA3*    NNrep([1:lx,lx+adInd],:);%mixing between all age groups, including pre-school
-    matA(lx+2,:)=               matA(lx+2,:)+               psub^2*   data.hospA2*    NNrep(lx+2,:);
-    matA(ln,:)=                 matA(ln,:)+                 psub^2*   data.hospA4*    NNrep(ln,:);
+%consumer-worker contacts linear in x but quadratic in wfh
+matC(1:lx,:) = data.C'.*repmat(NNrep,lx,1).*x.*(1-hw');
 
-else
-    error('Unknown economic configuration!');
-    
-end
+%% matB and matC: workplace
 
-%Transport:
-matA(1:lx,1:lx)=    matA(1:lx,1:lx)+    repmat(w',lx,1).*   data.travelA3(1).*  NNrea.*  repmat(1-hw,lx,1).*repmat(1-hw',1,lx);%home-working has a compound effect
-
-%% WORKER-WORKER AND COMMUNITY-WORKER MATRICES:
-
-%Make B and C:
-valB          = data.B;
-valB          = valB.*(1-hw).*(1-hw);%home-working has a compound effect
-valC          = data.C;
-valC          = valC.*(1-hw);
-valB(lx+1:ln) = 0;
-valC(lx+1:ln) = 0;
-x(lx+1:ln)    = 0;
-w(lx+1:ln)    = 0;
-matB          = diag(w.*valB');
-matC          = repmat(x.*valC',1,ln).*NNrep;
-
-%%
-
+%resulting number of workplace contacts
 if ~isfield(data,'wnorm');
     data.wnorm = dot(sum(matB+matC,2),NN)/sum(NN([1:lx,lx+adInd]));
 end
 
-D = matA + (data.workp/data.wnorm)*(matB + matC);
-f = D;
+%specify magnitude of workplace contacts
+matB = (data.workp/data.wnorm)*matB;
+matC = (data.workp/data.wnorm)*matC;
+
+%%
+
+f = matAL + matAS + matAH + matAT + matB + matC;
 
 end
