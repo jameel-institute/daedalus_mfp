@@ -7,9 +7,7 @@ int   = length(data.xoptim)/lx;
 
 NNbar                = data.NNs;
 XitMat               = reshape(data.xoptim,lx,int);
-WitMat               = XitMat.^(1/data.alp);
-WitMat(data.EdInd,:) = XitMat(data.EdInd,:);
-NNvec                = repmat(NNbar(1:lx),1,int).*WitMat;
+NNvec                = repmat(NNbar(1:lx),1,int).*XitMat;
 NNworkSum            = sum(NNvec,1);
 NNvec(lx+1:ln,:)     = repmat(NNbar(lx+1:ln),1,int);
 NNvec(lx+adInd,:)    = sum(NNbar([1:lx,lx+adInd]))-NNworkSum;
@@ -24,13 +22,13 @@ data.Dvec = Dvec;
 
 data.Ev = dis.Ev.*XitMat(data.IntlInd,:);
 
-[data,f,g] = p2SimVax(data,NNvec,Dvec,dis,NNvec(:,1),inp3,WitMat,p2);
+[data,f,g] = p2SimVax(data,NNvec,Dvec,dis,NNvec(:,1),inp3,XitMat,p2);
 
 end
 
 %%
 
-function [data,f,g]=p2SimVax(data,NNvec,Dvec,dis,S0,inp3,WitMat,p2)               
+function [data,f,g]=p2SimVax(data,NNvec,Dvec,dis,S0,inp3,XitMat,p2)               
 %% PARAMETERS:
 ntot          = size(data.NNs,1);
 adInd         = 3;
@@ -58,7 +56,7 @@ Insout     = zn';
 Hout       = zn';
 Dout       = zn';
 dDout      = zn';
-Wout       = [];
+Xout       = [];
 hwout      = [];
 aaout      = 0;
 asout      = 0;
@@ -74,7 +72,7 @@ tend = data.tvec(end);
 
 while Tout(end)<tend; 
 
-    Wit               = WitMat(:,i);    
+    Xit               = XitMat(:,i);    
     NNfeed            = NNvec(:,i);
     NNfeed(NNfeed==0) = 1;
     D                 = Dvec(:,:,i);
@@ -106,8 +104,8 @@ while Tout(end)<tend;
     Hout       = [Hout;Hclass(2:end,:)];
     Dout       = [Dout;Dclass(2:end,:)];
     dDout      = [dDout;dDclass(2:end,:)]; 
-    W          = Wit'.*ones(length(tout),lx);
-    Wout       = [Wout;W(1:end-1,:)];      
+    X          = Xit'.*ones(length(tout),lx);
+    Xout       = [Xout;X(1:end-1,:)];      
     hw         = data.hw(i,:).*ones(length(tout),lx);
     hwout      = [hwout;hw(1:end-1,:)];
     aaout      = [aaout;asc_a(2:end)];
@@ -158,9 +156,9 @@ end
     
 %% OUTPUTS:  
 
-Wout  = [Wout;Wout(end,:)];
+Xout  = [Xout;Xout(end,:)];
 hwout = [hwout;hwout(end,:)];
-g     = [Tout,Wout,hwout,Isaout,Isavout,Issout,Issvout,Insout,Hout,Dout,Vout,betamodout,Tsout,Thout,phout];
+g     = [Tout,Xout,hwout,Isaout,Isavout,Issout,Issvout,Insout,Hout,Dout,Vout,betamodout,Tsout,Thout,phout];
 f     = [Tout,...
          sum(Iout,2),...
          sum(Hout,2),...

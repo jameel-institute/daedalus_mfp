@@ -39,9 +39,7 @@ maxY  = 100000;%ceil(max([d1'/scal5,thresh/scal4,h1'/scal4,I1'/scal3])/10000)*10
 
 T               = repmat(t1',lx+1,1);
 S               = 0.5:1:lx+0.5;
-w               = g1(:,1+[1:lx])';
-x               = w.^data.alp;
-x(data.EdInd,:) = w(data.EdInd,:);
+x               = g1(:,1+[1:lx])';
 X               = [x;ones(1,length(t1))];
 
 %% EPIDEMIC TRAJECTORY

@@ -17,7 +17,6 @@ adInd    = 3;
 lx       = length(data.obj);
 ntot     = size(data.NNs,1);
 data.NNs(data.NNs==0) = 1;
-data.alp = 1;
 
 %Contact Matrix
 [Dout,data] = p2MakeDs(data,data.NNs,ones(lx,1),zeros(1,lx));
