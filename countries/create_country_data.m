@@ -1,41 +1,25 @@
 %% inputs
 
-% Single Country
-% countries = {'United Kingdom'};
+parpool;
 
-% Ten Representative Countries
-% countries = {'Rwanda',...
-%              'India','Egypt','Philippines','Indonesia',...
-%              'South Africa','Brazil',...
-%              'United Kingdom','Australia','United States'};
+warning('off');
 
-% Countries with Most Data
-% %63 of which have population by sector
-% %56 of which have current preparedness data: no testing in brunei, no social distancing in brunei, china, cyprus, ethiopia, iceland, laos(deaths), russia
-% %some of which have population < 1m
+filename  = '../../../Data/Preparedness/0.income_group.xlsx';
+T1        = readtable(filename);
+filename  = '../../../Data/Preparedness/1.population_age.xlsx';
+T2        = readtable(filename);
+countries = intersect(T1.Var1,T2.Location);
+data      = struct;
 % filename  = '../../../Data/Preparedness/5.gva_sector.xlsx';
 % T         = readtable(filename);
 % countries = T.ToIndustry_Sector;
 
-% Countries with Missing Data
-filename  = '../../../Data/Preparedness/1.population_age.xlsx';
-T         = readtable(filename);
-countries = T.Location;
+%% loop
 
-% ARE CONTINUE STATEMENTS BEING USED???
+%for i = 170;%:length(countries);
+parfor i = 1:length(countries);
 
-j = 1;
-
-%%
-
-for i = 1:length(countries);
-    
 country = countries{i};
-
-%% outputs
-
-warning('off');
-data = struct;
 
 %% income group
 
@@ -43,21 +27,16 @@ filename = '../../../Data/Preparedness/0.income_group.xlsx';
 T        = readtable(filename);
 kr       = find(strcmp(T.Var1,country));
 
-%if isempty(kr); error(['Could not find income group of country: ',country]); end
-if isempty(kr); 
-    continue; 
-end
-
-year   = T(kr,:).Var2;
+%year   = T(kr,:).Var2;
 igroup = char(T(kr,:).Var3);
-gnipc  = T(kr,:).Var40;
+%gnipc  = T(kr,:).Var40;
 
 if strcmp(igroup,'LIC')||strcmp(igroup,'LMIC');
 igroup = 'LLMIC';
 end
 
-data.igroup = igroup;
-data.gnipc  = gnipc;
+%data.igroup = igroup;
+%data.gnipc  = gnipc;
 
 %disp([country,' is a ',igroup,' and its GNI per capita is $',num2str(gnipc),' (World Bank, ',num2str(year),')']);
 
@@ -67,15 +46,15 @@ filename = '../../../Data/Preparedness/1.population_age.xlsx';
 T        = readtable(filename);
 kr       = find(strcmp(T.Location,country));
 
-if ~isempty(kr);
-    kc   = find(strcmp(T.Properties.VariableNames,'x0_4'));
-    Npop = 1000*table2array(T(kr,kc:kc+20))';
-else
-    continue;
-    % Npop = zeros(21,1);
-end
+% if ~isempty(kr);
+kc   = find(strcmp(T.Properties.VariableNames,'x0_4'));
+Npop = 1000*table2array(T(kr,kc:kc+20))';
+% else
+%     continue;
+%     % Npop = zeros(21,1);
+% end
 
-data.Npop = Npop;
+%data.Npop = Npop;
 
 %disp(['The population is ',num2str(sum(Npop)),' (United Nations, 2019)']);
 
@@ -129,105 +108,79 @@ if ~isempty(kr);
         NNs  = dpop*NNs;
     end
     %% capping
+    NNs = round(NNs);%redistribution of NEC and scaling may both result in non-integer NNs
     if sum(NNs)>sum(Npop(5:13));
         NNs = sum(Npop(5:13))*NNs/sum(NNs);
+        NNs = round(NNs);
+        while sum(NNs) > sum(Npop(5:13));
+            ind         = find(NNs == max(NNs)); 
+            NNs(ind(1)) = NNs(ind(1)) - 1; 
+        end
     end
 else
-    NNs = NaN(45,1);%continue;
+    NNs = [];%continue;
     % year   = 0;
     % NNs    = zeros(45,1);
     % source = 'Estimated';
 end
 
-NNs = [NNs;Npop(1);sum(Npop(2:4));sum(Npop(5:13))-sum(NNs);sum(Npop(14:end))];
-NNs = round(NNs);
+%NNs = [NNs;Npop(1);sum(Npop(2:4));sum(Npop(5:13))-sum(NNs);sum(Npop(14:end))];
 
-data.NNs = NNs;
+%data.NNs = NNs;
 
 %disp(['The workforce accounts for ',num2str(round(100*sum(NNs(1:45))/sum(Npop(5:13)))),...
 %      '% of the adult population, across ',num2str(nnz(NNs(1:45))),' sectors (',source,', ',num2str(year),')']);
 
-%% contact matrix
+%% contact matrices
 
 filename = '../../../Data/Preparedness/3.contact_matrices_all.xlsx';
 
 if any(strcmp(sheetnames(filename),country));
     opts       = detectImportOptions(filename);
     opts.Sheet = country;
-    T          = readtable(filename,opts);
     
-    CM     = table2array(T);
+    filename = '../../../Data/Preparedness/4.contact_rates_home.xlsx';
+    T        = readtable(filename,opts);
+    matAL    = table2array(T);
+    matAL    = compress_mat(matAL,Npop);
+
+    filename = '../../../Data/Preparedness/4.contact_rates_other.xlsx';
+    T        = readtable(filename,opts);
+    matAHT   = table2array(T);
+    matAHT   = compress_mat(matAHT,Npop);
+
+    filename = '../../../Data/Preparedness/4.contact_rates_school.xlsx';
+    T        = readtable(filename,opts);
+    matAS    = table2array(T);
+    matAS    = compress_mat(matAS,Npop);
+    
+    if ~isempty(NNs);
+    filename = '../../../Data/Preparedness/4.contact_rates_work.xlsx';
+    T        = readtable(filename,opts);
+    matABC   = table2array(T);
+    workp    = (dot(sum(matABC(5:13,:),2),Npop(5:13))/sum(Npop(5:13)))...
+               *(sum(Npop(5:13))/sum(NNs(1:45)));%average number of contacts per working adult
+    else
+    workp    = [];
+    end
+    
     source = 'Prem et al., 2021';
 else
-    CM = NaN(16,16);%continue;
-    % CM     = zeros(16,16);
+    matAL  = [];%continue;
+    matAHT = [];
+    matAS  = [];
+    workp  = [];
+
     % source = 'Estimated, 0';
 end
 
-data.CM = CM;
+% data.matAL  = matAL;
+% data.matAHT = matAHT;
+% data.matAS  = matAS;
+% data.workp  = workp;
 
 %disp(['The average number of contacts per person per day is ',...
 %      num2str(round(dot(sum(CM,2),[Npop(1:15);sum(Npop(16:end))])/sum(Npop),2)),' (',source,')']);
-
-%% contact rates
-
-if any(strcmp(sheetnames(filename),country));
-    filename = '../../../Data/Preparedness/4.contact_rates_home.xlsx';
-    T        = table2array(readtable(filename,opts));
-    comm     = dot(sum(T,2),[Npop(1:15);sum(Npop(16:end))])/sum(Npop);
-    
-    filename = '../../../Data/Preparedness/4.contact_rates_other.xlsx';
-    T        = table2array(readtable(filename,opts));
-    travelA3 = dot(sum(T(5:13,5:13),2),Npop(5:13))/sum(Npop(5:13));
-    
-    filename = '../../../Data/Preparedness/4.contact_rates_school.xlsx';
-    T        = table2array(readtable(filename,opts));
-    schoolA1 = T(1,1);
-    schoolA2 = dot(sum(T(2:4,2:4),2),Npop(2:4))/sum(Npop(2:4));
-    
-    filename = '../../../Data/Preparedness/4.contact_rates_work.xlsx';
-    T        = table2array(readtable(filename,opts));
-    workp    = dot(sum(T(5:13,:),2),Npop(5:13))/sum(Npop(5:13));
-    
-    source = 'Prem et al., 2021';
-else
-    comm     = NaN;
-    travelA3 = NaN;
-    schoolA1 = NaN;
-    schoolA2 = NaN;
-    workp    = NaN;
-    source   = 'Estimated, 0';
-end
-
-filename   = '../../../Data/Preparedness/4.contact_rates_Beraud.xlsx';
-opts       = detectImportOptions(filename);
-opts.Sheet = 'Hospitality';
-T          = readtable(filename,opts).Var2;
-hospA2     = T(2);
-hospA3     = T(3);
-hospA4     = T(4);
-
-opts.Sheet = 'B45';
-T          = readtable(filename,opts).Var2;
-B          = T(1:45);
-    
-opts.Sheet = 'C45';
-T          = readtable(filename,opts).Var2;
-C          = T(1:45);
-
-data.comm     = comm;
-data.hospA2   = hospA2;
-data.hospA3   = hospA3;
-data.hospA4   = hospA4;
-data.travelA3 = travelA3;
-data.schoolA1 = schoolA1;
-data.schoolA2 = schoolA2;
-data.workp    = workp;
-data.B        = B';
-data.C        = C';
-
-%disp(['There are on average ',num2str(round(comm,2)),' contacts per person per day at home, ',num2str(round(travelA3,2)),..
-%      ' during transport, ',num2str(round(schoolA2,2)),' at school and ',num2str(round(workp,2)),' at work (',source,')']);
 
 %% gva by sector
 
@@ -238,7 +191,7 @@ kr = find(strcmp(T.ToIndustry_Sector,country));
 if ~isempty(kr); 
     kc = find(strcmp(T.Properties.VariableNames,'D01T02_Agriculture_Hunting_Forestry'));
     
-    obj    = table2array(T(kr,kc:kc+44))';
+    obj    = abs(table2array(T(kr,kc:kc+44))');%one value negative for some reason
     source = 'OECD, 2018';
     %% scaling
     filename = '../../../Data/Preparedness/5.gva_sector_change.xlsx';
@@ -251,78 +204,45 @@ if ~isempty(kr);
         obj(obj>=0) = dgva*obj(obj>=0);
     end
 else
-    obj = NaN(45,1);%continue;
+    obj = [];%continue;
     % obj    = zeros(45,1);
     % source = 'Estimated, 0';
 end
 
-data.obj = obj;
+%data.obj = obj;
 
 %disp(['The GDP is $',num2str(sum(365*obj)),' million (',source,')']);
 
-%% seasonality
-
-% filename = '../../../Data/Preparedness/6.latitude.xlsx';
-% T        = readtable(filename);
-% 
-% kr = find(strcmp(T.Country,country));
-% if isempty(kr); error(['Could not find population-centroid latitude of country: ',country]); end
-% 
-% lat = T(kr,:).Latitude;
-% amp = abs(-0.0214+0.1377*sin(lat/(180/(2*pi))));
-% phi = (lat<0)*181;
-% 
-% data.amp = amp;
-% data.phi = phi;
-% 
-% %disp(['The amplitude of seasonal forcing is ',num2str(amp),' (Hall et al., 2019; Douglas et al., 1997)']);
-
 %% economic closures
 
-filename   = '../../../Data/Preparedness/6.economic_closures.xlsx';
-opts       = detectImportOptions(filename);
-% opts.Sheet = 'Alpha';
-% T          = readtable(filename,opts);
+% filename   = '../../../Data/Preparedness/6.economic_closures.xlsx';
+% opts       = detectImportOptions(filename);
 % 
-% kr = find(strcmp(T.country,country) & T.year==2019);
-% if ~isempty(kr);
-%     alp    = T(kr,:).labsh;
-%     source = 'Feenstra et al., 2015';
-%     
-%     if isnan(alp);
-%         alp    = 0;
-%         source = 'Estimated, 0';
-%     end
-% else
-%     alp    = 0;
-%     source = 'Estimated, 0';
-% end
-
-opts.Sheet = 'Australia 45';
-T          = readtable(filename,opts);
-x_elim     = T.Var2;
-x_elim(41) = 1.00;
-
-opts.Sheet   = 'United Kingdom 45';
-T            = readtable(filename,opts);
-x_econ(:,1)  = T.Aug;
-x_econ(:,2)  = T.Apr;
-x_econ(41,1) = 1.00;
-x_econ(41,2) = 0.10;
-
-opts.Sheet   = 'Indonesia 45';
-T            = readtable(filename,opts);
-x_schc(:,1)  = T.TriwulanIV;
-x_schc(:,2)  = T.TriwulanII;
-x_schc(41,1) = 0.10;
-x_schc(41,2) = 0.10;
-
-% data.alp    = alp;
-data.x_elim = x_elim;
-data.x_econ = x_econ;
-data.x_schc = x_schc;
-
-%disp(['The labour share of productivity is ',num2str(alp),' (',source,')']);
+% opts.Sheet = 'Australia 45';
+% T          = readtable(filename,opts);
+% x_elim     = T.Var2;
+% x_elim(41) = 1.00;
+% 
+% opts.Sheet   = 'United Kingdom 45';
+% T            = readtable(filename,opts);
+% x_econ(:,1)  = T.Aug;
+% x_econ(:,2)  = T.Apr;
+% x_econ(41,1) = 1.00;
+% x_econ(41,2) = 0.10;
+% 
+% opts.Sheet   = 'Indonesia 45';
+% T            = readtable(filename,opts);
+% x_schc(:,1)  = T.TriwulanIV;
+% x_schc(:,2)  = T.TriwulanII;
+% x_schc(41,1) = 0.10;
+% x_schc(41,2) = 0.10;
+% 
+% % data.alp    = alp;
+% %data.x_elim = x_elim;
+% %data.x_econ = x_econ;
+% %data.x_schc = x_schc;
+% 
+% %disp(['The labour share of productivity is ',num2str(alp),' (',source,')']);
 
 %% home-working
 
@@ -330,33 +250,33 @@ filename   = '../../../Data/Preparedness/7.home_working.xlsx';
 opts       = detectImportOptions(filename);
 opts.Sheet = 'LD vs. FO';
 T          = readtable(filename,opts);
-w05        = T.Var2(2:end);
-w50        = T.Var3(2:end);
-w95        = T.Var4(2:end);
+w_uk       = T.Var5(2:end);
 
-opts.Sheet = 'Gottlieb';
-T          = readtable(filename,opts);
-kr         = find(strcmp(T.Var1,country));
-if ~isempty(kr);
-    w      = T(kr,:).Var2;
-    scal   = w*sum(NNs(1:45))/dot(w50,NNs(1:45));
-    wfh    = min(scal*[w05';w95'],1);
-    source = 'Gottlieb et al., 2021';
-else
-    opts.Sheet         = 'GDPpcppp';
-    opts.VariableNames = arrayfun(@num2str,1:68,'UniformOutput',0);
-    opts.DataRange     = 'A4:BP270';
-    T                  = readtable(filename,opts);
-    kr                 = find(strcmp(T.x1,country));
-    gdppcppp           = str2double(cell2mat(T(kr,:).x68));
-    w                  = max(0,-0.2444+0.0791*log10(gdppcppp));
-    scal               = w*sum(NNs(1:45))/dot(w50,NNs(1:45));
-    wfh                = min(scal*[w05';w95'],1);
-    source             = 'Estimated, 0';
+if ~isempty(NNs);
+    opts.Sheet = 'Gottlieb';
+    T          = readtable(filename,opts);
+    kr         = find(strcmp(T.Var1,country));
+    if ~isempty(kr);
+        w      = T(kr,:).Var2;
+    else
+        opts.Sheet         = 'GDPpcppp';
+        opts.VariableNames = arrayfun(@num2str,1:68,'UniformOutput',0);
+        opts.DataRange     = 'A4:BP270';
+        T                  = readtable(filename,opts);
+        kr                 = find(strcmp(T.x1,country));
+        gdppcppp           = str2double(cell2mat(T(kr,:).x68));%available for everywhere but Taiwan, which doesn't have NNs data either
+        w                  = max(0,-0.2444+0.0791*log10(gdppcppp));
+    end
+    scal    = fzero(@(scal) dot(min(scal*w_uk, 1),NNs(1:45)) - w*sum(NNs(1:45)), 1);%initial guess for scal of 1
+    scal    = max(0,scal);%this prevents scal of negative epsilon
+    wfh     = min(scal*w_uk, 1)';
+    wfh(41) = 0;%treating education sector separately
+    source  = 'Gottlieb et al., 2021';
+else 
+    wfh = [];
 end
-if any(isnan(NNs)); wfh = NaN(2,45); end
 
-data.wfh = wfh;
+%data.wfh = wfh;
 
 %disp(['The share of home-working is ',num2str(w),' (',source,')']);
 
@@ -366,49 +286,64 @@ filename = '../../../Data/Preparedness/8.vaccination.csv';
 T        = readtable(filename);
 
 kr = strcmp(T.location,country);
-if any(kr);    
+if any(kr);
+    %independent variable
     date = T(kr,:).date;
-    dvec = datevec(date);
-    dvec = dvec(:,1)-2020;
-    date = day(date,'dayofyear')+366*min(1,dvec)+365*max(0,dvec-1);
-    Tts  = T(kr,:).people_vaccinated;
-    Tts  = max(fillmissing(Tts,'linear'),0);
-    v2   = T(kr,:).people_fully_vaccinated;
-    v2   = max(fillmissing(v2,'linear'),0);
-    Vts  = (Tts+v2)/2/sum(Npop/10^5);%this is for administration rate only!!!
+    dmat = datevec(date);
+    yvec = dmat(:,1)-2020;
+    dvec = day(date,'dayofyear') + 366*min(1,yvec) + 365*max(0,yvec-1);%days since 1st Jan 2020
+    %dependent variables
+    v1   = T(kr,:).people_vaccinated_per_hundred;%cumulative first doses per 100
+    v2   = T(kr,:).people_fully_vaccinated_per_hundred;%cumulative second doses per 100
+    % Tts  = T(kr,:).people_vaccinated;
+    % Tts  = max(fillmissing(Tts,'linear'),0);
+    % v2   = T(kr,:).people_fully_vaccinated;
+    % v2   = max(fillmissing(v2,'linear'),0);
+    % Vts  = (Tts+v2)/2/sum(Npop/10^5);
+    %missing values and combination
+    time   = [min(dvec):1:max(dvec)]';
+    V1     = nan(size(time));    
+    V2     = nan(size(time));
+    [~,iv] = ismember(dvec, time);
+    V1(iv) = v1;
+    V2(iv) = v2;
+    V1     = max(0, fillmissing(V1,'linear'));
+    V2     = max(0, fillmissing(V2,'linear'));
+    Vts    = 1000*(V1+V2)/2;%average cumulative doses per 100k%this is for administration time and rate only!!!
     
     rng default;
-    m       = (Vts(end)-Vts(find(Vts>0,1)))/(date(end)-date(find(Vts>0,1)));
-    lb      = [300,                           350,       0];
-    x0      = [max(300,date(end)-Vts(end)/m), date(end), Vts(end)];
-    ub      = [800,                           date(end), 100000];
-    %x0      = [500, 650,       60000];
-    %x0      = [date(find(Vts>0,1)),date(end),Vts(end)];
-    fun     = @(par,date)funky(par,date);
+    m       = (Vts(end)-Vts(find(Vts>0,1)))/(time(end)-time(find(Vts>0,1)));%approximate slope for IC
+    lb      = [300, 365, 0];%parameters are t1, t2 and maximum, which are converted to administration time and rate (uptake calculated separately below)
+    x0      = [max(300,time(end)-Vts(end)/m), time(end), Vts(end)];
+    ub      = [1000, time(end), 100000];
+    fun     = @(params,time)pw_function(params,time);
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
-    problem = createOptimProblem('lsqcurvefit','x0',x0,'objective',fun,'xdata',date,'ydata',Vts,...
-                                 'lb',lb,'ub',ub,'options',options);
-    ms      = MultiStart;
-    poptim  = run(ms,problem,1); 
-    
-    %plot(date,Vts);
-    %hold on;
-    %plot(date,funky(poptim,date));
+    % problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Vts);
+    % ms      = MultiStart;
+    % poptim  = run(ms,problem,1);
+    poptim  = lsqcurvefit(fun, x0, time, Vts, lb, ub, options);
     
     t_vax   = poptim(1);
     arate   = poptim(3)/(poptim(2)-poptim(1));
-    puptake = max(T(kr,:).people_fully_vaccinated_per_hundred)/100;
+    puptake = max(T(kr,:).people_fully_vaccinated_per_hundred)/100;%uptake based on second dose only
+    puptake = puptake/(1-(1/2.87));%normalise by HIT using R0 from https://pmc.ncbi.nlm.nih.gov/articles/PMC7657547/#:~:text=The%20estimated%20summary%20reproductive%20number,CI%2C%202.39%E2%80%933.44). 
     source  = 'Our World in Data, 2022';
+
+    % figure;
+    % hold on;
+    % plot(time,Vts);
+    % plot(time,pw_function(poptim,time));
+
 else
-    t_vax   = NaN;
-    arate   = NaN;
-    puptake = NaN;
+    t_vax   = [];
+    arate   = [];
+    puptake = [];
     source  = 'Estimated, 0';
 end
 
-data.t_vax   = t_vax;
-data.arate   = arate;
-data.puptake = puptake;
+% data.t_vax   = t_vax;
+% data.arate   = arate;
+% data.puptake = puptake;
 
 %disp(['The vaccine rollout begins on day ',num2str(t_vax),...
 %      ' with an administration rate of ',num2str(arate),' vaccines per 100k per day',...
@@ -423,12 +358,12 @@ opts.Sheet = 'Beds';
 T          = readtable(filename,opts);
 kr         = strcmp(T.Var1,country);
 if any(kr);
-    year   = T(kr,:).Var2;
+    %year   = T(kr,:).Var2;
     hcap   = 100*T(kr,:).Var3;
     source = 'World Bank/OECD';
 else
-    year   = NaN;
-    hcap   = NaN;
+    %year   = NaN;
+    hcap   = [];
     source = 'Estimated';
 end
 
@@ -441,16 +376,18 @@ else
     BOR = 0.85;%assumption
 end
 
-opts.Sheet = 'Covid';
-T          = readtable(filename,opts);
-kr         = strcmp(T.Var1,country);
-if any(kr);
-    Cmax = max(T(kr,:).Var3)/10;
-else
-    Cmax = 0;
-end
+% opts.Sheet = 'Covid';
+% T          = readtable(filename,opts);
+% kr         = strcmp(T.Var1,country);
+% if any(kr);
+%     Cmax = max(T(kr,:).Var3)/10;
+% else
+%     Cmax = 0;
+% end
 
-data.Hmax  = hcap*(1-BOR);
+Hmax = hcap*(1-BOR);
+
+%data.Hmax  = hcap*(1-BOR);
 %data.SHmax = hcap*(1-BOR)*2;
 
 %disp(['The hospital capacity is ',num2str(hcap*(1-BOR)),' beds per 100k (',source,',',num2str(year),')']);
@@ -461,72 +398,68 @@ filename = '../../../Data/Preparedness/10.testing.csv';
 T        = readtable(filename);
 
 kr = strcmp(T.Entity,country);
-if any(kr);    
+if any(kr);
+    %independent variable
     date = T(kr,:).Date;
-    dvec = datevec(date);
-    dvec = dvec(:,1)-2020;
-    date = day(date,'dayofyear')+366*min(1,dvec)+365*max(0,dvec-1);
-    Tts  = 100*T(kr,:).CumulativeTotalPerThousand;
-    Tts  = max(fillmissing(Tts,'linear'),0);
+    dmat = datevec(date);
+    yvec = dmat(:,1)-2020;
+    dvec = day(date,'dayofyear') + 366*min(1,yvec) + 365*max(0,yvec-1);%days since 1st Jan 2020
+    %dependent variables
+    t1   = 100*T(kr,:).CumulativeTotalPerThousand;%cumulative tests per 100k
+    %missing values
+    time    = [min(dvec):1:max(dvec)]';
+    Tts     = nan(size(time));    
+    [~,iv]  = ismember(dvec, time);
+    Tts(iv) = t1;
+    Tts     = max(0, fillmissing(Tts,'linear'));
     
-    fdat       = 1:850';
-    fTts       = nan(size(fdat));
-    fTts(date) = Tts;
-    fTts       = max(fillmissing(fTts,'linear'),0);
-    
-    daily = movmean(diff(fTts),[0 30]);
-    i_tit = find(daily>1,1);
-    if ~isempty(i_tit);
-        i_tit = i_tit+1;
-        t_tit = fdat(i_tit);
+    rng default;
+    %bounds and initial condition
+    av_daily = movmean(diff(Tts),[0 30]);
+    ttit_ub  = find(av_daily>10,1);
+    if ~isempty(ttit_ub);
+        ttit_ub = time(ttit_ub);
     else
-        i_tit = 367;
-        t_tit = 367; 
+        ttit_ub = time(end);
     end
-    t_end = 731;
-    i_end = find(fdat==t_end,1);
-    tspan = t_end-t_tit;
-    Tspan = fTts(i_end)-fTts(i_tit-1);
-    trate = Tspan/tspan;
+    lb      = [14, 365, 0];%parameters are t1, t2 and maximum, which are converted to administration time and rate
+    x0      = [ttit_ub/2, time(end), Tts(end)];
+    ub      = [ttit_ub, time(end), 3500000];%3.5m is max from data
+    fun     = @(params,time)pw_function(params,time);
+    options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
+    % problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Tts);
+    % ms      = MultiStart;
+    % poptim  = run(ms,problem,1);
+    poptim  = lsqcurvefit(fun, x0, time, Tts, lb, ub, options);
     
-    %     figure;
-    %     hold on;
-    %     scatter(date,Tts);
-    %     plot(fdat,fTts,'r');
-    % 
-    %     figure;
-    %     hold on;
-    %     scatter(fdat(2:end),diff(fTts),'go');
-    %     scatter(fdat(2:end),daily,'bo');
-    %     scatter(t_tit,daily(i_tit-1),'r*');
-    %     plot(t_tit:t_end,trate*ones(1,tspan+1));
+    t_tit   = poptim(1)/3.48;%normalise by doubling time from https://pmc.ncbi.nlm.nih.gov/articles/PMC7575205/pdf/nihms-1636611.pdf
+    trate   = poptim(3)/(poptim(2)-poptim(1));
+    source  = 'Our World in Data, 2022';
     
-    %     rng default;
-    %     m       = (Tts(end)-Tts(find(Tts>0,1)))/(date(end)-date(find(Tts>0,1)));
-    %     lb      = [1,                           50,        0];
-    %     x0      = [max(1,date(end)-Tts(end)/m), date(end), Tts(end)];
-    %     ub      = [800,                         date(end), 1000000];
-    %     %x0      = [90,  date(end), 100000];
-    %     %x0      = [date(find(Tts>0,1)),date(end),Tts(end)];
-    %     fun     = @(par,date)funky(par,date);
-    %     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',500);
-    %     problem = createOptimProblem('lsqcurvefit','x0',x0,'objective',fun,'xdata',date,'ydata',Tts,...
-    %                                  'lb',lb,'ub',ub,'options',options);
-    %     ms      = MultiStart;
-    %     poptim  = run(ms,problem,1); 
-    %     
-    %     figure;
-    %     plot(date,Tts,'linewidth',2);
-    %     hold on;
-    %     plot([1:850],funky(poptim,[1:850]));
-    %     plot([1:850],funky(x0,[1:850]));
-    %     
-    %     t_tit  = poptim(1);
-    %     trate  = poptim(3)/(poptim(2)-poptim(1));
-    %     source = 'Our World in Data, 2022';
+    % figure;
+    % hold on;
+    % plot(time,Tts);
+    % plot(time,pw_function(poptim,time));
+
+    %old way
+    % daily = movmean(diff(Tts),[0 30]);
+    % i_tit = find(daily>1,1);
+    % if ~isempty(i_tit);
+    %     i_tit = i_tit+1;
+    %     t_tit = fdat(i_tit);
+    % else
+    %     i_tit = 367;
+    %     t_tit = 367; 
+    % end
+    % t_end = 731;
+    % i_end = find(fdat==t_end,1);
+    % tspan = t_end-t_tit;
+    % Tspan = fTts(i_end)-fTts(i_tit-1);
+    % trate = Tspan/tspan;
+    
 else
-    t_tit  = NaN;
-    trate  = NaN;
+    t_tit  = [];
+    trate  = [];
     source = 'Estimated, 0';
 end
 
@@ -545,168 +478,194 @@ end
 % plot(Ip,(trate/10^5)*ones(size(Ip)),'r');
 % plot(Ip,(Ip.*p3)/trate,'g');%test positivity rate
 
-data.t_tit = t_tit;
-data.trate = trate;
+% data.t_tit = t_tit;
+% data.trate = trate;
 
 %disp(['Mass testing begins on day ',num2str(t_tit),...
 %      ' with an administration rate of ',num2str(trate),' tests per 100k per day','% (',source,')']);
 
-%% response time
+%% response time & social distancing
 
 filename = '../../../Data/Preparedness/11.response.csv';
 T        = readtable(filename);
 
 kc = find(strcmpi(T.Properties.VariableNames,strrep(strrep(strrep(country,' ',''),'-','_'),'''','_')));
-if any(kc);    
-    date   = T.country_name;
-    dvec   = datevec(date);
-    dvec   = dvec(:,1)-2020;
-    date   = day(date,'dayofyear')+366*min(1,dvec)+365*max(0,dvec-1);
+if any(kc); 
+    date = T.country_name;
+    dmat = datevec(date);
+    yvec = dmat(:,1)-2020;
+    dvec = day(date,'dayofyear') + 366*min(1,yvec) + 365*max(0,yvec-1);%days since 1st Jan 2020
+
     Bts    = table2array(T(:,kc));
-    i_r    = find(Bts>=20,1);
-    Tres   = date(i_r);
+    i_r    = find(Bts>=20,1);%if strategy is no closures, this makes no difference, and if this threshold isn't met we assume Covid closures weren't imposed 
+    Tres   = dvec(i_r)/3.48;%normalise by doubling time from https://pmc.ncbi.nlm.nih.gov/articles/PMC7575205/pdf/nihms-1636611.pdf
     source = 'Blavatnik, 2022';
 else
-    Tres   = NaN;
+    Tres   = [];
     source = 'Estimated, 0';
 end
 
-data.Tres = Tres;
+% data.Tres = Tres;
 
 %disp(['The response time is on the ',num2str(Tres),' day of the first year (',source,')']);
-
-%% social distancing
 
 filename = '../../../Data/Preparedness/12.mobility.csv';
 T        = readtable(filename);
 kr       = strcmp(T.Entity,country);
 
-if any(kr);
+if any(kr) & ~isempty(Tres);
     date = T(kr,:).Day;
-    dvec = datevec(date);
-    dvec = dvec(:,1)-2020;
-    t2   = day(date,'dayofyear')+366*min(1,dvec)+365*max(0,dvec-1);  
+    dmat = datevec(date);
+    yvec = dmat(:,1)-2020;
+    t2   = day(date,'dayofyear') + 366*min(1,yvec) + 365*max(0,yvec-1);%days since 1st Jan 2020
     Rts  = min(T(kr,:).retail_and_recreation,0);
     Gts  = min(T(kr,:).grocery_and_pharmacy,0);
-    Mts  = 1+((Rts+Gts)/200);
-
+    Tts  = min(T(kr,:).transit_stations,0);
+    Mts  = 1+((Rts+Gts+Tts)/3/100);
+    
     filename = '../../../Data/Preparedness/12.excess_deaths.csv';
     T        = readtable(filename);
     kr       = strcmp(T.location_name,country);
     exd      = max(1,T(kr,:).mean_value);
     
-    filename = '../../../Data/Preparedness/12.deaths.csv';
+    filename = '../../../Data/Preparedness/12.deaths.csv';%daily deaths per million (OWID file no longer supported)
     T        = readtable(filename);
     kc       = find(strcmpi(T.Properties.VariableNames,strrep(strrep(strrep(country,' ',''),'-','_'),'''','_')));
     date     = T.date;
-    dvec     = datevec(date);
-    dvec     = dvec(:,1)-2020;
-    t1       = day(date,'dayofyear')+366*min(1,dvec)+365*max(0,dvec-1);
-    Dts      = movmean(table2array(T(:,kc))/10,7);
+    dmat     = datevec(date);
+    yvec     = dmat(:,1)-2020;
+    t1       = day(date,'dayofyear') + 366*min(1,yvec) + 365*max(0,yvec-1);%days since 1st Jan 2020
+    Dts      = table2array(T(:,kc))/10;%daily deaths per 100k
+    %Dts     = movmean(table2array(T(:,kc))/10,7);%7-day average
     t1       = t1(~isnan(Dts));
     Dts      = exd*Dts(~isnan(Dts));
     
     [t,i1,i2] = intersect(t1,t2);
     Dts       = Dts(i1);
     Mts       = Mts(i2);
+    t         = t - Tres;%days since response time
     
-    low     = 1;
-    upp     = 366;%+31+28+31;
-    lu      = min(Mts);   
-    tit_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
-    tit_fit = fit([Dts(t>low&t<upp)],Mts(t>low&t<upp),tit_fun,...
-              'StartPoint',[0.25,0.00000001],'Lower',[0.10,0],'Upper',[min(lu,0.4),10],...
-              'Robust','LAR','MaxIter',10*10^3,'MaxFunEvals',10*10^3);
-
+    %customfit3d   = fittype('l + (1-l)/(1+exp(b*log10(d)*exp(-c*t)))',...
+    %                        'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});
+    %log10-logistic functions are used elsewhere (CIT), but this function has a value of l + (1-l)/2 at t = 0 and d = 1, without introducing another parameter for the intercept
+    customfit3d   = fittype('l + (1-l)*exp(-b*exp(-c*t)*d)',...
+                            'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});%parameters are minimum, and death and time-steepness
+    options       = fitoptions(customfit3d);
+    options.lower = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
+    options.upper = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days 
+    [mdl,gof]     = fit([Dts,t],Mts,customfit3d,options);
+    
     % figure;
     % hold on;
-    % scatter(Dts(t>low&t<upp),Mts(t>low&t<upp),'bo');
+    % scatter3(Dts, t, Mts, 'ko');
+    % Drange = linspace(0,5,1000);
+    % Trange = linspace(0,900,1000);
+    % [D,T]  = meshgrid(Drange,Trange);
+    % SD     = reshape(feval(mdl,D(:),T(:)),size(D));
+    % surf(D,T,SD);
+    % zlim([0 1]);
+    % colormap(flipud(cool));
+    % shading interp;
+    % alpha 0.8;
+    % view(0,0);
+    
+    % low     = 1;
+    % upp     = 366;
+    % lu      = min(Mts);   
+    % tit_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
+    % tit_fit = fit([Dts(t>low&t<upp)],Mts(t>low&t<upp),tit_fun,...
+    %                'StartPoint',[0.25,0.00000001],'Lower',[0.10,0],'Upper',[min(lu,0.4),10],...
+    %                'Robust','LAR','MaxIter',10*10^3,'MaxFunEvals',10*10^3);
+    % figure;
+    % hold on;
+    % scatter(Dts(t>low&t<upp),Mts(t>low&t<upp),'go');
     % D = linspace(0,10,1000);      
     % plot(D,tit_fun(tit_fit.l,tit_fit.b,D),'b-');
     % xlim([0 10]);
     % ylim([0 1]);
     
-    sdl    = tit_fit.l;
-    sdb    = tit_fit.b;
+    sdl    = mdl.l;
+    sdb    = mdl.b;
+    sdc    = mdl.c;
     source = 'Our World in Data/Wang et al., 2022';
 else
     %continue;
-    sdl    = NaN;
-    sdb    = NaN;
+    sdl    = [];
+    sdb    = [];
+    sdc    = [];
     source = 'Estimated, 0';
 end
 
-data.sdl = sdl;
-data.sdb = sdb;
+% data.sdl = sdl;
+% data.sdb = sdb;
+% data.sdc = sdc;
 
 %disp(['The transmission modifier asymptote is ',num2str(sdl),'(',source,')']);
 
 %% costing - vlyl
- 
-%value of statistical life
-filename = '../../../Data/Preparedness/13.vly.csv';
-T        = readtable(filename);
-kr       = strcmp(T.DataSource,country);
+
+filename   = '../../../Data/Preparedness/13.life_expectancy.csv';
+T          = readtable(filename);
+kr         = strcmp(T.Location,country);
+
+% %value of statistical life
+% filename = '../../../Data/Preparedness/13.vly.csv';
+% T        = readtable(filename);
+% kr       = strcmp(T.DataSource,country);
 
 if any(kr);
-    year     = T(kr,:).Var3;
-    gnipcppp = T(kr,:).Var69;
-    vsl      = 160*gnipcppp/10^6;%100*gnipcppp/10^6;%in millions
-    
-    %discounted population-weighted life expectancy (disease independent)
-    filename   = '../../../Data/Preparedness/13.life_expectancy.csv';
-    T          = readtable(filename);
-    na         = [Npop(1:17)',sum(Npop(18:end))];%length is 18 to match life table
     for k = 1:18;
         label  = strcat('AGE',num2str(5*(k-1)),'-',num2str(5*(k-1)+4));
-        index  = strcmp(T.Location,country) & strcmp(T.Dim2ValueCode,label);
-        la(k)  = mean(T(index,:).Value,1); 
+        index  = kr & strcmp(T.Dim2ValueCode,label);
+        la(k)  = mean(T(index,:).Value,1);%assuming equal proportion by sex
     end
-    lg         = [dot(la(1),na(1))/sum(na(1)),...
-                  dot(la(2:4),na(2:4))/sum(na(2:4)),...
-                  dot(la(5:13),na(5:13))/sum(na(5:13)),...
-                  dot(la(14:end),na(14:end))/sum(na(14:end))];
-    for k = 1:length(lg); 
-        lgh(k) = sum(1./((1+0.03).^[1:lg(k)]));
-    end    
-    
-    %value of life-year
-    %avage    = round(dot(Npop,[2:5:102]')/sum(Npop));
-    %label    = strcat('AGE',num2str(avage-mod(avage,5)),'-',num2str(avage-mod(avage,5)+4));  
-    %krv      = strcmp(T.Location,country)&strcmp(T.Dim2ValueCode,label);    
-    %rlifex   = mean(T(krv,:).Value,1);
-    %vly      = vsl/rlifex;
-    vly    = vsl/(dot(lgh,[Npop(1);sum(Npop(2:4));sum(Npop(5:13));sum(Npop(14:end))])/sum(Npop));
-    source = strcat('World Bank,',num2str(year));
+    % year     = T(kr,:).Var3;
+    % gnipcppp = T(kr,:).Var69;
+    % vsl      = 100*gnipcppp/10^6;%160*gnipcppp/10^6;%in millions
+    % na         = [Npop(1:17)',sum(Npop(18:end))];%length is 18 to match life table
+    % lg         = [dot(la(1),na(1))/sum(na(1)),...
+    %               dot(la(2:4),na(2:4))/sum(na(2:4)),...
+    %               dot(la(5:13),na(5:13))/sum(na(5:13)),...
+    %               dot(la(14:end),na(14:end))/sum(na(14:end))];
+    % for k = 1:length(lg); 
+    %     lgh(k) = sum(1./((1+0.03).^[1:lg(k)]));
+    % end    
+    % %value of life-year
+    % avage    = round(dot(Npop,[2:5:102]')/sum(Npop));
+    % label    = strcat('AGE',num2str(avage-mod(avage,5)),'-',num2str(avage-mod(avage,5)+4));  
+    % krv      = strcmp(T.Location,country)&strcmp(T.Dim2ValueCode,label);    
+    % rlifex   = mean(T(krv,:).Value,1);
+    % vly      = vsl/rlifex;
+    % vly      = vsl/(dot(lgh,[Npop(1);sum(Npop(2:4));sum(Npop(5:13));sum(Npop(14:end))])/sum(Npop));
+    source = 'WHO, 2019';
 else
-    vly    = NaN;
-    la     = NaN(1,18);
+    la     = [];
+    %vly    = [];
     source = 'Estimated, 0';
 end
 
-data.vly = vly;
-data.la  = la;
-
+%data.la  = la;
+%data.vly = vly;
 %disp(['The value of a life year is $',num2str(vly),' million (',source,')']);
 
 %% costing - vsyl
 
-% filename = '../../../Data/15.vsy.xlsx';
-% T        = readtable(filename);
-% kr       = strcmp(T.CountryName,country);
-% 
-% if any(kr);
-%     year   = cell2mat(T(kr,:).Year);
-%     gdp    = T(kr,:).MOSTRECENT;
-%     vsy    = 2.02*gdp/sum(Npop(2:4))/10^6;%in millions
-%     source = strcat('World Bank,',num2str(year));
-% else
-%     vsy    = 0;
-%     source = 'Estimated, 0';
-% end
+% % filename = '../../Data/15.vsy.xlsx';
+% % T        = readtable(filename);
+% % kr       = strcmp(T.CountryName,country);
+% % 
+% % if any(kr);
+% %     year   = cell2mat(T(kr,:).Year);
+% %     gdp    = T(kr,:).MOSTRECENT;
+% %     vsy    = 2.02*gdp/sum(Npop(2:4))/10^6;%in millions
+% %     source = strcat('World Bank,',num2str(year));
+% % else
+% %     vsy    = 0;
+% %     source = 'Estimated, 0';
+% % end
 % 
 % gdp = 365*sum(obj);
-% vsy = 0.5454*gdp/sum(Npop(2:4));;%2.02*gdp/sum(Npop(2:4));
+% vsy = 0.5454*gdp/sum(Npop(2:4));%2.02*gdp/sum(Npop(2:4));
 % 
 % if vsy~=0;
 %     source = 'OECD, 2018';
@@ -716,156 +675,51 @@ data.la  = la;
 % 
 % data.vsy = vsy;
 % 
-% %disp(['The value of a school year is $',num2str(vsy),' million (',source,')']);
+% % %disp(['The value of a school year is $',num2str(vsy),' million (',source,')']);
 
-%% costing - gdpl
+%% storage
 
-% filename = '../../../Data/Preparedness/15.consumption_sector.xlsx';
-% T        = readtable(filename);
-% kr       = strcmp(T.Var2,country);
-% 
-% if any(kr); 
-%     kc     = find(strcmp(T.Properties.VariableNames,'TTL_01T02_Agriculture_Hunting_Forestry'));
-%     hcon   = table2array(T(kr,kc:kc+44))';
-%     source = 'OECD, 2018';
-% else
-%     hcon   = zeros(45,1);
-%     source = 'Estimated, 0';
-% end
-% 
-% filename = '../../../Data/Preparedness/15.consumption_sector_sweden.xlsx';
-% T        = readtable(filename);
-% hconsl   = T(:,:).Var5;
-% 
-% data.hcon   = hcon;
-% data.hconsl = hconsl;
-% 
-% %disp(['The annual household consumption expenditure is $',num2str(sum(365*hcon)),' million (',source,')']);
+data(i).igroup  = igroup;
+data(i).country = country;
+data(i).Npop    = Npop';
+data(i).NNs     = NNs';
+data(i).matAL   = matAL(:)';
+data(i).matAHT  = matAHT(:)';
+data(i).matAS   = matAS(:)';
+data(i).workp   = workp;
+data(i).obj     = obj';
+data(i).wfh     = wfh;
+data(i).t_vax   = t_vax;   
+data(i).arate   = arate;   
+data(i).puptake = puptake; 
+data(i).Hmax    = Hmax;
+data(i).t_tit   = t_tit; 
+data(i).trate   = trate; 
+data(i).Tres    = Tres;
+data(i).sdl     = sdl; 
+data(i).sdb     = sdb; 
+data(i).sdc     = sdc;
+data(i).la      = la;  
 
-%% costing - implementation costs
+% cdata = data(j);
+% save(strcat(country,'.mat'),'cdata');
 
-% fixed = [0,          24.9333726, 0,              32.45842874, 484.2267634]';
-% units = [0.09353734, 0.00006628, 0.000000150830, 0.00533906,  0.00007910]';
-% 
-% data.impcost = [fixed,units];
-
-%% costing - PPP factor
-
-% filename = '../../../Data/Preparedness/14.ppp.xlsx';
-% T        = readtable(filename);
-% kr       = strcmp(T.CountryName,country);
-% 
-% if any(kr); 
-%     year = T(kr,:).Year;
-%     ppp  = T(kr,:).MOSTRECENT;
-%     
-%     filename = '../../../Data/Preparedness/14.exchange_rate.xlsx';
-%     T        = readtable(filename);
-%     kr       = strcmp(T.CountryName,country);
-%     
-%     if any(kr);
-%         %kc     = find(strcmp(T.Properties.VariableNames,strcat('x',year)));
-%         %excr   = table2array(T(kr,kc));
-%         excr   = T(kr,:).MOSTRECENT;
-%         pppf   = ppp/excr;
-%         source = strcat('World Bank, ',char(year));
-%     else
-%         pppf   = 0;
-%         source = 'Estimated, 0';
-%     end
-% else
-%     pppf   = 0;
-%     source = 'Estimated, 0';
-% end
-% 
-% data.pppf = pppf;
-% 
-% %disp(['The PPP conversion factor is ',num2str(pppf),' (',source,')']);
-
-%% analysis
+if mod(i,10)==0;
+    display(i);
+end
 
 % if any(isnan([Npop;NNs;CM(:);comm;hospA2;hospA3;hospA4;travelA3;schoolA1;schoolA2;workp;B;C;obj])); 
 %     error(['NaN in data for country: ',country]); 
 % end
-
 % save(strcat(country,'.mat'),'data');
 
-candidates{j,1}       = country;
-candidates{j,2}       = data.igroup;
-candidates{j,3}       = data.gnipc;
-candidates(j,4:24)    = num2cell(data.Npop');
-candidates(j,25:69)   = num2cell(data.NNs(1:45)');
-candidates(j,70:325)  = num2cell(data.CM(:));
-candidates{j,326}     = data.comm;     
-candidates{j,327}     = data.travelA3; 
-candidates{j,328}     = data.schoolA1; 
-candidates{j,329}     = data.schoolA2; 
-candidates{j,330}     = data.workp;
-candidates(j,331:375) = num2cell(data.obj');
-candidates(j,376:465) = num2cell([data.wfh(1,:),data.wfh(2,:)]);
-candidates{j,466}     = data.t_vax;   
-candidates{j,467}     = data.arate;   
-candidates{j,468}     = data.puptake; 
-candidates{j,469}     = data.Hmax;
-candidates{j,470}     = data.t_tit; 
-candidates{j,471}     = data.trate; 
-candidates{j,472}     = data.Tres;
-candidates{j,473}     = data.sdl; 
-candidates{j,474}     = data.sdb; 
-candidates{j,475}     = data.vly;
-candidates(j,476:493) = num2cell(data.la);  
-
-if mod(j,10)==0;
-    display(j);
-end
-j = j+1;
-
 end
 
-index             = cellfun(@isnan,candidates,'uni',false);
-index             = cellfun(@any,index);
-candidates(index) = {[]};
+writetable(struct2table(data), 'country_data.csv');
 
-candidates                          = cell2table(candidates);
-candidates.Properties.VariableNames = {...
-'country','igroup','gnipc',...
-'Npop1','Npop2','Npop3','Npop4','Npop5','Npop6','Npop7','Npop8','Npop9','Npop10',...
-'Npop11','Npop12','Npop13','Npop14','Npop15','Npop16','Npop17','Npop18','Npop19','Npop20','Npop21',...
-'NNs1','NNs2','NNs3','NNs4','NNs5','NNs6','NNs7','NNs8','NNs9','NNs10','NNs11','NNs12','NNs13','NNs14','NNs15',...
-'NNs16','NNs17','NNs18','NNs19','NNs20','NNs21','NNs22','NNs23','NNs24','NNs25','NNs26','NNs27','NNs28','NNs29','NNs30',...
-'NNs31','NNs32','NNs33','NNs34','NNs35','NNs36','NNs37','NNs38','NNs39','NNs40','NNs41','NNs42','NNs43','NNs44','NNs45',...
-'CMaa','CMba','CMca','CMda','CMea','CMfa','CMga','CMha','CMia','CMja','CMka','CMla','CMma','CMna','CMoa','CMpa',...
-'CMab','CMbb','CMcb','CMdb','CMeb','CMfb','CMgb','CMhb','CMib','CMjb','CMkb','CMlb','CMmb','CMnb','CMob','CMpb',...
-'CMac','CMbc','CMcc','CMdc','CMec','CMfc','CMgc','CMhc','CMic','CMjc','CMkc','CMlc','CMmc','CMnc','CMoc','CMpc',...
-'CMad','CMbd','CMcd','CMdd','CMed','CMfd','CMgd','CMhd','CMid','CMjd','CMkd','CMld','CMmd','CMnd','CMod','CMpd',...
-'CMae','CMbe','CMce','CMde','CMee','CMfe','CMge','CMhe','CMie','CMje','CMke','CMle','CMme','CMne','CMoe','CMpe',...
-'CMaf','CMbf','CMcf','CMdf','CMef','CMff','CMgf','CMhf','CMif','CMjf','CMkf','CMlf','CMmf','CMnf','CMof','CMpf',...
-'CMag','CMbg','CMcg','CMdg','CMeg','CMfg','CMgg','CMhg','CMig','CMjg','CMkg','CMlg','CMmg','CMng','CMog','CMpg',...
-'CMah','CMbh','CMch','CMdh','CMeh','CMfh','CMgh','CMhh','CMih','CMjh','CMkh','CMlh','CMmh','CMnh','CMoh','CMph',...
-'CMai','CMbi','CMci','CMdi','CMei','CMfi','CMgi','CMhi','CMii','CMji','CMki','CMli','CMmi','CMni','CMoi','CMpi',...
-'CMaj','CMbj','CMcj','CMdj','CMej','CMfj','CMgj','CMhj','CMij','CMjj','CMkj','CMlj','CMmj','CMnj','CMoj','CMpj',...
-'CMak','CMbk','CMck','CMdk','CMek','CMfk','CMgk','CMhk','CMik','CMjk','CMkk','CMlk','CMmk','CMnk','CMok','CMpk',...
-'CMal','CMbl','CMcl','CMdl','CMel','CMfl','CMgl','CMhl','CMil','CMjl','CMkl','CMll','CMml','CMnl','CMol','CMpl',...
-'CMam','CMbm','CMcm','CMdm','CMem','CMfm','CMgm','CMhm','CMim','CMjm','CMkm','CMlm','CMmm','CMnm','CMom','CMpm',...
-'CMan','CMbn','CMcn','CMdn','CMen','CMfn','CMgn','CMhn','CMin','CMjn','CMkn','CMln','CMmn','CMnn','CMon','CMpn',...
-'CMao','CMbo','CMco','CMdo','CMeo','CMfo','CMgo','CMho','CMio','CMjo','CMko','CMlo','CMmo','CMno','CMoo','CMpo',...
-'CMap','CMbp','CMcp','CMdp','CMep','CMfp','CMgp','CMhp','CMip','CMjp','CMkp','CMlp','CMmp','CMnp','CMop','CMpp',...
-'comm','travelA3','schoolA1','schoolA2','workp',...
-'obj1','obj2','obj3','obj4','obj5','obj6','obj7','obj8','obj9','obj10','obj11','obj12','obj13','obj14','obj15',...
-'obj16','obj17','obj18','obj19','obj20','obj21','obj22','obj23','obj24','obj25','obj26','obj27','obj28','obj29','obj30',...
-'obj31','obj32','obj33','obj34','obj35','obj36','obj37','obj38','obj39','obj40','obj41','obj42','obj43','obj44','obj45',...
-'wfhl1','wfhl2','wfhl3','wfhl4','wfhl5','wfhl6','wfhl7','wfhl8','wfhl9','wfhl10','wfhl11','wfhl12','wfhl13','wfhl14','wfhl15',...
-'wfhl16','wfhl17','wfhl18','wfhl19','wfhl20','wfhl21','wfhl22','wfhl23','wfhl24','wfhl25','wfhl26','wfhl27','wfhl28','wfhl29','wfhl30',...
-'wfhl31','wfhl32','wfhl33','wfhl34','wfhl35','wfhl36','wfhl37','wfhl38','wfhl39','wfhl40','wfhl41','wfhl42','wfhl43','wfhl44','wfhl45',...
-'wfhu1','wfhu2','wfhu3','wfhu4','wfhu5','wfhu6','wfhu7','wfhu8','wfhu9','wfhu10','wfhu11','wfhu12','wfhu13','wfhu14','wfhu15',...
-'wfhu16','wfhu17','wfhu18','wfhu19','wfhu20','wfhu21','wfhu22','wfhu23','wfhu24','wfhu25','wfhu26','wfhu27','wfhu28','wfhu29','wfhu30',...
-'wfhu31','wfhu32','wfhu33','wfhu34','wfhu35','wfhu36','wfhu37','wfhu38','wfhu39','wfhu40','wfhu41','wfhu42','wfhu43','wfhu44','wfhu45',...
-'t_vax','arate','puptake','Hmax','t_tit','trate','Tres','sdl','sdb',...
-'vly','la1','la2','la3','la4','la5','la6','la7','la8','la9',...
-'la10','la11','la12','la13','la14','la15','la16','la17','la18'};
-writetable(candidates,'country_data.csv');
+delete(gcp);
 
-%% postprocessing
+%% postprocessing & plotting
 
 % for i = 1:size(candidates,1)
 %     
@@ -892,8 +746,6 @@ writetable(candidates,'country_data.csv');
 % lics  = lics(ilic,:);
 % 
 % candidates = [lics;lmics;umics;hics];
-
-%% plotting
 
 % names = categorical(candidates(:,1));
 % names = reordercats(names,cellstr(candidates(:,1)));
@@ -927,94 +779,30 @@ writetable(candidates,'country_data.csv');
 % b.CData(size(lics,1)+size(lmics,1)+1:size(lics,1)+size(lmics,1)+size(umics,1),:) = repmat([0 0 .5],size(umics,1),1);
 % b.CData(size(lics,1)+size(lmics,1)+size(umics,1)+1:end,:)                        = repmat([0.41 0.16 0.38],size(hics,1),1);
 
-%% levels
-
-% %save P2levels.mat candidates;
-% load('P2levels.mat');
-% 
-% pop  = cell2mat(candidates(:,4));
-% test = cell2mat(candidates(:,21));
-% test = test(pop>10^6 & test~=0);%is it appropriate to delete 0s?
-% l    = quantile(test,0.125+[0.00,0.25,0.50,0.75]);
-% 
-% figure;
-% hold on;
-% histogram(test,100,'FaceColor','yellow','FaceAlpha',0.00);
-% xline(l(1),'LineWidth',1.5,'Color','k');
-% xline(l(2),'LineWidth',1.5,'Color','r');
-% xline(l(3),'LineWidth',1.5,'Color','b');
-% xline(l(4),'LineWidth',1.5,'Color','g');
-% 
-% % D       = linspace(0,10,1000);      
-% % tit_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
-% % figure;
-% % hold on;
-% % plot(D,tit_fun(m(4),l(4),D),'k-');
-% % plot(D,tit_fun(m(3),l(3),D),'r-');
-% % plot(D,tit_fun(m(2),l(2),D),'b-');
-% % plot(D,tit_fun(m(1),l(1),D),'g-');
-
-%% modelling
-
-% if strcmp(igroup,'HIC');  
-%     replacement = 'Italy';  
-%     
-% elseif strcmp(igroup,'UMIC');  
-%     replacement = 'Guyana'; 
-% 
-% elseif strcmp(igroup,'LMIC');  
-%     replacement = 'Angola'; 
-% 
-% elseif strcmp(igroup,'LIC'); 
-%     replacement = 'Sudan';  
-%     
-% else
-%     error(['Couldn't find replacement for country: ',country]);
-%     
-% end
-
-%     filename = '../../../Data/1.population_age.xlsx';
-%     T        = readtable(filename);
-%     kr       = find(strcmp(T.Location,replacement));
-%     kc       = find(strcmp(T.Properties.VariableNames,'x0_4'));
-% 
-%     Nad = sum(1000*table2array(T(kr,kc+4:kc+12)));
-% 
-%     T  = readtable(filename_e);
-%     kr = find(strcmp(T{:,1},replacement));
-%     kc = find(strcmp(T.Properties.VariableNames,cname_e));
-% 
-%     pNs    = table2array(T(kr,kc:kc+44))';
-%     if width(T)~=49;
-%         pNs    = pNs/Nad;
-%     else
-%         pNs    = (pNs + T(kr,:).Var41*(pNs/sum(pNs)))/Nad;
-%     end            
-%     NNs    = sum(Npop(5:13))*pNs;
-
-% b.CData(find(names=='Sudan'),:)  = [1 0 0];
-% b.CData(find(names=='Angola'),:) = [1 0 0];
-% b.CData(find(names=='Guyana'),:) = [1 0 0];
-% b.CData(find(names=='Italy'),:)  = [1 0 0];
-
-% b.CData(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Italy'),5)),2),:)...
-% =repmat([1 1 1],sum(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Italy'),5)),2)),1);
-% b.CData(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Guyana'),5)),2),:)...
-% =repmat([1 1 1],sum(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Guyana'),5)),2)),1);
-% b.CData(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Angola'),5)),2),:)...
-% =repmat([1 1 1],sum(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Angola'),5)),2)),1);
-% b.CData(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Sudan'),5)),2),:)...
-% =repmat([1 1 1],sum(round(cell2mat(candidates(:,5)),2)==round(cell2mat(candidates(find(names=='Sudan'),5)),2)),1);
-
 %% functions
 
-function V=funky(params,dates)
-    syms ddate;
-    V = piecewise(ddate<params(1),0,...
-                  params(1)<ddate<params(2),...
-                  -params(1)*(params(3)/(params(2)-params(1))) + ddate*(params(3)/(params(2)-params(1))),...
-                  ddate>params(2),params(3));
+function mat = compress_mat(mat,pop)
+
+pop(16) = sum(pop(16:end));
+pop     = pop(1:16);
+
+mat = [mat(:,1),sum(mat(:,2:4),2),sum(mat(:,5:13),2),sum(mat(:,14:16),2)];%sum of the columns
+mat = [mat(1,:);
+       pop(2:4)'*mat(2:4,:)/sum(pop(2:4));
+       pop(5:13)'*mat(5:13,:)/sum(pop(5:13));
+       pop(14:16)'*mat(14:16,:)/sum(pop(14:16))];%weighted average of the rows
+
+end
+
+function S = pw_function(params,dates)
+    
+    syms t;
+    S = piecewise(t<params(1),0,...
+                  params(1)<t<params(2),...
+                  -params(1)*(params(3)/(params(2)-params(1))) + t*(params(3)/(params(2)-params(1))),...
+                  t>params(2),params(3));
                           
-    V = subs(V,ddate,dates);
-    V = fillmissing(double(V),'nearest');
+    S = subs(S,t,dates);
+    S = fillmissing(double(S),'nearest');
+    
 end
