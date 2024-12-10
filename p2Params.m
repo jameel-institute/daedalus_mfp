@@ -13,13 +13,13 @@ subs   = 1:4;
 subs   = repelem(subs,ranges);
 
 %Population by Sector
-adInd    = 3;
-lx       = length(data.obj);
-ntot     = size(data.NNs,1);
+ln     = size(data.NNs,1);
+lx     = length(data.obj);
+adInd  = 3;
 data.NNs(data.NNs==0) = 1;
 
 %Contact Matrix
-[Dout,data] = p2MakeDs(data,data.NNs,ones(lx,1),zeros(1,lx));
+[Dout,data] = p2MakeDs(data,ones(lx,1),zeros(1,lx));
 
 %% INITIAL DISEASE PARAMETERS:
 
@@ -75,23 +75,23 @@ dis.mu   = dis.pd./dis.Th;
 dis.nu   = 1/dis.Ti;
 
 %Transmission
-F   = zeros(3*ntot,3*ntot);
-FOI = 1.*Dout./repmat(data.NNs',ntot,1).*repmat(data.NNs,1,ntot);
+F   = zeros(3*ln,3*ln);
+FOI = 1.*Dout./repmat(data.NNs',ln,1).*repmat(data.NNs,1,ln);
 
-F(1:ntot,ntot+1:end) = [dis.red*FOI,FOI];
+F(1:ln,ln+1:end) = [dis.red*FOI,FOI];
 
-onesn = ones(ntot,1);
-vvec  = [(dis.siga+dis.sigs).*onesn;      dis.g1.*onesn;       (dis.g2+dis.h).*onesn];%g2 and h are vectors
+onesn = ones(ln,1);
+vvec  = [(dis.siga+dis.sigs).*onesn; dis.g1.*onesn; (dis.g2+dis.h).*onesn];%g2 and h are vectors
 V     = diag(vvec);
 
-V(ntot+1:2*ntot,1:ntot) = diag(-dis.siga.*onesn);
-V(2*ntot+1:end,1:ntot)  = diag(-dis.sigs.*onesn);
+V(ln+1:2*ln,1:ln)  = diag(-dis.siga.*onesn);
+V(2*ln+1:end,1:ln) = diag(-dis.sigs.*onesn);
 
 NGM       = F/V;
 [Ev,R0a]  = eigs(NGM,1,'largestreal');
 %dis.beta = dis.R0/R0a;%beta scales actual R0 to desired R0
 dis.R0    = dis.beta*R0a;
-Ev        = abs(Ev(1:ntot));%corresponding eigenvector to seed exposed population
+Ev        = abs(Ev(1:ln));%corresponding eigenvector to seed exposed population
 dis.Ev    = Ev./sum(Ev);
 
 %Vaccination
@@ -121,24 +121,24 @@ arate    = data.arate*sum(data.Npop/10^5);  %Vaccine Administration Rate
 puptake  = data.puptake;                    %Vaccine Uptake
 
 %Response Time
-J                                  = zeros(7*ntot,7*ntot);
-J(1:ntot,2*ntot+1:3*ntot)          = -dis.beta*dis.red*Dout;
-J(1:ntot,3*ntot+1:4*ntot)          = -dis.beta*Dout;
-J(1:ntot,5*ntot+1:6*ntot)          = diag(onesn.*dis.nu);
-J(ntot+1:2*ntot,1*ntot+1:2*ntot)   = diag(onesn.*(-dis.siga-dis.sigs));
-J(ntot+1:2*ntot,2*ntot+1:3*ntot)   = dis.beta*dis.red*Dout;
-J(ntot+1:2*ntot,3*ntot+1:4*ntot)   = dis.beta*Dout;
-J(2*ntot+1:3*ntot,1*ntot+1:2*ntot) = diag(onesn.*dis.siga);
-J(2*ntot+1:3*ntot,2*ntot+1:3*ntot) = diag(onesn.*-dis.g1);
-J(3*ntot+1:4*ntot,1*ntot+1:2*ntot) = diag(onesn.*dis.sigs);
-J(3*ntot+1:4*ntot,3*ntot+1:4*ntot) = diag(onesn.*(-dis.g2-dis.h));
-J(4*ntot+1:5*ntot,3*ntot+1:4*ntot) = diag(onesn.*dis.h);
-J(4*ntot+1:5*ntot,4*ntot+1:5*ntot) = diag(onesn.*(-dis.g3-dis.mu));
-J(5*ntot+1:6*ntot,2*ntot+1:3*ntot) = diag(onesn.*dis.g1);
-J(5*ntot+1:6*ntot,3*ntot+1:4*ntot) = diag(onesn.*dis.g2);
-J(5*ntot+1:6*ntot,4*ntot+1:5*ntot) = diag(onesn.*dis.g3);
-J(5*ntot+1:6*ntot,5*ntot+1:6*ntot) = diag(onesn.*-dis.nu);
-J(6*ntot+1:7*ntot,4*ntot+1:5*ntot) = diag(onesn.*dis.mu);
+J                          = zeros(7*ln,7*ln);
+J(1:ln,2*ln+1:3*ln)        = -dis.beta*dis.red*Dout;
+J(1:ln,3*ln+1:4*ln)        = -dis.beta*Dout;
+J(1:ln,5*ln+1:6*ln)        = diag(onesn.*dis.nu);
+J(ln+1:2*ln,1*ln+1:2*ln)   = diag(onesn.*(-dis.siga-dis.sigs));
+J(ln+1:2*ln,2*ln+1:3*ln)   = dis.beta*dis.red*Dout;
+J(ln+1:2*ln,3*ln+1:4*ln)   = dis.beta*Dout;
+J(2*ln+1:3*ln,1*ln+1:2*ln) = diag(onesn.*dis.siga);
+J(2*ln+1:3*ln,2*ln+1:3*ln) = diag(onesn.*-dis.g1);
+J(3*ln+1:4*ln,1*ln+1:2*ln) = diag(onesn.*dis.sigs);
+J(3*ln+1:4*ln,3*ln+1:4*ln) = diag(onesn.*(-dis.g2-dis.h));
+J(4*ln+1:5*ln,3*ln+1:4*ln) = diag(onesn.*dis.h);
+J(4*ln+1:5*ln,4*ln+1:5*ln) = diag(onesn.*(-dis.g3-dis.mu));
+J(5*ln+1:6*ln,2*ln+1:3*ln) = diag(onesn.*dis.g1);
+J(5*ln+1:6*ln,3*ln+1:4*ln) = diag(onesn.*dis.g2);
+J(5*ln+1:6*ln,4*ln+1:5*ln) = diag(onesn.*dis.g3);
+J(5*ln+1:6*ln,5*ln+1:6*ln) = diag(onesn.*-dis.nu);
+J(6*ln+1:7*ln,4*ln+1:5*ln) = diag(onesn.*dis.mu);
 
 r       = max(real(eig(J)));
 Td      = log(2)/r;
@@ -149,12 +149,6 @@ p2.Tres = data.tvec(1) + (-data.tvec(1) + p2.Tres)*Td/data.Td_CWT;
 
 %Test-Isolate-Trace
 p2.t_tit  = data.tvec(1) + (-data.tvec(1) + p2.t_tit)*Td/data.Td_CWT;
-% p2.dur    = 1;
-% p2.qg1    = 1/(dis.Tay-p2.dur);
-% p2.qg2    = (1-dis.ph)./(dis.Ts-p2.dur);
-% p2.qg2_v1 = (1-(1-dis.hv1)*dis.ph)./(dis.Ts_v1-p2.dur);
-% p2.qh     = dis.ph./(dis.Ts-p2.dur);
-% p2.qh_v1  = (1-dis.hv1)*dis.ph./(dis.Ts_v1-p2.dur);
 
 %Hospital Capacity
 p2.thl   = max(1,0.25*p2.Hmax);%lower threshold can't be less than 1 occupant
@@ -183,18 +177,27 @@ uptake  = [u1,u2,u3,u4];
 %Vaccine Administration Rate
 t_ages     = min((uptake.*NNage)/arate,Inf);%arate may be 0
 if strcmp(inp2,'Influenza 1918');
-    t_ages     = [t_ages(3),t_ages(4),t_ages(2),t_ages(1)];
-    p2.aratep1 = [0;0;arate;0];%Period 1 - working-age%to be split across all economic sectors in heSimCovid19vax.m
-    p2.aratep2 = [0;0;0;arate];%Period 2 - retired-age
-    p2.aratep3 = [0;arate;0;0];%Period 3 - school-age
-    p2.aratep4 = [0;0;0;0];    %Period 4 - pre-school-age
+    t_ages  = [t_ages(3),t_ages(4),t_ages(2),t_ages(1)];
+    aratep1 = [0;0;arate;0];%Period 1 - working-age%to be split across all economic sectors in heSimCovid19vax.m
+    aratep2 = [0;0;0;arate];%Period 2 - retired-age
+    aratep3 = [0;arate;0;0];%Period 3 - school-age
+    aratep4 = [0;0;0;0];    %Period 4 - pre-school-age
 else
-    t_ages     = [t_ages(4),t_ages(3),t_ages(2),t_ages(1)];
-    p2.aratep1 = [0;0;0;arate];%Period 1 - retired-age
-    p2.aratep2 = [0;0;arate;0];%Period 2 - working-age%to be split across all economic sectors in heSimCovid19vax.m
-    p2.aratep3 = [0;arate;0;0];%Period 3 - school-age
-    p2.aratep4 = [0;0;0;0];    %Period 4 - pre-school-age
-end    
+    t_ages  = [t_ages(4),t_ages(3),t_ages(2),t_ages(1)];
+    aratep1 = [0;0;0;arate];%Period 1 - retired-age
+    aratep2 = [0;0;arate;0];%Period 2 - working-age%to be split across all economic sectors in heSimCovid19vax.m
+    aratep3 = [0;arate;0;0];%Period 3 - school-age
+    aratep4 = [0;0;0;0];    %Period 4 - pre-school-age
+end
+NNprop                  = ones(ln,1);
+workingage              = sum(data.NNs([1:lx,lx+adInd]));
+NNprop([1:lx,lx+adInd]) = data.NNs([1:lx,lx+adInd])/workingage;
+p2.aratep1              = NNprop.*[repmat(aratep1(3),lx,1);aratep1];    
+p2.aratep2              = NNprop.*[repmat(aratep2(3),lx,1);aratep2];
+p2.aratep3              = NNprop.*[repmat(aratep3(3),lx,1);aratep3];
+p2.aratep4              = NNprop.*[repmat(aratep4(3),lx,1);aratep4];
+
+%Vaccine Administration Time
 tpoints    = cumsum([t_vax,t_ages]);
 p2.startp1 = tpoints(1);
 p2.startp2 = tpoints(2);

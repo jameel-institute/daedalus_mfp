@@ -1,12 +1,13 @@
-function [f,data]=p2MakeDs(data,NN,x,hw)
+function [f,data]=p2MakeDs(data,x,hw)
 
 %define number of strata, sectors, adult index, population by age (compressed to 16)
-ln       = length(NN);
+ln       = length(data.NNs);
 lx       = length(x);
 adInd    = 3;
 Npop     = data.Npop;
 Npop(16) = sum(Npop(16:end));
 Npop     = Npop(1:16);
+NN       = data.NNs;
 
 %initialise contact matrices: notation consistent with SI of Haw et al. (2022)
 matAL = zeros(ln,ln);%household
@@ -61,12 +62,12 @@ matAH(ln,:)              = data.hospA4*NNrep*psub^2;
 %transport contacts split in proportion to workforce population, linear in x but quadratic in wfh
 NNrea = repmat(NN(1:lx)'/sum(NN(1:lx)),lx,1);%workforce population proportion matrix
 
-matAT(1:lx,1:lx) = data.travelA3.*NNrea.*repmat(x',lx,1).*repmat(1-hw,lx,1).*repmat(1-hw',1,lx);
+matAT(1:lx,1:lx) = data.travelA3.*NNrea.*repmat(x',lx,1).*repmat(x,1,lx).*repmat(1-hw,lx,1).*repmat(1-hw',1,lx);
 
 %% matB: worker-worker
 
 %worker-worker contacts linear in x but quadratic in wfh
-matB(1:lx,1:lx) = diag(data.B.*x'.*(1-hw).*(1-hw));
+matB(1:lx,1:lx) = diag(data.B.*x'.*x'.*(1-hw).*(1-hw));
 
 %% matC: consumer-worker
 
