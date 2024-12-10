@@ -42,13 +42,13 @@ matAL = ALmag*matAL;
 
 %% matAS: school
 
-%school contacts are quadratic in x since we don't move people between strata
+%school contacts are quadratic in x
 matAS(lx+1,lx+1) = data.schoolA1*x(data.EdInd)^2;
 matAS(lx+2,lx+2) = data.schoolA2*x(data.EdInd)^2;
 
 %% matAH: hospitality
 
-%hospitality contacts split in proportion to total population (incl. pre-school), quadratic in x/psub since we don't move people between strata
+%hospitality contacts split in proportion to total population (incl. pre-school), quadratic in x/psub
 NNrep = NN'/sum(NN);%total population proportion vector
 psub  = data.NNs(data.HospInd);
 psub  = sum(psub.*x(data.HospInd))/sum(psub);%constant from 0-1, weighted measure of how much sectors are open
@@ -59,19 +59,19 @@ matAH(ln,:)              = data.hospA4*NNrep*psub^2;
 
 %% matAT: transport
 
-%transport contacts split in proportion to workforce population, linear in x but quadratic in wfh
+%transport contacts split in proportion to workforce population, quadratic in x and wfh
 NNrea = repmat(NN(1:lx)'/sum(NN(1:lx)),lx,1);%workforce population proportion matrix
 
 matAT(1:lx,1:lx) = data.travelA3.*NNrea.*repmat(x',lx,1).*repmat(x,1,lx).*repmat(1-hw,lx,1).*repmat(1-hw',1,lx);
 
 %% matB: worker-worker
 
-%worker-worker contacts linear in x but quadratic in wfh
+%worker-worker contacts quadratic in x and wfh
 matB(1:lx,1:lx) = diag(data.B.*x'.*x'.*(1-hw).*(1-hw));
 
 %% matC: consumer-worker
 
-%consumer-worker contacts linear in x but quadratic in wfh
+%consumer-worker contacts linear in x and wfh
 matC(1:lx,:) = data.C'.*repmat(NNrep,lx,1).*x.*(1-hw');
 
 %% matB and matC: workplace
