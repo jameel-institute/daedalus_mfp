@@ -154,15 +154,15 @@ if any(strcmp(sheetnames(filename),country));
     matAS    = table2array(T);
     matAS    = compress_mat(matAS,Npop);
     
-    if ~isempty(NNs);
+    %if ~isempty(NNs);
     filename = '../../../Data/Preparedness/4.contact_rates_work.xlsx';
     T        = readtable(filename,opts);
-    matABC   = table2array(T);
-    workp    = (dot(sum(matABC(5:13,:),2),Npop(5:13))/sum(Npop(5:13)))...
-               *(sum(Npop(5:13))/sum(NNs(1:45)));%average number of contacts per working adult
-    else
-    workp    = [];
-    end
+    matBC    = table2array(T);
+    workp    = dot(sum(matBC(5:13,:),2),Npop(5:13))/sum(Npop(5:13));%average number of workplace contacts per adult (working and non-working)
+    %*(sum(Npop(5:13))/sum(NNs(1:45)));%average number of contacts per working adult
+    %else
+    %workp    = [];
+    %end
     
     source = 'Prem et al., 2021';
 else

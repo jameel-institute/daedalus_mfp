@@ -138,16 +138,13 @@ p6 <- ggplot(ctry_data, aes(x = workp, fill = igroup)) +
       geom_histogram(aes(y = ..density..), position = "stack", color = "black") + 
       scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
       theme_bw() +
-      scale_x_continuous(limits = c(0,25), breaks = seq(0,25,5), expand = c(0,0), position = "bottom") +
+      scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
       scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left") +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-      labs(title = "", x = "Population-Average Workplace Contacts (#/person/day)", y = "Relative Frequency") +
+      labs(title = "", x = "Adult-Average Workplace Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
       theme(legend.position = c(0.20, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
-
-patchwork <- p1 / p2 / (p3 + p4) / (p5 + p6)
-ggsave("figure_S1a.png", plot = patchwork, height = 14, width = 10)
 
 p7 <- ggplot(nns_data, aes(x = NNs, y = value, group = country, color = igroup)) +
       facet_wrap(~ "Adult Population by Sector") +
@@ -231,5 +228,7 @@ p9 <- ggplot(wfh_data, aes(x = wfh, y = value, group = country, color = igroup))
       theme(legend.position = c(0.263, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
+patchwork <- p1 / p2 / (p3 + p4) / (p5 + p6)
+ggsave("figure_S1a.png", plot = patchwork, height = 14, width = 10)
 patchwork <- p7 / p8 / p9
 ggsave("figure_S1b.png", plot = patchwork, height = 14, width = 10)

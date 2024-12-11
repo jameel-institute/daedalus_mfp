@@ -19,7 +19,7 @@ adInd  = 3;
 data.NNs(data.NNs==0) = 1;
 
 %Contact Matrix
-[Dout,data] = p2MakeDs(data,ones(lx,1),zeros(1,lx));
+Dout = p2MakeDs(data,ones(lx,1),zeros(1,lx));
 
 %% INITIAL DISEASE PARAMETERS:
 
