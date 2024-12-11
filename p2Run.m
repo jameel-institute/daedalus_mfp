@@ -98,6 +98,7 @@ while Tout(end)<tend;
     if Tout(end)<tend;
         
         data.tvec = [data.tvec(1:end-1),Tout(end),tend];
+        p2.Tres   = min(p2.Tres,Tout(end));
         t0        = Tout(end);
         i         = inext;
         % Xh2w                   = NNvec(1:lx,inext)-NNvec(1:lx,i);%Addition to each wp next intervention step
@@ -219,14 +220,24 @@ Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
 mu  = pd./Th;
 ddk = 10^5*sum(mu.*Hclass,2)/sum(data.Npop);
 
-sd_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
+% sd_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
+% 
+% if strcmp(inp3,'No Closures')||i==1;
+%     betamod = ones(size(occ));
+% elseif any(i==data.imand);
+%     betamod = min(max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk)), max(p2.sdl,sd_fun(p2.sdl,p2.sdb,2)));
+% else
+%     betamod = max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk));
+% end
+
+sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c.*t).*d);%here, t is time since response
 
 if strcmp(inp3,'No Closures')||i==1;
     betamod = ones(size(occ));
 elseif any(i==data.imand);
-    betamod = min(max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk)), max(p2.sdl,sd_fun(p2.sdl,p2.sdb,2)));
+    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,2));
 else
-    betamod = max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk));
+    betamod = sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk);
 end
 
 S     = yout(:,0*ln+1:1*ln);
@@ -244,12 +255,7 @@ Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
 g3    = (1-pd)./Th;
 h     = ph./Ts;
 h_v1  = dis.h_v1;
-%dur   = p2.dur;
-%qh    = ph./(Ts-dur);
-%qh_v1 = p2.qh_v1;
 
-%Hdot   = h.*Ins      +qh.*Iss        -(g3+mu).*H;
-%Hv1dot = h_v1'.*Insv1 +qh_v1'.*Issv1   -(g3+mu).*Hv1;
 Hdot   = h.*Ins      +h.*Iss        -(g3+mu).*H;
 Hv1dot = h_v1'.*Insv1 +h_v1'.*Issv1   -(g3+mu).*Hv1;
 occdot = sum(Hdot+Hv1dot,2);
@@ -491,14 +497,23 @@ end
 phi = 1;%+data.amp*cos((t-32-data.phi)/(365/2*pi));
 
 ddk    = 10^5*sum(mu.*(H+Hv1))/sum(data.Npop);
-sd_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
+% sd_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
+% 
+% if strcmp(inp3,'No Closures')||i==1;
+%     betamod = 1;
+% elseif any(i==data.imand);
+%     betamod = min(max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk)), max(p2.sdl,sd_fun(p2.sdl,p2.sdb,2)));
+% else
+%     betamod = max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk));
+% end
+sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c*t)*d);%here, t is time since response
 
 if strcmp(inp3,'No Closures')||i==1;
     betamod = 1;
 elseif any(i==data.imand);
-    betamod = min(max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk)), max(p2.sdl,sd_fun(p2.sdl,p2.sdb,2)));
+    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,2));
 else
-    betamod = max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk));
+    betamod = sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk);
 end
 
 I       = (red*Ina+Ins) + (1-trv1)*(red*Inav1+Insv1) + tm_a*red*(Isa+(1-trv1)*Isav1) + tm_s.*(Iss+(1-trv1)*Issv1);
