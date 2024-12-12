@@ -143,13 +143,15 @@ J(6*ln+1:7*ln,4*ln+1:5*ln) = diag(onesn.*dis.mu);
 
 r       = max(real(eig(J)));
 Td      = log(2)/r;
-if ~isfield(data,'Td_CWT');
-    data.Td_CWT = Td;
-end
-p2.Tres = data.tvec(1) + (-data.tvec(1) + p2.Tres)*Td/data.Td_CWT;
+%if ~isfield(data,'Td_CWT');
+%    data.Td_CWT = Td;
+%end
+%p2.Tres = data.tvec(1) + (-data.tvec(1) + p2.Tres)*Td/data.Td_CWT;
+p2.Tres = p2.Tres*Td;
 
 %Test-Isolate-Trace
-p2.t_tit  = data.tvec(1) + (-data.tvec(1) + p2.t_tit)*Td/data.Td_CWT;
+%p2.t_tit  = data.tvec(1) + (-data.tvec(1) + p2.t_tit)*Td/data.Td_CWT;
+p2.t_tit = p2.t_tit*Td;
 
 %Hospital Capacity
 p2.thl   = max(1,0.25*p2.Hmax);%lower threshold can't be less than 1 occupant

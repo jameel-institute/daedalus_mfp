@@ -37,7 +37,7 @@ function p2SimRand%(locations,diseases,strategies)
                          ldata.obj',ldata.wfh(1,:),ldata.wfh(2,:),...
                          ldata.t_vax,ldata.arate,ldata.puptake,ldata.Hmax,ldata.t_tit,ldata.trate,ldata.Tres,ldata.sdl,ldata.sdb,...
                          NaN,ldata.la];
-        [ldata,~,~]   = p2Params(ldata,'Covid Wildtype');%to define wnorm and Td_CWT
+        #[ldata,~,~]   = p2Params(ldata,'Covid Wildtype');%to define wnorm and Td_CWT
         %for l = 1:2;if l==2;ldata.t_vax = min(ldata.t_vax,100);end
                    
         for j = 1:ldis;
