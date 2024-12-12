@@ -43,11 +43,6 @@ else
     error('Unknown Disease!');
 end   
 
-% dis.R0  = inp5*dis.R0;
-% dis.ps  = min(inp6*dis.ps ,1);
-% dis.ihr = min(inp6*dis.ihr,dis.ps);
-% dis.ifr = min(inp6*dis.ifr,dis.ihr);
-
 %Probabilities
 phgs    = dis.ihr./dis.ps;
 pdgh    = dis.ifr./dis.ihr;
@@ -143,39 +138,27 @@ J(6*ln+1:7*ln,4*ln+1:5*ln) = diag(onesn.*dis.mu);
 
 r       = max(real(eig(J)));
 Td      = log(2)/r;
-%if ~isfield(data,'Td_CWT');
-%    data.Td_CWT = Td;
-%end
-%p2.Tres = data.tvec(1) + (-data.tvec(1) + p2.Tres)*Td/data.Td_CWT;
 p2.Tres = p2.Tres*Td;
 
 %Test-Isolate-Trace
-%p2.t_tit  = data.tvec(1) + (-data.tvec(1) + p2.t_tit)*Td/data.Td_CWT;
 p2.t_tit = p2.t_tit*Td;
 
 %Hospital Capacity
 p2.thl   = max(1,0.25*p2.Hmax);%lower threshold can't be less than 1 occupant
-%p2.Hmax  = max(4*p2.thl,p2.Hmax);
 p2.SHmax = 2*p2.Hmax;
 
 %Vaccine Uptake
 Npop    = data.Npop;
 NNage   = [Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:end))];
-puptake = min(0.95*(1-NNage(1)/sum(NNage)),puptake);%population uptake cannot be greater than 95% coverage in non-pre-school age groups
+puptake = puptake*(1-(1/dis.R0));
+puptake = min(puptake,0.95*(1-NNage(1)/sum(NNage)));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
+upfun   = @(up) puptake*sum(NNage) - min(0.5*up,0.95)*NNage(2) - min(up,0.95)*NNage(3) - min(1.5*up,0.95)*NNage(4);
+up      = fzero(upfun,[0 2]);
 u1      = 0;
-up3fun  = @(u3) puptake*sum(NNage) - min(0.5*u3,0.95)*NNage(2) - min(u3,0.95)*NNage(3) - min(1.5*u3,0.95)*NNage(4);
-if up3fun(0)*up3fun(1)<=0;
-    u3  = fzero(up3fun,[0 1]);
-else
-    u3  = fminbnd(up3fun,0,1);
-end
-u4      = min(1.5*u3,0.95);
-up2fun  = @(u2) min(u2,0.95)*NNage(2) + u3*NNage(3) + u4*NNage(4) - puptake*sum(NNage);
-u2      = fzero(up2fun,[0 1]);
+u2      = min(0.5*up,0.95);
+u3      = min(up,0.95);
+u4      = min(1.5*up,0.95);
 uptake  = [u1,u2,u3,u4];
-% if ((uptake*NNage'/sum(NNage))-puptake)~=0;
-%     error('Vaccine uptake error!');
-% end
 
 %Vaccine Administration Rate
 t_ages     = min((uptake.*NNage)/arate,Inf);%arate may be 0
