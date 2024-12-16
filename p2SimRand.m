@@ -21,7 +21,7 @@ function p2SimRand%(locations,diseases,strategies)
     fields    = fieldnames(data);
     ikeep     = [6,7,8,13,14,16,17,18];
     data      = rmfield(data,fields(~ismember(1:numel(fields),ikeep)));  
-    data.tvec = 1+[0 365*3];
+    data.tvec = 1+[0 365*4];
     
     for h = 1:llocs;
         

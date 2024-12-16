@@ -1,7 +1,7 @@
 function sec = p2Sim(inp1,inp2,inp3)
     
     load(strcat('countries/',inp1,'.mat'),'data');
-    data.tvec = 1+[0 365*3];
+    data.tvec = 1+[0 365*4];
     
     %[data,~,~]    = p2Params(data,'Covid Wildtype');%to define wnorm and Td_CWT
     [data,dis,p2] = p2Params(data,inp2);

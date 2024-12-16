@@ -4,8 +4,6 @@ ln        = length(data.NNs);
 lx        = length(data.obj);
 tvec      = data.tvec;
 thresh    = p2.Hmax;
-limit     = p2.SHmax;
-numThresh = length(thresh);
 
 t1    = f1(:,1); 
 I1    = f1(:,2);
@@ -82,10 +80,12 @@ hh5 = plot(t1,100*(v1+v2+v3+v4)/sum(data.Npop),'-','linewidth',lw,'color','cyan'
 xlim([0 tvec(end)]);
 set(gca,'xtick',[[1,91,182,274],...
              365+[1,91,182,274],...
-           2*365+[1,91,182,274]]);
+           2*365+[1,91,182,274],...
+           3*365+[1,91,182,274]]);
 set(gca,'xticklabels',{'Year 1','Apr','Jul','Oct',...
                        'Year 2','Apr','Jul','Oct',...
-                       'Year 3','Apr','Jul','Oct'});
+                       'Year 3','Apr','Jul','Oct',...
+                       'Year 4','Apr','Jul','Oct'});
 xtickangle(45);
 yyaxis left;
 ylim([0 maxY]);

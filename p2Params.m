@@ -144,8 +144,6 @@ p2.Tres = p2.Tres*Td;
 p2.t_tit = p2.t_tit*Td;
 
 %Hospital Capacity
-p2.thl   = max(1,0.25*p2.Hmax);%lower threshold can't be less than 1 occupant
-p2.SHmax = 2*p2.Hmax;
 
 %Vaccine Uptake
 Npop    = data.Npop;

@@ -212,8 +212,7 @@ Vclass   = yout(:,18*ln+1:19*ln);
 
 occ   = max(1,sum(Hclass,2));
 Hmax  = p2.Hmax;
-SHmax = p2.SHmax;
-th0   = max(1,1+1.87*((occ-Hmax)/(SHmax-Hmax)));
+th0   = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
 
 pd  = min(th0.*dis.pd',1);
 Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
@@ -328,13 +327,12 @@ Sn    = y(19*ln+1:20*ln);
 
 occ   = max(1,sum(H+Hv1));
 Hmax  = p2.Hmax;
-SHmax = p2.SHmax;
 
 %% TIME-DEPENDENT DISEASE PARAMETERS:
 
 %Amplitudes
 amp = (Sn+(1-dis.heff).*(S-Sn))./S;
-th0 = max(1,1+1.87*((occ-Hmax)/(SHmax-Hmax)));
+th0 = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
 
 %Probabilities
 ps = dis.ps;
@@ -573,47 +571,28 @@ function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
     ln   = length(data.NNs);
     
     S    = y(0*ln+1:1*ln);
-    H    = y(6*ln+1:7*ln);
     Shv1 = y(8*ln+1:9*ln);
     Sv1  = y(9*ln+1:10*ln);
-    Hv1  = y(15*ln+1:16*ln);
     Sn   = y(19*ln+1:20*ln);
-    occ  = max(1,sum(H+Hv1));
-        
+    
     amp  = (Sn+(1-dis.heff).*(S-Sn))./S;
     ph   = amp.*dis.ph;
     Ts   = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
     g2   = (1-ph)./Ts;
     h    = ph./Ts;
     
-    %%Rt2  = rep_num(ntot,dis,h,g2,S,Shv1,Sv1,data.NNvec(:,5),data.Dvec(:,:,5),1,0,0);
-    %Rt2  = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNvec(:,5),data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);          
-
-%     %% Event 1: Response Time
-%     
-%     value(1)      = - abs(i-1) + min(t-p2.Tres,0);
-%     direction(1)  = 1;
-%     isterminal(1) = 1;
-%     
-%     %% Event 2: Late Lockdown
-%     
-%     value(2)      = - abs(i-1) + min(occ-0.95*p2.Hmax,0);
-%     direction(2)  = 1;
-%     isterminal(2) = 1;
-
-    %% Event 1: End
-    E1iflag = -floor(i/5);
-    E1tflag = min(t-(data.tvec(end-1)+0.1),0);
-    E1vflag = min(t-p2.end,0);
-    if E1iflag==0 && E1tflag==0 && E1vflag ~=0;
+    %% event 1: end of testing
+    %stop testing at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
+    E1iflag = floor(i/5);
+    E1tflag = max(0,data.tvec(end-1)+0.1-t);
+    E1vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
+    if E1iflag == 0 && E1tflag == 0 && E1vflag ~=0;
         Rt2     = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E1vflag = min(1.00-Rt2,0);
+        E1vflag = max(0,Rt2-1);
     end
     
-    %value(1)      = floor(i/5) + abs(min(t-(data.tvec(end-1)+0.1),0)) + min(t-p2.end,0)*min(1.00-Rt2,0);
     value(1)      = E1iflag + E1tflag + E1vflag;
-    %measures can be removed at any stage if (Rt<1) or (after end of vaccination campaign)
-    direction(1)  = 0;
+    direction(1)  = -1;
     isterminal(1) = 1;
     
 end
@@ -621,93 +600,90 @@ end
 function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     
     ln    = length(data.NNs);
-
+    
     S     = y(0*ln+1:1*ln);
-%     Ina   = y(2*ntot+1:3*ntot);
-%     Isa   = y(3*ntot+1:4*ntot);
     Ins   = y(4*ln+1:5*ln);
     Iss   = y(5*ln+1:6*ln);
     H     = y(6*ln+1:7*ln);
     Shv1  = y(8*ln+1:9*ln);
     Sv1   = y(9*ln+1:10*ln);
-%     Inav1 = y(11*ntot+1:12*ntot);
-%     Isav1 = y(12*ntot+1:13*ntot);
     Insv1 = y(13*ln+1:14*ln);
     Issv1 = y(14*ln+1:15*ln);
     Hv1   = y(15*ln+1:16*ln);
     Sn    = y(19*ln+1:20*ln);
-    occ   = max(1,sum(H+Hv1));
     
-    Hmax  = p2.Hmax;
-    SHmax = p2.SHmax;
-    amp   = (Sn+(1-dis.heff).*(S-Sn))./S;
-    th0   = max(1,1+1.87*((occ-Hmax)/(SHmax-Hmax)));
-    ph    = amp.*dis.ph;
-    pd    = min(th0*dis.pd,1);
-    Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-    Th    = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
-    g2    = (1-ph)./Ts;
-    g3    = (1-pd)./Th;
-    h     = ph./Ts;
-    mu    = pd./Th;
-    h_v1  = dis.h_v1;
-    %dur   = p2.dur;
-    %qh    = ph./(Ts-dur);
-    %qh_v1 = p2.qh_v1;
-  
-    %Hdot   = h.*Ins      +qh.*Iss        -(g3+mu).*H;
-    %Hv1dot = h_v1.*Insv1 +qh_v1.*Issv1   -(g3+mu).*Hv1;
+    occ    = max(1,sum(H+Hv1));
+    Hmax   = p2.Hmax;
+    amp    = (Sn+(1-dis.heff).*(S-Sn))./S;
+    th0    = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
+    ph     = amp.*dis.ph;
+    pd     = min(th0*dis.pd,1);
+    Ts     = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
+    Th     = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
+    g2     = (1-ph)./Ts;
+    g3     = (1-pd)./Th;
+    h      = ph./Ts;
+    mu     = pd./Th;
+    h_v1   = dis.h_v1;
     Hdot   = h.*Ins      +h.*Iss        -(g3+mu).*H;
     Hv1dot = h_v1.*Insv1 +h_v1.*Issv1   -(g3+mu).*Hv1;
     occdot = sum(Hdot+Hv1dot);
-    r      = occdot/occ;%disp(num2str([t,r]));%H(t)=occ*exp(r*t)
+    r      = occdot/occ;
     Tcap   = t + log(p2.Hmax/occ)/r;
-    Tcap   = Tcap-4;
+    Tld    = Tcap - 5;%(20 + 5*log(abs(r)));%empirical function, unused for r < 0.025 as below
     
-    %%Rt2    = rep_num(ntot,dis,h,g2,S,Shv1,Sv1,data.NNvec(:,5),data.Dvec(:,:,5),1,0,0); 
-    %Rt2    = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNvec(:,5),data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);          
-    
-    %% Event 1: Response Time
-    
-    value(1)      = - abs(i-1) + min(t-p2.Tres,0) ;
-    direction(1)  = 1;
+    %% event 1: first measures
+    %home-working and distancing imposed at response time
+    E1iflag = abs(i-1);
+    E1tflag = max(0,data.tvec(end-1)+0.1-t);
+    E1vflag = max(0,p2.Tres-t);
+        
+    value(1)      = E1iflag + E1tflag + E1vflag;
+    direction(1)  = -1;
     isterminal(1) = 1;
     
-    %% Event 2: Early Lockdown
+    %% event 2: early lockdown
+    %lockdown if less than 4 days before hospital capacity expected to be breached and growth rate is large
+    E2iflag = abs((i-2)*(i-4));
+    E2tflag = max(0,data.tvec(end-1)+0.1-t);
+    E2vflag = max(0,Tld-t) + max(0,0.025-r);  
     
-    value(2)     = - abs((i-2)*(i-4)) + min(t-(data.tvec(end-1)+0.1),0) + min(t-Tcap,0);
-    direction(2) = 1;
-    if r>0.025;
-        isterminal(2) = 1;
-    else
-        isterminal(2) = 0;
-    end
+    value(2)      = E2iflag + E2tflag + E2vflag;
+    direction(2)  = -1;
+    isterminal(2) = 1;
     
-    %% Event 3: Late Lockdown
+    %% event 3: late lockdown
+    %lockdown if hospital occupancy greater than 95% of capacity
+    E3iflag = abs((i-1)*(i-2)*(i-4));
+    E3tflag = max(0,data.tvec(end-1)+0.1-t);
+    E3vflag = max(0,0.95*p2.Hmax-occ);  
     
-    value(3)      = - abs((i-1)*(i-2)*(i-4)) + min(t-(data.tvec(end-1)+0.1),0) + min(occ-0.95*p2.Hmax,0);
-    direction(3)  = 1;
+    value(3)      = E3iflag + E3tflag + E3vflag;
+    direction(3)  = -1;
     isterminal(3) = 1;
     
-    %% Event 4: Reopening
+    %% event 4: partial reopening
+    %partially reopen after 1 week if hospital occupancy less than 25% of capacity
+    E4iflag = abs(i-3);
+    E4tflag = max(0,data.tvec(end-1)+7-t);
+    E4vflag = max(0,occ-0.25*p2.Hmax);  
     
-    value(4)      = abs(i-3) + abs(min(t-(data.tvec(end-1)+7),0)) + max(0,occ-p2.thl);
+    value(4)      = E4iflag + E4tflag + E4vflag;
     direction(4)  = -1;
     isterminal(4) = 1;
     
-    %% Event 5: End
-    E5iflag = -abs((i-1)*(i-2)*(i-4));
-    E5tflag = min(t-(data.tvec(end-1)+0.1),0);
-    E5vflag = min(t-p2.end,0) + min(0.025-r,0)*max(0,occ-p2.thl);
-    if E5iflag==0 && E5tflag==0 && E5vflag ~=0;
+    %% event 5: end of closures and testing
+    %remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign and (below 25% occupancy or low non-lockdown growth rate or 90 days since end of rollout), 2.5 years after response time
+    E5iflag = floor(i/5);
+    E5tflag = max(0,data.tvec(end-1)+0.1-t);
+    E5vflag = (max(0,p2.end-t) + max(0,occ-0.25*p2.Hmax)*(max(0,r-0.025) + abs((i-1)*(i-2)*(i-4)))*max(0,p2.end+90-t))*max(0,p2.Tres+2.5*365-t);
+    if E5iflag == 0 && E5tflag == 0 && E5vflag ~=0;
         Rt2     = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E5vflag = min(1.00-Rt2,0);
+        E5vflag = max(0,Rt2-1);
     end
     
-    %%value(5)      = abs((i-1)*(i-2)*(i-4)*(abs(i-3) + abs(min(t-(data.tvec(end-1)+56),0)))) + abs(min(t-(data.tvec(end-1)+0.1),0)) + min(t-p2.end,0)*min(1.00-Rt2,0);
-    %value(5)      = abs((i-1)*(i-2)*(i-4)) + abs(min(t-(data.tvec(end-1)+0.1),0)) + (min(0.025-r,0)*max(0,occ-p2.thl) + min(t-p2.end,0))*min(1.00-Rt2,0);
-    value(5)      = E5iflag + E5tflag + E5vflag;%measures can be removed if not in hard lockdown and (Rt<1 OR (after end of vaccination campaign and (below 25% occupancy OR low growth rate)))
-    direction(5)  = 0;
+    value(5)      = E5iflag + E5tflag + E5vflag;
+    direction(5)  = -1;
     isterminal(5) = 1;
     
 end
@@ -715,39 +691,22 @@ end
 function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     
     ln    = length(data.NNs);
-
+    
     S     = y(0*ln+1:1*ln);
     E     = y(1*ln+1:2*ln);
-    %Ina   = y(2*ntot+1:3*ntot);
-    %Isa   = y(3*ntot+1:4*ntot);
-    %Ins   = y(4*ntot+1:5*ntot);
-    %Iss   = y(5*ntot+1:6*ntot);
     H     = y(6*ln+1:7*ln);
     Shv1  = y(8*ln+1:9*ln);
     Sv1   = y(9*ln+1:10*ln);
     Ev1   = y(10*ln+1:11*ln);
-    %Inav1 = y(11*ntot+1:12*ntot);
-    %Isav1 = y(12*ntot+1:13*ntot);
-    %Insv1 = y(13*ntot+1:14*ntot);
-    %Issv1 = y(14*ntot+1:15*ntot);
     Hv1   = y(15*ln+1:16*ln);
     Sn    = y(19*ln+1:20*ln);
+    
     occ   = max(1,sum(H+Hv1));
-    
-%     Hmax  = p2.Hmax;
-%     SHmax = p2.SHmax;
     amp   = (Sn+(1-dis.heff).*(S-Sn))./S;
-%     th0   = max(1,1+1.87*((occ-Hmax)/(SHmax-Hmax)));
     ph    = amp.*dis.ph;
-%     pd    = min(th0*dis.pd,1);
     Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-%     Th    = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
     g2    = (1-ph)./Ts;
-%     g3    = (1-pd)./Th;
     h     = ph./Ts;
-%     mu    = pd./Th;
-%     h_v1  = dis.h_v1;
-    
     if t<p2.t_tit;   
         asc_a = 0;
         asc_s = 0;
@@ -784,65 +743,62 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
         tm_s  = 1;
             
     end
+    sig1  = dis.siga*(1-asc_a);
+    sig2  = dis.sigs*(1-asc_s);
+    sig3  = dis.siga*asc_a;
+    sig4  = dis.sigs*asc_s;
     
-    sig1 = dis.siga*(1-asc_a);
-    sig2 = dis.sigs*(1-asc_s);
-    sig3 = dis.siga*asc_a;
-    sig4 = dis.sigs*asc_s;
-
-    %%Rt1 = rep_num(ntot,dis,h,g2,S,Shv1,Sv1,data.NNvec(:,3),data.Dvec(:,:,3),1,p3,p4);
-    %Rt1 = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNvec(:,3),data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);          
-    %%Rt2 = rep_num(ntot,dis,h,g2,S,Shv1,Sv1,data.NNvec(:,5),data.Dvec(:,:,5),1,0,0);
-    %Rt2 = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNvec(:,5),data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-
-    %% Event 1: Early Lockdown
-    
-    value(1)      = - abs(i-1) + min(t-p2.Tres,0);
-    direction(1)  = 1;
+    %% event 1: first lockdown
+    %lockdown at first occurence of: response time, 95% of hospital capacity
+    E1iflag = abs(i-1);
+    E1tflag = max(0,data.tvec(end-1)+0.1-t);
+    E1vflag = max(0,p2.Tres-t)*max(0,0.95*p2.Hmax-occ);
+        
+    value(1)      = E1iflag + E1tflag + E1vflag;
+    direction(1)  = -1;
     isterminal(1) = 1;
     
-    %% Event 2: Late Lockdown
-    
-    value(2)      = - abs(i-1) + min(occ-0.95*p2.Hmax,0);
-    direction(2)  = 1;
+    %% event 2: domestic reopening
+    %reopen domestic economy after 1 week if Rt<1  
+    E2iflag = abs(i-2);
+    E2tflag = max(0,data.tvec(end-1)+7-t);
+    E2vflag = 1;
+    if E2iflag == 0 && E2tflag == 0;
+        Rt1     = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
+        E2vflag = max(0,Rt1-1);
+    end
+
+    value(2)      = E2iflag + E2tflag + E2vflag;
+    direction(2)  = -1;
     isterminal(2) = 1;
     
-    %% Event 3: Reopening
-    E3tflag = min(t-(data.tvec(end-1)+7),0);
-    E3Rflag = -1;
-    if i==2 && E3tflag==0;
+    %% event 3: relockdown
+    %lockdown again after 1 week if Rt>1.2
+    E3iflag = abs(i-3);
+    E3tflag = max(0,data.tvec(end-1)+7-t);
+    E3vflag = 1;
+    if E3iflag == 0 && E3tflag == 0;
         Rt1     = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
-        E3Rflag = min(1.00-Rt1,0);
+        E3vflag = max(0,1.2-Rt1);
     end
 
-    value(3)      = - abs(i-2) + E3tflag + E3Rflag;
-    direction(3)  = 0;
+    value(3)      = E3iflag + E3tflag + E3vflag;
+    direction(3)  = -1;
     isterminal(3) = 1;
     
-    %% Event 4: Relockdown
-    E4tflag = min(t-(data.tvec(end-1)+0.1),0);
-    E4Rflag = -1;
-    if i==3 && E4tflag==0;
-        Rt1     = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
-        E4Rflag = min(Rt1-1.20,0);
-    end
-
-    value(4)      = - abs(i-3) + E4tflag + E4Rflag;
-    direction(4)  = 0;
-    isterminal(4) = 1;
-    
-    %% Event 5: End
-    E5iflag = -floor(i/5);
-    E5tflag = min(t-(data.tvec(end-1)+0.1),0);
-    E5vflag = min(t-p2.end,0);
-    if E5iflag==0 && E5tflag==0 && E5vflag ~=0;
+    %% event 4: end of closures and testing
+    %remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
+    E4iflag = floor(i/5);
+    E4tflag = max(0,data.tvec(end-1)+0.1-t);
+    E4vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
+    if E4iflag == 0 && E4tflag == 0 && E4vflag ~=0;
         Rt2     = rep_num(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E5vflag = min(1.00-Rt2,0);
+        E4vflag = max(0,Rt2-1);
     end
-
-    value(5)      = E5iflag + E5tflag + E5vflag;%measures can be removed at any stage if (Rt<1) or (after end of vaccination campaign)
-    direction(5)  = 0;
-    isterminal(5) = 1;
+    
+    value(4)      = E4iflag + E4tflag + E4vflag;
+    direction(4)  = -1;
+    isterminal(4) = 1;
     
 end
 
