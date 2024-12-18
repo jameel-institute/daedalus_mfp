@@ -1,6 +1,8 @@
 function sec = p2Sim(inp1,inp2,inp3)
     
-    load(strcat('countries/',inp1,'.mat'),'data');
+    load('countries/country.mat','data');
+    CD        = readtable('countries/country_data.csv');
+    data      = p2RandIG(data,CD,inp1);
     data.tvec = 1+[0 365*4];
     
     %[data,~,~]    = p2Params(data,'Covid Wildtype');%to define wnorm and Td_CWT

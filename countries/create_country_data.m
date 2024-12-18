@@ -1,8 +1,54 @@
-%% inputs
+warning('off');
+
+%% create baseline country.mat file
+
+data = struct;
+
+IntlInd      = [29];
+HospInd      = [32,43,44];
+EdInd        = [41];
+data.IntlInd = IntlInd;
+data.HospInd = HospInd;
+data.EdInd   = EdInd;
+
+filename   = '../../../Data/Preparedness/4.contact_rates_Beraud.xlsx';
+opts       = detectImportOptions(filename);
+opts.Sheet = 'B45';
+T          = readtable(filename,opts).Var2;
+B          = T(1:45);
+opts.Sheet = 'C45';
+T          = readtable(filename,opts).Var2;
+C          = T(1:45);
+data.B     = B';
+data.C     = C';
+
+filename        = '../../../Data/Preparedness/6.economic_closures.xlsx';
+opts            = detectImportOptions(filename);
+opts.Sheet      = 'Indonesia 45';
+T               = readtable(filename,opts);
+x_schc(:,1)     = T.TriwulanIV;
+x_schc(:,2)     = T.TriwulanII;
+x_schc(EdInd,1) = 0.10;
+x_schc(EdInd,2) = 0.10;
+opts.Sheet      = 'United Kingdom 45';
+T               = readtable(filename,opts);
+x_econ(:,1)     = T.Aug;
+x_econ(:,2)     = T.Apr;
+x_econ(EdInd,1) = 1.00;
+x_econ(EdInd,2) = 0.10;
+opts.Sheet      = 'Australia 45';
+T               = readtable(filename,opts);
+x_elim          = T.Var2;
+x_elim(EdInd)   = 1.00;
+data.x_schc     = x_schc;
+data.x_econ     = x_econ;
+data.x_elim     = x_elim;
+
+save('country.mat','data');
+
+%% create country_data.csv file
 
 parpool;
-
-warning('off');
 
 filename  = '../../../Data/Preparedness/0.income_group.xlsx';
 T1        = readtable(filename);
@@ -13,8 +59,6 @@ data      = struct;
 % filename  = '../../../Data/Preparedness/5.gva_sector.xlsx';
 % T         = readtable(filename);
 % countries = T.ToIndustry_Sector;
-
-%% loop
 
 %for i = 170;%:length(countries);
 parfor i = 1:length(countries);
@@ -212,37 +256,6 @@ end
 %data.obj = obj;
 
 %disp(['The GDP is $',num2str(sum(365*obj)),' million (',source,')']);
-
-%% economic closures
-
-% filename   = '../../../Data/Preparedness/6.economic_closures.xlsx';
-% opts       = detectImportOptions(filename);
-% 
-% opts.Sheet = 'Australia 45';
-% T          = readtable(filename,opts);
-% x_elim     = T.Var2;
-% x_elim(41) = 1.00;
-% 
-% opts.Sheet   = 'United Kingdom 45';
-% T            = readtable(filename,opts);
-% x_econ(:,1)  = T.Aug;
-% x_econ(:,2)  = T.Apr;
-% x_econ(41,1) = 1.00;
-% x_econ(41,2) = 0.10;
-% 
-% opts.Sheet   = 'Indonesia 45';
-% T            = readtable(filename,opts);
-% x_schc(:,1)  = T.TriwulanIV;
-% x_schc(:,2)  = T.TriwulanII;
-% x_schc(41,1) = 0.10;
-% x_schc(41,2) = 0.10;
-% 
-% % data.alp    = alp;
-% %data.x_elim = x_elim;
-% %data.x_econ = x_econ;
-% %data.x_schc = x_schc;
-% 
-% %disp(['The labour share of productivity is ',num2str(alp),' (',source,')']);
 
 %% home-working
 
@@ -701,83 +714,15 @@ data(i).sdb     = sdb;
 data(i).sdc     = sdc;
 data(i).la      = la;  
 
-% cdata = data(j);
-% save(strcat(country,'.mat'),'cdata');
-
-if mod(i,10)==0;
+if mod(i,10) == 0;
     display(i);
 end
-
-% if any(isnan([Npop;NNs;CM(:);comm;hospA2;hospA3;hospA4;travelA3;schoolA1;schoolA2;workp;B;C;obj])); 
-%     error(['NaN in data for country: ',country]); 
-% end
-% save(strcat(country,'.mat'),'data');
 
 end
 
 writetable(struct2table(data), 'country_data.csv');
 
 delete(gcp);
-
-%% postprocessing & plotting
-
-% for i = 1:size(candidates,1)
-%     
-%     hicc(i)  = strcmp(candidates{i,2},'HIC');
-%     umicc(i) = strcmp(candidates{i,2},'UMIC');
-%     lmicc(i) = strcmp(candidates{i,2},'LMIC');
-%     licc(i)  = strcmp(candidates{i,2},'LIC');
-%     
-% end
-% 
-% hics  = candidates(hicc,:);
-% umics = candidates(umicc,:);
-% lmics = candidates(lmicc,:);
-% lics  = candidates(licc,:);
-% 
-% [~,ihic]  = sort([hics{:,3}], 'ascend','MissingPlacement','first'); 
-% [~,iumic] = sort([umics{:,3}],'ascend','MissingPlacement','first'); 
-% [~,ilmic] = sort([lmics{:,3}],'ascend','MissingPlacement','first'); 
-% [~,ilic]  = sort([lics{:,3}], 'ascend','MissingPlacement','first'); 
-% 
-% hics  = hics(ihic,:);
-% umics = umics(iumic,:);
-% lmics = lmics(ilmic,:);
-% lics  = lics(ilic,:);
-% 
-% candidates = [lics;lmics;umics;hics];
-
-% names = categorical(candidates(:,1));
-% names = reordercats(names,cellstr(candidates(:,1)));
-% 
-% f  = figure('Units','centimeters','Position',[0 0 45 15]);
-% set(f,'defaulttextInterpreter','latex');
-% set(f,'defaultAxesTickLabelInterpreter','latex');
-% set(f,'defaultLegendInterpreter','latex');
-% set(f,'DefaultAxesFontSize',10);
-% fs = 12;
-% 
-% g = gca;
-% g.Position = [0.035 0.28 0.93 0.625];
-% hold on;
-% 
-% b = bar(names,cell2mat(candidates(:,3)));
-% %plot(names,70*ones(1,length(candidates)),'-','linewidth',1,'color','k');
-% 
-% %ylim([0 100000]);
-% %ylabel('GNI per capita (\$)');
-% g.XAxis.TickLength = [0 0];
-% xtickangle(45);
-% %g.YAxis.Exponent = 3;
-% grid on;
-% box on;
-% set(gca,'FontSize',fs);
-% 
-% b.FaceColor = 'flat';
-% b.CData(1:size(lics,1),:)                                                        = repmat([0 1 1],size(lics,1),1);
-% b.CData(size(lics,1)+1:size(lics,1)+size(lmics,1),:)                             = repmat([0 .5 1],size(lmics,1),1);
-% b.CData(size(lics,1)+size(lmics,1)+1:size(lics,1)+size(lmics,1)+size(umics,1),:) = repmat([0 0 .5],size(umics,1),1);
-% b.CData(size(lics,1)+size(lmics,1)+size(umics,1)+1:end,:)                        = repmat([0.41 0.16 0.38],size(hics,1),1);
 
 %% functions
 

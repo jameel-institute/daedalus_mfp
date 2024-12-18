@@ -16,12 +16,9 @@ function p2SimRand%(locations,diseases,strategies)
     dat_array = cell(llocs,nsamples,ldis,lstrat);
     dis_array = cell(llocs,nsamples,ldis,lstrat);
     p2_array  = cell(llocs,nsamples,ldis,lstrat);
-    CD        = readtable('countries/country_data.csv');
-    load('countries/Argentina.mat','data');%loading Argentina, but only keeping country-independent parameters
-    fields    = fieldnames(data);
-    ikeep     = [6,7,8,13,14,16,17,18];
-    data      = rmfield(data,fields(~ismember(1:numel(fields),ikeep)));  
+    load('countries/country.mat','data');
     data.tvec = 1+[0 365*4];
+    CD        = readtable('countries/country_data.csv');
     
     for h = 1:llocs;
         
