@@ -16,7 +16,7 @@ vlyl      = lyl*data.vly;
 cost(3,:) = vlyl;
 
 deaths          = g(:,(1+2*lx+6*ln+1):(1+2*lx+7*ln));
-ccost_t(:,1:ln) = deaths.*data.lgh.*data.vly;
+ccost_t(:,1:ln) = deaths.*dis.lgd.*data.vly;
 
 %% VSYL
 
