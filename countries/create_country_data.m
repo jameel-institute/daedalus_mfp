@@ -48,7 +48,7 @@ save('country.mat','data');
 
 %% create country_data.csv file
 
-parpool;
+%parpool;
 
 filename  = '../../../Data/Preparedness/0.income_group.xlsx';
 T1        = readtable(filename);
@@ -60,8 +60,8 @@ data      = struct;
 % T         = readtable(filename);
 % countries = T.ToIndustry_Sector;
 
-%for i = 170;%:length(countries);
-parfor i = 1:length(countries);
+%parfor i = 1:length(countries);
+for i = 1:length(countries);
 
 country = countries{i};
 
@@ -324,17 +324,16 @@ if any(kr);
     V2     = max(0, fillmissing(V2,'linear'));
     Vts    = 1000*(V1+V2)/2;%average cumulative doses per 100k%this is for administration time and rate only!!!
     
-    rng default;
     m       = (Vts(end)-Vts(find(Vts>0,1)))/(time(end)-time(find(Vts>0,1)));%approximate slope for IC
     lb      = [300, 365, 0];%parameters are t1, t2 and maximum, which are converted to administration time and rate (uptake calculated separately below)
     x0      = [max(300,time(end)-Vts(end)/m), time(end), Vts(end)];
     ub      = [1000, time(end), 100000];
     fun     = @(params,time)pw_function(params,time);
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
-    % problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Vts);
-    % ms      = MultiStart;
-    % poptim  = run(ms,problem,1);
-    poptim  = lsqcurvefit(fun, x0, time, Vts, lb, ub, options);
+    %poptim  = lsqcurvefit(fun, x0, time, Vts, lb, ub, options);
+    problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Vts);
+    ms      = MultiStart('UseParallel', false);
+    poptim  = run(ms,problem,10);
     
     t_vax   = poptim(1);
     arate   = poptim(3)/(poptim(2)-poptim(1));
@@ -425,8 +424,7 @@ if any(kr);
     [~,iv]  = ismember(dvec, time);
     Tts(iv) = t1;
     Tts     = max(0, fillmissing(Tts,'linear'));
-    
-    rng default;
+       
     %bounds and initial condition
     av_daily = movmean(diff(Tts),[0 30]);
     ttit_ub  = find(av_daily>10,1);
@@ -440,10 +438,10 @@ if any(kr);
     ub      = [ttit_ub, time(end), 3500000];%3.5m is max from data
     fun     = @(params,time)pw_function(params,time);
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
-    % problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Tts);
-    % ms      = MultiStart;
-    % poptim  = run(ms,problem,1);
-    poptim  = lsqcurvefit(fun, x0, time, Tts, lb, ub, options);
+    %poptim  = lsqcurvefit(fun, x0, time, Tts, lb, ub, options);
+    problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Tts);
+    ms      = MultiStart('UseParallel', false);
+    poptim  = run(ms,problem,10);
     
     t_tit   = poptim(1)/3.48;%normalise by doubling time from https://pmc.ncbi.nlm.nih.gov/articles/PMC7575205/pdf/nihms-1636611.pdf
     trate   = poptim(3)/(poptim(2)-poptim(1));
@@ -475,21 +473,6 @@ else
     trate  = [];
     source = 'Estimated, 0';
 end
-
-% dur   = 1;
-% Ip    = linspace(0,1000,500);
-% trate = 110;
-% b0    = 2.197;
-% b1    = 0.1838;
-% b2    = -1.024;
-% p3    = (Ip<trate) .*   (1./(1+exp(b0+b1*Ip+b2*log10(trate))))/dur + ...
-%         (Ip>=trate).*min(1./(1+exp(b0+b1*Ip+b2*log10(trate))),trate/10^5)/dur;
-% p4    = p3;
-% plot(Ip,p3);
-% hold on;
-% plot(trate*ones(1,11),[0:0.1:1],'r');
-% plot(Ip,(trate/10^5)*ones(size(Ip)),'r');
-% plot(Ip,(Ip.*p3)/trate,'g');%test positivity rate
 
 % data.t_tit = t_tit;
 % data.trate = trate;
@@ -558,15 +541,20 @@ if any(kr) & ~isempty(Tres);
     Mts       = Mts(i2);
     t         = t - Tres;%days since response time
     
-    %customfit3d   = fittype('l + (1-l)/(1+exp(b*log10(d)*exp(-c*t)))',...
-    %                        'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});
-    %log10-logistic functions are used elsewhere (CIT), but this function has a value of l + (1-l)/2 at t = 0 and d = 1, without introducing another parameter for the intercept
-    customfit3d   = fittype('l + (1-l)*exp(-b*exp(-c*t)*d)',...
-                            'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});%parameters are minimum, and death and time-steepness
-    options       = fitoptions(customfit3d);
-    options.lower = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
-    options.upper = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days 
-    [mdl,gof]     = fit([Dts,t],Mts,customfit3d,options);
+    lb      = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
+    x0      = [(0.1+min(Mts))/2, 100, -log(0.5)/14];
+    ub      = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days
+    fun     = @(params, x) params(1) + (1 - params(1)) .* exp(-params(2) * exp(-params(3) * x(:,2)) .* x(:,1));
+    options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
+    %poptim  = lsqcurvefit(fun, x0, [Dts, t], Mts, lb, ub, options);
+    problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',[Dts, t],'ydata',Mts);
+    ms      = MultiStart('UseParallel', false);
+    poptim  = run(ms,problem,10);
+    
+    sdl    = poptim(1);
+    sdb    = poptim(2);
+    sdc    = poptim(3);
+    source = 'Our World in Data/Wang et al., 2022';
     
     % figure;
     % hold on;
@@ -582,25 +570,19 @@ if any(kr) & ~isempty(Tres);
     % alpha 0.8;
     % view(0,0);
     
-    % low     = 1;
-    % upp     = 366;
-    % lu      = min(Mts);   
-    % tit_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
-    % tit_fit = fit([Dts(t>low&t<upp)],Mts(t>low&t<upp),tit_fun,...
-    %                'StartPoint',[0.25,0.00000001],'Lower',[0.10,0],'Upper',[min(lu,0.4),10],...
-    %                'Robust','LAR','MaxIter',10*10^3,'MaxFunEvals',10*10^3);
-    % figure;
-    % hold on;
-    % scatter(Dts(t>low&t<upp),Mts(t>low&t<upp),'go');
-    % D = linspace(0,10,1000);      
-    % plot(D,tit_fun(tit_fit.l,tit_fit.b,D),'b-');
-    % xlim([0 10]);
-    % ylim([0 1]);
+    %other candidate
+    % customfit3d   = fittype('l + (1-l)/(1+exp(b*log10(d)*exp(-c*t)))',...
+    %                         'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});
+    % log10-logistic functions are used elsewhere (CIT), but this function has a value of l + (1-l)/2 at t = 0 and d = 1, without introducing another parameter for the intercept
+
+    %old algorithm
+    % customfit3d   = fittype('l + (1-l)*exp(-b*exp(-c*t)*d)',...
+    %                         'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});%parameters are minimum, and death and time-steepness
+    % options       = fitoptions(customfit3d);
+    % options.lower = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
+    % options.upper = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days 
+    % [poptim,gof]  = fit([Dts,t],Mts,customfit3d,options);
     
-    sdl    = mdl.l;
-    sdb    = mdl.b;
-    sdc    = mdl.c;
-    source = 'Our World in Data/Wang et al., 2022';
 else
     %continue;
     sdl    = [];
@@ -722,7 +704,7 @@ end
 
 writetable(struct2table(data), 'country_data.csv');
 
-delete(gcp);
+%delete(gcp);
 
 %% functions
 

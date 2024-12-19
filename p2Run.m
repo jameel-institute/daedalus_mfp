@@ -234,7 +234,7 @@ sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c.*t).*d);%here, t is time since res
 if strcmp(inp3,'No Closures')||i==1;
     betamod = ones(size(occ));
 elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,2));
+    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,14,2));
 else
     betamod = sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk);
 end
@@ -509,7 +509,7 @@ sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c*t)*d);%here, t is time since respo
 if strcmp(inp3,'No Closures')||i==1;
     betamod = 1;
 elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,2));
+    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,14,2));
 else
     betamod = sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk);
 end
