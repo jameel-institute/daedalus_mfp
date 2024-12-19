@@ -192,16 +192,17 @@ p2.end     = tpoints(5);%End of Rollout
 %% COST PARAMETERS:
 
 na         = [data.Npop(1:16)',sum(data.Npop(17:end))];%length is 17 to match ifr
-napd       = na.*dis.ifr;
 la         = [data.la(1:16),...
               dot(data.la(17:end),[data.Npop(17),sum(data.Npop(18:end))])/sum(data.Npop(17:end))];
+napd       = na.*dis.ifr;
 lg         = [dot(la(1),napd(1))/sum(napd(1)),...
               dot(la(2:4),napd(2:4))/sum(napd(2:4)),...
               dot(la(5:13),napd(5:13))/sum(napd(5:13)),...
               dot(la(14:end),napd(14:end))/sum(napd(14:end))];
-for k = 1:length(lg); 
-    lgh(k) = sum(1./((1+0.03).^[1:lg(k)]));
+lgd        = zeros(size(lg));
+for k = 1:length(lgd); 
+    lgd(k) = sum(1./((1+0.03).^[1:lg(k)]));
 end  
-data.lgh   = [repmat(lgh(3),1,45),lgh];
+dis.lgd    = [repmat(lgd(3),1,45),lgd];
 
 end

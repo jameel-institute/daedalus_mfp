@@ -134,7 +134,7 @@ lg        = [dot(la(1),na(1))/sum(na(1)),...
              dot(la(5:13),na(5:13))/sum(na(5:13)),...
              dot(la(14:end),na(14:end))/sum(na(14:end))];
 lgd       = zeros(size(lg));
-for k = 1:length(lg); 
+for k = 1:length(lgd); 
     lgd(k) = sum(1./((1+0.03).^[1:lg(k)]));
 end 
 gdp       = 365*sum(data.obj);

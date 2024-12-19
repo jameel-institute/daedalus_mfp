@@ -9,7 +9,7 @@ ln = lx+4;
 deaths    = g(end,(1+2*lx+6*ln+1):(1+2*lx+7*ln));
 cost(1,:) = deaths;
 
-lyl       = deaths.*data.lgh;
+lyl       = deaths.*dis.lgd;
 cost(2,:) = lyl;
 
 vlyl      = lyl*data.vly;
