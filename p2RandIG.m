@@ -133,10 +133,10 @@ lg        = [dot(la(1),na(1))/sum(na(1)),...
              dot(la(2:4),na(2:4))/sum(na(2:4)),...
              dot(la(5:13),na(5:13))/sum(na(5:13)),...
              dot(la(14:end),na(14:end))/sum(na(14:end))];
-lgd       = zeros(size(lg));
-for k = 1:length(lgd); 
-    lgd(k) = sum(1./((1+0.03).^[1:lg(k)]));
-end 
+% lgd       = zeros(size(lg));
+% for k = 1:length(lgd); 
+%     lgd(k) = sum(1./((1+0.03).^[1:lg(k)]));
+% end 
 gdp       = 365*sum(data.obj);%in millions USD
 gdppc     = gdp/sum(na);
 %Masterman & Viscusi (2018) method, using US 2019 VSL of $10.9m from 
@@ -146,7 +146,7 @@ if all(strcmp(country_data.igroup,'LLMIC')) || (all(strcmp(country_data.igroup,'
 elseif (all(strcmp(country_data.igroup,'UMIC')) && gdppc > 0.008809) || all(strcmp(country_data.igroup,'HIC'));
     vsl   = 10.9*((gdppc/0.060362)^0.85);
 end
-defivalue = vsl/(dot(lgd,[na(1);sum(na(2:4));sum(na(5:13));sum(na(14:end))])/sum(na));
+defivalue = vsl/(dot(lg,[na(1);sum(na(2:4));sum(na(5:13));sum(na(14:end))])/sum(na));
 data.vly  = defivalue;
 
 %vsy

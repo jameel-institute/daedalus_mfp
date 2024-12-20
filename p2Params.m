@@ -199,10 +199,10 @@ lg         = [dot(la(1),napd(1))/sum(napd(1)),...
               dot(la(2:4),napd(2:4))/sum(napd(2:4)),...
               dot(la(5:13),napd(5:13))/sum(napd(5:13)),...
               dot(la(14:end),napd(14:end))/sum(napd(14:end))];
-lgd        = zeros(size(lg));
-for k = 1:length(lgd); 
-    lgd(k) = sum(1./((1+0.03).^[1:lg(k)]));
-end  
-dis.lgd    = [repmat(lgd(3),1,45),lgd];
+% lgd        = zeros(size(lg));
+% for k = 1:length(lgd); 
+%     lgd(k) = sum(1./((1+0.03).^[1:lg(k)]));
+% end  
+dis.lg     = [repmat(lg(3),1,45),lg];
 
 end

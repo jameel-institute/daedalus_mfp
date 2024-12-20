@@ -9,14 +9,14 @@ ln = lx+4;
 deaths    = g(end,(1+2*lx+6*ln+1):(1+2*lx+7*ln));
 cost(1,:) = deaths;
 
-lyl       = deaths.*dis.lgd;
+lyl       = deaths.*dis.lg;
 cost(2,:) = lyl;
 
 vlyl      = lyl*data.vly;
 cost(3,:) = vlyl;
 
 deaths          = g(:,(1+2*lx+6*ln+1):(1+2*lx+7*ln));
-ccost_t(:,1:ln) = deaths.*dis.lgd.*data.vly;
+ccost_t(:,1:ln) = deaths.*dis.lg.*data.vly;
 
 %% VSYL
 
