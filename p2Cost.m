@@ -25,17 +25,18 @@ students         = data.NNs(Stu);
 cost(4,lx+[1,2]) = students;%student numbers not used, but storing supply costs in lx+1 and demand costs in lx+2
 
 %student supply: learning losses due to illness, when schools are open
-%assume that the isolation period is the latent period plus maximum infectious period
 %assume that the symptomatic period is the same duration as the infectious period (though start/end points may be different)
+%assume that the isolation period is the latent period plus maximum infectious period
 %not scaled by ability for sfh because the valuation used here accounts for this
+%assume isolating symptomatics who are hospitalised isolate for same duration as infectious period
 ph           = g(:,1+2*lx+8*ln+1+2*ln+Stu);
 phv          = (1-dis.hv1)*dis.ph(Stu);
 Ts           = g(:,1+2*lx+8*ln+1+Stu);
 Tiso         = dis.Tlat + max([dis.Tay,dis.Tsr,dis.Tsh]);
 isoasyu      = (g(:,1+2*lx+0*ln+Stu)./dis.Tay).*Tiso;%.*(1-(1/3));
 isoasyv      = (g(:,1+2*lx+1*ln+Stu)./dis.Tay).*Tiso;%.*(1-(1/3));
-isosymu      = (g(:,1+2*lx+2*ln+Stu)./Ts).*(Tiso.*(1-ph) + 1.*ph);              
-isosymv      = (g(:,1+2*lx+3*ln+Stu)./dis.Ts_v1(Stu)).*(Tiso.*(1-phv) + 1.*phv);
+isosymu      = (g(:,1+2*lx+2*ln+Stu)./Ts).*(Tiso.*(1-ph) + Ts.*ph);              
+isosymv      = (g(:,1+2*lx+3*ln+Stu)./dis.Ts_v1(Stu)).*(Tiso.*(1-phv) + dis.Ts_v1(Stu).*phv);
 nissym       = g(:,1+2*lx+4*ln+Stu);
 hospts       = g(:,1+2*lx+5*ln+Stu);
 deaths       = g(:,1+2*lx+6*ln+Stu);
@@ -56,40 +57,15 @@ cost(6,lx+2) = vsyl_std;
 ccost_t(:,ln+lx+1) = cumtrapz(t,abs_ill_open,1)./365.*data.vsy;
 ccost_t(:,ln+lx+2) = cumtrapz(t,abs_clos,1)./365.*data.vsy;
 
-% %student supply: learning loss due to illness, regardless whether schools are open or not
-% %assume that ths isoasy and isosym isolation period is the latent period plus maximum infectious period: note that isoasy and isosym depend on dis.Tsr and Ts repsectively
-% %assume that the nissym symptomatic period is the same duration as the infectious period (though start/end points may be different)
-% %not scaled by ability for sfh because the valuation used here accounts for this
-% Ts           = g(:,1+2*lx+8*ln+1+Stu);
-% isoasyu      = g(:,1+2*lx+0*ln+Stu).*((dis.Tlat + max(dis.Tay,dis.Tsr))./dis.Tay);%.*(1-(1/3));
-% isoasyv      = g(:,1+2*lx+1*ln+Stu).*((dis.Tlat + max(dis.Tay,dis.Tsr))./dis.Tay);%.*(1-(1/3));
-% isosymu      = g(:,1+2*lx+2*ln+Stu).*((dis.Tlat + max(dis.Tay,Ts))./Ts);
-% isosymv      = g(:,1+2*lx+3*ln+Stu).*((dis.Tlat + max(dis.Tay,Ts))./Ts);
-% nissym       = g(:,1+2*lx+4*ln+Stu);
-% hospts       = g(:,1+2*lx+5*ln+Stu);
-% deaths       = g(:,1+2*lx+6*ln+Stu);
-% abs          = isoasyu + isoasyv + isosymu + isosymv + nissym + hospts + deaths;%numbers of students
-% absint       = trapz(t,abs)/365;
-% cost(5,lx+1) = absint;
-% vsyl_sts     = absint*data.vsy;
-% cost(6,lx+1) = vsyl_sts;
-% 
-% %student demand: learning loss due to school closures, for healthy students only
-% pres         = students-abs;%numbers of students
-% presl        = pres.*(1-g(:,1+data.EdInd));%.*(1-(1/3));
-% preslint     = trapz(t,presl)/365;%(diff(t)'*presl)/365;
-% cost(5,lx+2) = preslint;
-% vsyl_std     = preslint*data.vsy;
-% cost(6,lx+2) = vsyl_std;
-
 %% SGDPL
 
 notEd = [1:(data.EdInd-1),(data.EdInd+1):lx];
 
 %labour supply: GDP loss due to illness, when businesses are open
-%assume that the isolation period is the latent period plus maximum infectious period
 %assume that the symptomatic period is the same duration as the infectious period (though start/end points may be different)
-%asymptomatics have ability to wfh
+%assume that the isolation period is the latent period plus maximum infectious period
+%assume isolating asymptomatics wfh if capable
+%assume isolating symptomatics who are hospitalised isolate for same duration as infectious period
 ph            = g(:,1+2*lx+8*ln+1+2*ln+notEd);
 phv           = (1-dis.hv1).*dis.ph(notEd)';
 Ts            = g(:,1+2*lx+8*ln+1+notEd);
@@ -97,8 +73,8 @@ Tiso          = dis.Tlat + max([dis.Tay,dis.Tsr,dis.Tsh]);
 hw            = g(:,1+1*lx+notEd);
 isoasyu       = (g(:,1+2*lx+0*ln+notEd)./dis.Tay).*Tiso.*(1-hw);
 isoasyv       = (g(:,1+2*lx+1*ln+notEd)./dis.Tay).*Tiso.*(1-hw);
-isosymu       = (g(:,1+2*lx+2*ln+notEd)./Ts).*(Tiso.*(1-ph) + 1.*ph);              
-isosymv       = (g(:,1+2*lx+3*ln+notEd)./dis.Ts_v1(notEd)').*(Tiso.*(1-phv) + 1.*phv);
+isosymu       = (g(:,1+2*lx+2*ln+notEd)./Ts).*(Tiso.*(1-ph) + Ts.*ph);              
+isosymv       = (g(:,1+2*lx+3*ln+notEd)./dis.Ts_v1(notEd)').*(Tiso.*(1-phv) + dis.Ts_v1(notEd)'.*phv);
 nissym        = g(:,1+2*lx+4*ln+notEd);
 hospts        = g(:,1+2*lx+5*ln+notEd);
 deaths        = g(:,1+2*lx+6*ln+notEd);
