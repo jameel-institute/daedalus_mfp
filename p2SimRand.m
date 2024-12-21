@@ -9,7 +9,7 @@ function p2SimRand%(locations,diseases,strategies)
     strategies = {'No Closures','School Closures','Economic Closures','Elimination'};
     
     llocs     = length(locations);
-    nsamples  = 1000;%samples per location
+    nsamples  = 5000;%samples per location
     ldis      = length(diseases);
     lstrat    = length(strategies);
     inputs    = zeros(llocs,nsamples,493);
