@@ -150,7 +150,15 @@ defivalue = vsl/(dot(lg,[na(1);sum(na(2:4));sum(na(5:13));sum(na(14:end))])/sum(
 data.vly  = defivalue;
 
 %vsy
-defivalue = 0.5454*gdp/sum(data.Npop(2:4));
+%Psacharopoulos (2021) method, weighting LLMIC value by number of LICs and LMICs, scaled to 1 year
+if all(strcmp(country_data.igroup,'LLMIC'));
+    llpc  = dot([0.62,0.22],[27,55])/(27+55)/0.33;
+elseif all(strcmp(country_data.igroup,'UMIC'));
+    llpc  = 0.22/0.33;
+elseif all(strcmp(country_data.igroup,'HIC'));
+    llpc  = 0.09/0.33;
+end
+defivalue = llpc*gdp/sum(data.Npop(2:4));
 data.vsy  = defivalue;
 
 end
