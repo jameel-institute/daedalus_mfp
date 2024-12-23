@@ -1,4 +1,4 @@
-function [cost,ccost_t] = p2Cost(data,dis,p2,g)
+function [cost,ccost_t,c] = p2Cost(data,dis,g)
 
 t  = g(:,1);
 lx = length(data.obj);
@@ -57,7 +57,7 @@ cost(6,lx+2) = vsyl_std;
 ccost_t(:,ln+lx+1) = cumtrapz(t,abs_ill_open,1)./365.*data.vsy;
 ccost_t(:,ln+lx+2) = cumtrapz(t,abs_clos,1)./365.*data.vsy;
 
-%% SGDPL
+%% GDPL
 
 notEd = [1:(data.EdInd-1),(data.EdInd+1):lx];
 
@@ -91,47 +91,13 @@ x_int         = trapz(t,1-x);%diff(t)'*(1-x(1:end-1,:));%proportion of sector cl
 gdpl_lbd      = x_int.*data.obj(notEd)';
 cost(8,notEd) = gdpl_lbd;
 
-%consumer demand
-% betamod       = g(:,1+2*lx+6*ln+1);
-% conloss       = min((1-betamod).*data.hconsl(notEd)',1).*data.hcon(notEd)';
-% prdloss       = (absx+1-x).*data.obj(notEd)';
-% difloss       = max(0,conloss-prdloss);%to avoid double counting
-% gdpl_crd      = trapz(t,difloss);
-cost(9,notEd) = 0;%gdpl_crd;
-%zero during ld: betamod(sum(x,2)<44)=1;
+%% SUMMARY
 
-%medium-term
-cost(10,notEd) = 0;
-
-ccost_t(:,2*ln+notEd) = cumtrapz(t,abs_ill_pcop,1).*data.obj(notEd)';
-ccost_t(:,3*ln+notEd) = cumtrapz(t,(1-x),1).*data.obj(notEd)';
-
-%% IMPC
-
-% tstart       = min(p2.Tres,data.tvec(2));%response time or late lockdown time
-% w            = g(:,1+notEd);
-% if sum(w(end,:))==44;    
-%     tend     = data.tvec(end-1);%lifting time or simulation end time
-% else
-%     tend     = data.tvec(end);
-%     error('Implementation Cost Error!');
-% end
-% betamod      = g(:,1+2*lx+6*ln+1);
-% hospts       = min(sum(g(:,(1+2*lx+3*ln+1):(1+2*lx+4*ln)),2),p2.Hmax);
-% vaxxed       = sum(g(:,(1+2*lx+5*ln+1):(1+2*lx+6*ln)),2);%number of people vaccinated
-% units        = [max(0,tend-tstart),...
-%                 data.trate*sum(data.Npop/10^5)*max(0,tend-p2.t_tit),...
-%                 sum(data.Npop)*trapz(t,1-betamod),...
-%                 trapz(t,hospts),...
-%                 2*vaxxed(end)];
-% impcost      = data.pppf*(data.impcost(:,1)' + units.*data.impcost(:,2)');
-% cost(11,1:5) = impcost;
-% 
-% cunits                = [cumtrapz(t,(tstart<t)&(t<tend)),...
-%                          data.trate*sum(data.Npop/10^5)*cumtrapz(t,(p2.t_tit<t)&(t<tend)),...
-%                          sum(data.Npop)*cumtrapz(t,1-betamod),...
-%                          cumtrapz(t,hospts),...
-%                          2*vaxxed];
-% ccost_t(:,4*ln+[1:5]) = data.pppf*(data.impcost(:,1)' + cunits.*data.impcost(:,2)');
+c1        = [cost(3,lx+1) cost(3,lx+2) sum(cost(3,[1:lx,lx+3])) cost(3,ln)];
+c2        = sum(cost(7:8,1:lx),1);
+map45to10 = [1,1,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,5,6,7,7,7,7,7,6,8,8,8,9,9,9,9,10,10,10,10,10,10];
+c2        = accumarray(map45to10',c2')';
+c3        = sum(cost(6,:));
+c         = [c1,c2,c3];
 
 end

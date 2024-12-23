@@ -1,4 +1,4 @@
-function f=p2Plot(data,f1,p2,g1,cost,ccost_t,sec,inp1,inp2,inp3)
+function f=p2Plot(data,f1,p2,g1,cost,ccost_t,inp1,inp2,inp3)
 
 ln        = length(data.NNs);
 lx        = length(data.obj);
@@ -163,12 +163,12 @@ ax.Position = [0.25 0.20 0.65 0.70];
 labs = categorical(["VLYL","GDPL","VSYL"]);
 labs = reordercats(labs,[2 1 3]);
 y    = 100*[cost(3,lx+1) cost(3,lx+2)   sum(cost(3,[1:lx,lx+3])) cost(3,ln);...
-        sum(cost(7,:))   sum(cost(8,:)) sum(cost(9,:))           sum(cost(10,:));...
+        sum(cost(7,:))   sum(cost(8,:)) 0                        0;...
         cost(6,lx+1:ln)]/sum(365*data.obj);
 b    = bar(labs,y,'stacked','FaceColor','flat');
 
 xtickangle(45);
-ymax = 100*max([sum(cost(3,:)),sum(cost(6,:)),sum(cost(7:10,:),'all')])/sum(365*data.obj);
+ymax = 100*max([sum(cost(3,:)),sum(cost(6,:)),sum(cost(7:end,:),'all')])/sum(365*data.obj);
 ylmt = ceil(ymax/10)*10;
 ylmt = ylmt + 10*((ylmt-ceil(ymax))<(0.25*ylmt));%%%%%
 ylim([0 ylmt]);

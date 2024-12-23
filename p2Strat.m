@@ -1,6 +1,7 @@
 function data = p2Strat(data,inp3);
     
-    lx = length(data.B);
+    data.inp3 = inp3;
+    lx        = length(data.B);
     
     if strcmp(inp3,'No Closures');
         data.xoptim = [ones(lx,1);NaN(3*lx,1);ones(lx,1)];

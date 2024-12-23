@@ -1,19 +1,11 @@
-function [data,f,g]=p2Run(data,dis,inp3,p2);
+function [data,f,g]=p2Run(data,dis,p2);
 
 ln    = length(data.NNs);
 lx    = length(data.obj);
-%adInd = 3;
 int   = length(data.xoptim)/lx;
 
-XitMat               = reshape(data.xoptim,lx,int);
-%NNbar                = data.NNs;
-%NNvec                = repmat(NNbar(1:lx),1,int).*XitMat;
-%NNworkSum            = sum(NNvec,1);
-%NNvec(lx+1:ln,:)     = repmat(NNbar(lx+1:ln),1,int);
-%NNvec(lx+adInd,:)    = sum(NNbar([1:lx,lx+adInd]))-NNworkSum;
-%data.NNvec           = NNvec;
-
-Dvec = zeros(ln,ln,int);
+XitMat = reshape(data.xoptim,lx,int);
+Dvec   = zeros(ln,ln,int);
 for i = 1:int;
     Dvec(:,:,i) = p2MakeDs(data,XitMat(:,i),data.hw(i,:));
 end
@@ -21,13 +13,13 @@ data.Dvec = Dvec;
 
 data.Ev = dis.Ev.*XitMat(data.IntlInd,:);
 
-[data,f,g] = p2SimVax(data,dis,data.NNs,inp3,XitMat,p2);%S0 = data.NNs, i.e. entirely susceptible population
+[data,f,g] = p2SimVax(data,dis,data.NNs,XitMat,p2);%S0 = data.NNs, i.e. entirely susceptible population
 
 end
 
 %%
 
-function [data,f,g]=p2SimVax(data,dis,S0,inp3,XitMat,p2)               
+function [data,f,g]=p2SimVax(data,dis,S0,XitMat,p2)               
 %% IC:
 
 t0    = data.tvec(1);
@@ -71,8 +63,15 @@ while Tout(end)<tend;
     Xit = XitMat(:,i);    
     D   = data.Dvec(:,:,i);
     
-    [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0,inext] = integr8(data,D,i,t0,tend,dis,y0,inp3,p2);
+    [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0,inext] = integr8(data,D,i,t0,tend,dis,y0,p2);
     
+    if tout(end)<tend;
+        data.tvec = [data.tvec(1:end-1),tout(end),tend];
+        p2.Tres   = min(p2.Tres,tout(end));
+        t0        = tout(end);
+        i         = inext;
+    end   
+
     Tout       = [Tout;tout(2:end)];  
     Tsout      = [Tsout;Ts(2:end,:)];  
     Thout      = [Thout;Th(2:end,:)];
@@ -95,40 +94,6 @@ while Tout(end)<tend;
     betamodout = [betamodout;betamod(2:end)];
     Vout       = [Vout;Vclass(2:end,:)];
     
-    if Tout(end)<tend;
-        
-        data.tvec = [data.tvec(1:end-1),Tout(end),tend];
-        p2.Tres   = min(p2.Tres,Tout(end));
-        t0        = Tout(end);
-        i         = inext;
-        % Xh2w                   = NNvec(1:lx,inext)-NNvec(1:lx,i);%Addition to each wp next intervention step
-        % Xw2h                   = -Xh2w; 
-        % Xw2h(Xw2h<0)           = 0;
-        % Xw2h                   = Xw2h./NNvec(1:lx,i);
-        % Xw2h(NNvec(1:lx,i)==0) = 0;
-        % 
-        % if NNvec(lx+adInd,i)>0;%when would this not be the case?
-        %     Xh2w(Xh2w<0) = 0;
-        %     Xh2w         = Xh2w/NNvec(lx+adInd,i);
-        % else
-        %     Xh2w         = 0;
-        % end
-        % 
-        % %Move all infection statuses:
-        % 
-        % y0    = reshape(y0,[ln,nc]);%IC
-        % y0w2h = y0(1:lx,:).*repmat(Xw2h,1,nc);%IC%number of people to be put at home (+)
-        % y0w2h = [-y0w2h;sum(y0w2h,1)];
-        % 
-        % y0h2w = y0(lx+adInd,:);
-        % y0h2w = kron(y0h2w,Xh2w);
-        % y0h2w = [y0h2w;-sum(y0h2w,1)];
-        % 
-        % y0([1:lx,lx+adInd],:) = y0([1:lx,lx+adInd],:)+y0w2h+y0h2w;
-        % y0                    = reshape(y0,ln*nc,1);
-
-    end   
-
 end
     
 %% OUTPUTS:  
@@ -160,31 +125,25 @@ end
 
 %%
 
-function [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0new,inext] = integr8(data,D,i,t0,tend,dis,y0,inp3,p2)
+function [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0new,inext] = integr8(data,D,i,t0,tend,dis,y0,p2)
 %% CALL:
 
 ln  = length(data.NNs);
-fun = @(t,y)ODEs(data,D,i,t,dis,y,inp3,p2);
+fun = @(t,y)ODEs(data,D,i,t,dis,y,p2);
 
-if strcmp(inp3,'No Closures');
+if strcmp(data.inp3,'No Closures');
     options = odeset('Events',@(t,y)unmitigated(t,y,data,dis,i,p2));
-elseif strcmp(inp3,'School Closures');
+elseif strcmp(data.inp3,'School Closures');
     options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));
-elseif strcmp(inp3,'Economic Closures');
+elseif strcmp(data.inp3,'Economic Closures');
     options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));
-elseif strcmp(inp3,'Elimination');
+elseif strcmp(data.inp3,'Elimination');
 	options = odeset('Events',@(t,y)elimination(t,y,data,dis,i,p2));
 else
     error('Unknown Mitigation Strategy!');
 end    
 
-% try 
-    [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
-% catch
-%     options.RelTol     = 1e-5;
-%     options.AbsTol     = 1e-8;
-%     [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
-% end
+[tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
 
 y0new     = yout(end,:)'; 
 if tout(end)<tend;
@@ -219,19 +178,9 @@ Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
 mu  = pd./Th;
 ddk = 10^5*sum(mu.*Hclass,2)/sum(data.Npop);
 
-% sd_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
-% 
-% if strcmp(inp3,'No Closures')||i==1;
-%     betamod = ones(size(occ));
-% elseif any(i==data.imand);
-%     betamod = min(max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk)), max(p2.sdl,sd_fun(p2.sdl,p2.sdb,2)));
-% else
-%     betamod = max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk));
-% end
-
 sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c.*t).*d);%here, t is time since response
 
-if strcmp(inp3,'No Closures')||i==1;
+if strcmp(data.inp3,'No Closures')||i==1;
     betamod = ones(size(occ));
 elseif any(i==data.imand);
     betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,14,2));
@@ -248,7 +197,7 @@ Issv1 = yout(:,14*ln+1:15*ln);
 H     = yout(:,6*ln+1:7*ln);
 Hv1   = yout(:,15*ln+1:16*ln);
 
-amp   = (Sn+(1-dis.heff).*(S-Sn))./S;
+amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
 ph    = amp.*dis.ph';
 Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
 g3    = (1-pd)./Th;
@@ -293,10 +242,11 @@ end
 
 %%
 
-function [f,g]=ODEs(data,D,i,t,dis,y,inp3,p2)
+function [f,g]=ODEs(data,D,i,t,dis,y,p2)
 
-NN = data.NNs;
-ln = length(NN);
+NN        = data.NNs;
+ln        = length(NN);
+NN(NN==0) = 1;
 
 %% IC:
 
@@ -331,7 +281,7 @@ Hmax  = p2.Hmax;
 %% TIME-DEPENDENT DISEASE PARAMETERS:
 
 %Amplitudes
-amp = (Sn+(1-dis.heff).*(S-Sn))./S;
+amp = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
 th0 = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
 
 %Probabilities
@@ -370,20 +320,6 @@ nuv1  = dis.nuv1;
 
 %Preparedness
 trate   = p2.trate;
-%Tm      = p2.Tm;
-%p3      = p2.p3;
-%p4      = p2.p4;
-%dur    = p2.dur;
-%qg1    = p2.qg1;
-%qg2    = (1-ph)./(Ts-dur);
-%qg2_v1 = p2.qg2_v1;
-%qh     = ph./(Ts-dur);
-%qh_v1  = p2.qh_v1;
-%betamod = p2.betamod;
-%Hmax    = p2.Hmax;
-%FHmax   = p2.FHmax;
-%g3_oc   = p2.g3_oc;
-%mu_oc   = p2.mu_oc;
 startp1 = p2.startp1;
 startp2 = p2.startp2;
 startp3 = p2.startp3;
@@ -495,18 +431,9 @@ end
 phi = 1;%+data.amp*cos((t-32-data.phi)/(365/2*pi));
 
 ddk    = 10^5*sum(mu.*(H+Hv1))/sum(data.Npop);
-% sd_fun = @(l,b,x) (l-b)+(1-l+b)*(1+((l-1)/(1-l+b))).^(x./10);
-% 
-% if strcmp(inp3,'No Closures')||i==1;
-%     betamod = 1;
-% elseif any(i==data.imand);
-%     betamod = min(max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk)), max(p2.sdl,sd_fun(p2.sdl,p2.sdb,2)));
-% else
-%     betamod = max(p2.sdl,sd_fun(p2.sdl,p2.sdb,ddk));
-% end
 sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c*t)*d);%here, t is time since response
 
-if strcmp(inp3,'No Closures')||i==1;
+if strcmp(data.inp3,'No Closures')||i==1;
     betamod = 1;
 elseif any(i==data.imand);
     betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,14,2));
@@ -575,7 +502,7 @@ function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
     Sv1  = y(9*ln+1:10*ln);
     Sn   = y(19*ln+1:20*ln);
     
-    amp  = (Sn+(1-dis.heff).*(S-Sn))./S;
+    amp  = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     ph   = amp.*dis.ph;
     Ts   = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
     g2   = (1-ph)./Ts;
@@ -614,7 +541,7 @@ function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     
     occ    = max(1,sum(H+Hv1));
     Hmax   = p2.Hmax;
-    amp    = (Sn+(1-dis.heff).*(S-Sn))./S;
+    amp    = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     th0    = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
     ph     = amp.*dis.ph;
     pd     = min(th0*dis.pd,1);
@@ -702,7 +629,7 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     Sn    = y(19*ln+1:20*ln);
     
     occ   = max(1,sum(H+Hv1));
-    amp   = (Sn+(1-dis.heff).*(S-Sn))./S;
+    amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     ph    = amp.*dis.ph;
     Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
     g2    = (1-ph)./Ts;
@@ -803,9 +730,10 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
 end
 
 function Rt = rep_num(dis,h,g2,S,Shv1,Sv1,N,D,betamod,sig1,sig2,sig3,sig4,tm_a,tm_s)
-
-    ln = length(S);
-    F  = zeros(10*ln,10*ln);
+    
+    N(N==0) = 1;
+    ln      = length(N);
+    F       = zeros(10*ln,10*ln);
     
     FOIu = dis.beta.*betamod.*D./repmat(N',ln,1).*repmat(S+Shv1,1,ln);
     FOIv = dis.beta.*betamod.*(1-dis.scv1).*D./repmat(N',ln,1).*repmat(Sv1,1,ln);

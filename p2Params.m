@@ -1,4 +1,4 @@
-function [data,dis,p2] = p2Params(data,inp2)
+function [dis,p2] = p2Params(data,inp2)
 
 %% COUNTRY PARAMETERS:
 
@@ -13,10 +13,11 @@ subs   = 1:4;
 subs   = repelem(subs,ranges);
 
 %Population by Sector
-ln     = size(data.NNs,1);
-lx     = length(data.obj);
-adInd  = 3;
-data.NNs(data.NNs==0) = 1;
+NNs         = data.NNs;
+ln          = length(NNs);
+lx          = length(data.obj);
+adInd       = 3;
+NNs(NNs==0) = 1;
 
 %Contact Matrix
 Dout = p2MakeDs(data,ones(lx,1),zeros(1,lx));
@@ -71,7 +72,7 @@ dis.nu   = 1/dis.Ti;
 
 %Transmission
 F   = zeros(3*ln,3*ln);
-FOI = 1.*Dout./repmat(data.NNs',ln,1).*repmat(data.NNs,1,ln);
+FOI = 1.*Dout./repmat(NNs',ln,1).*repmat(data.NNs,1,ln);
 
 F(1:ln,ln+1:end) = [dis.red*FOI,FOI];
 
@@ -149,9 +150,13 @@ p2.t_tit = p2.t_tit*Td;
 Npop    = data.Npop;
 NNage   = [Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:end))];
 puptake = puptake*(1-(1/dis.R0));
-puptake = min(puptake,0.95*(1-NNage(1)/sum(NNage)));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
+puptake = min(puptake,0.95*(1-(NNage(1)/sum(NNage))));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
 upfun   = @(up) puptake*sum(NNage) - min(0.5*up,0.95)*NNage(2) - min(up,0.95)*NNage(3) - min(1.5*up,0.95)*NNage(4);
-up      = fzero(upfun,[0 2]);
+try
+    up  = fzero(upfun,[0 2]);
+catch
+    up  = fminbnd(upfun,0,2);
+end
 u1      = 0;
 u2      = min(0.5*up,0.95);
 u3      = min(up,0.95);
