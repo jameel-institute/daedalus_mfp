@@ -471,8 +471,8 @@ Issv1dot = sig4.*Ev1 - (g2_v1+h_v1).*Issv1;
 Hdot     = h.*Ins + h.*Iss - (g3+mu).*H;
 Hv1dot   = h_v1.*Insv1 + h_v1.*Issv1 - (g3+mu).*Hv1;
 
-Rdot     = g1.*Ina + g1.*Isa + g2.*Ins + g2.*Iss + g3.*H - nu.*R - v1rate_r;
-Rv1dot   = g1.*Inav1 + g1*Isav1 + g2_v1.*Insv1 + g2_v1.*Issv1 + g3.*Hv1 + v1rate_sw + v1rate_r;
+Rdot     = g1.*Ina + g2.*Ins + g1.*Isa + g2.*Iss + g3.*H - nu.*R - v1rate_r;
+Rv1dot   = g1.*Inav1 + g2_v1.*Insv1 + g1*Isav1 + g2_v1.*Issv1 + g3.*Hv1 + v1rate_sw + v1rate_r;
 
 DEdot    = mu.*H + mu.*Hv1;     
 
@@ -514,7 +514,7 @@ function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
     E1tflag = max(0,data.tvec(end-1)+0.1-t);
     E1vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
     if E1iflag == 0 && E1tflag == 0 && E1vflag ~=0;
-        [Rt2,~] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
         E1vflag = max(0,Rt2-1);
     end
     
@@ -605,7 +605,7 @@ function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     E5tflag = max(0,data.tvec(end-1)+0.1-t);
     E5vflag = (max(0,p2.end-t) + max(0,occ-0.25*p2.Hmax)*(max(0,r-0.025) + abs((i-1)*(i-2)*(i-4)))*max(0,p2.end+90-t))*max(0,p2.Tres+2.5*365-t);
     if E5iflag == 0 && E5tflag == 0 && E5vflag ~=0;
-        [Rt2,~] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
         E5vflag = max(0,Rt2-1);
     end
     
@@ -691,7 +691,7 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     E2tflag = max(0,data.tvec(end-1)+7-t);
     E2vflag = 1;
     if E2iflag == 0 && E2tflag == 0;
-        [Rt1,~] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
+        [Rt1,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
         E2vflag = max(0,Rt1-1);
     end
 
@@ -705,7 +705,7 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     E3tflag = max(0,data.tvec(end-1)+7-t);
     E3vflag = 1;
     if E3iflag == 0 && E3tflag == 0;
-        [Rt1,~] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
+        [Rt1,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
         E3vflag = max(0,1.2-Rt1);
     end
 
@@ -719,7 +719,7 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     E4tflag = max(0,data.tvec(end-1)+0.1-t);
     E4vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
     if E4iflag == 0 && E4tflag == 0 && E4vflag ~=0;
-        [Rt2,~] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
         E4vflag = max(0,Rt2-1);
     end
     

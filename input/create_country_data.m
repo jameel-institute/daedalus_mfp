@@ -1,4 +1,4 @@
-%warning('off');
+warning('off');
 
 %% create baseline country.mat file
 
@@ -48,7 +48,7 @@ save('country.mat','data');
 
 %% create country_data.csv file
 
-%parpool;
+parpool;
 
 filename  = '../../../Data/Preparedness/0.income_group.xlsx';
 T1        = readtable(filename);
@@ -60,8 +60,8 @@ data      = struct;
 % T         = readtable(filename);
 % countries = T.ToIndustry_Sector;
 
-%parfor i = 1:length(countries);
-for i = 1:length(countries);
+parfor i = 1:length(countries);
+%for i = 1:length(countries);
 
 country = countries{i};
 
@@ -324,16 +324,15 @@ if any(kr);
     V2     = max(0, fillmissing(V2,'linear'));
     Vts    = 1000*(V1+V2)/2;%average cumulative doses per 100k%this is for administration time and rate only!!!
     
-    m       = (Vts(end)-Vts(find(Vts>0,1)))/(time(end)-time(find(Vts>0,1)));%approximate slope for IC
     lb      = [300, 365, 0];%parameters are t1, t2 and maximum, which are converted to administration time and rate (uptake calculated separately below)
-    x0      = [max(300,time(end)-Vts(end)/m), time(end), Vts(end)];
+    x0      = [500, time(end), Vts(end)];
     ub      = [1000, time(end), 100000];
     fun     = @(params,time)pw_function(params,time);
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
-    %poptim  = lsqcurvefit(fun, x0, time, Vts, lb, ub, options);
     problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Vts);
     ms      = MultiStart('UseParallel', false);
     poptim  = run(ms,problem,10);
+    %poptim  = lsqcurvefit(fun, x0, time, Vts, lb, ub, options);
     
     t_vax   = poptim(1);
     arate   = poptim(3)/(poptim(2)-poptim(1));
@@ -433,16 +432,16 @@ if any(kr);
     else
         ttit_ub = time(end);
     end
-    lb      = [14, 365, 0];%parameters are t1, t2 and maximum, which are converted to administration time and rate
-    x0      = [ttit_ub/2, time(end), Tts(end)];
+    lb      = [14, 180, 0];%parameters are t1, t2 and maximum, which are converted to administration time and rate
+    x0      = [max(14,ttit_ub/2), time(end), Tts(end)];
     ub      = [ttit_ub, time(end), 3500000];%3.5m is max from data
     fun     = @(params,time)pw_function(params,time);
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
-    %poptim  = lsqcurvefit(fun, x0, time, Tts, lb, ub, options);
     problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',time,'ydata',Tts);
     ms      = MultiStart('UseParallel', false);
     poptim  = run(ms,problem,10);
-    
+    %poptim  = lsqcurvefit(fun, x0, time, Tts, lb, ub, options);
+
     t_tit   = poptim(1)/3.48;%normalise by doubling time from https://pmc.ncbi.nlm.nih.gov/articles/PMC7575205/pdf/nihms-1636611.pdf
     trate   = poptim(3)/(poptim(2)-poptim(1));
     source  = 'Our World in Data, 2022';
@@ -546,10 +545,10 @@ if any(kr) & ~isempty(Tres);
     ub      = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days
     fun     = @(params, x) params(1) + (1 - params(1)) .* exp(-params(2) * exp(-params(3) * x(:,2)) .* x(:,1));
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
-    %poptim  = lsqcurvefit(fun, x0, [Dts, t], Mts, lb, ub, options);
     problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',[Dts, t],'ydata',Mts);
     ms      = MultiStart('UseParallel', false);
     poptim  = run(ms,problem,10);
+    %poptim  = lsqcurvefit(fun, x0, [Dts, t], Mts, lb, ub, options);
     
     sdl    = poptim(1);
     sdb    = poptim(2);
@@ -704,7 +703,7 @@ end
 
 writetable(struct2table(data), 'country_data.csv');
 
-%delete(gcp);
+delete(gcp);
 
 %% functions
 

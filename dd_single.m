@@ -17,6 +17,6 @@ function sec = dd_single(inp1,inp2,inp3)
     %sec(2)    = sum(cost([7:end],:),'all');
     %sec(3)    = sum(cost([6],:),'all');
 
-    dd_plot_output(data,f,p2,g,cost,NaN,inp1,inp2,inp3);
+    dd_single_plot(data,f,p2,g,cost,NaN,inp1,inp2,inp3);
     
 end

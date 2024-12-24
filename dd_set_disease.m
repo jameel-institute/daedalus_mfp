@@ -13,11 +13,9 @@ subs   = 1:4;
 subs   = repelem(subs,ranges);
 
 %Population by Sector
-NNs         = data.NNs;
-ln          = length(NNs);
+ln          = length(data.NNs);
 lx          = length(data.obj);
 adInd       = 3;
-NNs(NNs==0) = 1;
 
 %Contact Matrix
 Dout = dd_calc_contacts(data,ones(lx,1),zeros(1,lx));
@@ -83,7 +81,7 @@ dis.g2_v1 = (1-(1-dis.hv1)*dis.ph)./dis.Ts_v1;
 dis.h_v1  = (1-dis.hv1)*dis.ph./dis.Ts_v1;
 
 %Transmission
-[r0,ev] = dd_calc_rt(dis,dis.h,dis.g2,data.NNs,zeros(ln,1),zeros(ln,1),data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
+[r0,ev] = dd_calc_Rt(dis,dis.h,dis.g2,data.NNs,zeros(ln,1),zeros(ln,1),data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
 dis.r0  = r0;
 ev      = abs(ev(1:ln));%corresponding eigenvector to seed exposed population
 dis.Ev  = ev./sum(ev);
@@ -104,27 +102,9 @@ arate    = data.arate*sum(data.Npop/10^5);  %Vaccine Administration Rate
 puptake  = data.puptake;                    %Vaccine Uptake
 
 %Response Time
-onesn = ones(ln,1);
-J                          = zeros(7*ln,7*ln);
-J(1:ln,2*ln+1:3*ln)        = -dis.beta*dis.red*Dout;
-J(1:ln,3*ln+1:4*ln)        = -dis.beta*Dout;
-J(1:ln,5*ln+1:6*ln)        = diag(onesn.*dis.nu);
-J(ln+1:2*ln,1*ln+1:2*ln)   = diag(onesn.*(-dis.siga-dis.sigs));
-J(ln+1:2*ln,2*ln+1:3*ln)   = dis.beta*dis.red*Dout;
-J(ln+1:2*ln,3*ln+1:4*ln)   = dis.beta*Dout;
-J(2*ln+1:3*ln,1*ln+1:2*ln) = diag(onesn.*dis.siga);
-J(2*ln+1:3*ln,2*ln+1:3*ln) = diag(onesn.*-dis.g1);
-J(3*ln+1:4*ln,1*ln+1:2*ln) = diag(onesn.*dis.sigs);
-J(3*ln+1:4*ln,3*ln+1:4*ln) = diag(onesn.*(-dis.g2-dis.h));
-J(4*ln+1:5*ln,3*ln+1:4*ln) = diag(onesn.*dis.h);
-J(4*ln+1:5*ln,4*ln+1:5*ln) = diag(onesn.*(-dis.g3-dis.mu));
-J(5*ln+1:6*ln,2*ln+1:3*ln) = diag(onesn.*dis.g1);
-J(5*ln+1:6*ln,3*ln+1:4*ln) = diag(onesn.*dis.g2);
-J(5*ln+1:6*ln,4*ln+1:5*ln) = diag(onesn.*dis.g3);
-J(5*ln+1:6*ln,5*ln+1:6*ln) = diag(onesn.*-dis.nu);
-J(6*ln+1:7*ln,4*ln+1:5*ln) = diag(onesn.*dis.mu);
-
-r       = max(real(eig(J)));
+r       = dd_calc_r(dis,dis.h,dis.g2,dis.mu,dis.g3,data.NNs, ...
+                    zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1), ...
+                    data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
 Td      = log(2)/r;
 p2.Tres = p2.Tres*Td;
 

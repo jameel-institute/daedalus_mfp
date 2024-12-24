@@ -1,16 +1,16 @@
-function [rt,ev] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,N,D,betamod,sig1,sig2,sig3,sig4,tm_a,tm_s)
+function [Rt,ev] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,N,D,betamod,sig1,sig2,sig3,sig4,tm_a,tm_s)
     
     N(N==0) = 1;
     ln      = length(N);
     F       = zeros(10*ln,10*ln);
     
-    FOIu = dis.beta.*betamod.*D./repmat(N',ln,1).*repmat(S+Shv1,1,ln);
-    FOIv = dis.beta.*betamod.*(1-dis.scv1).*D./repmat(N',ln,1).*repmat(Sv1,1,ln);
+    ARssh = dis.beta.*betamod.*D./repmat(N',ln,1).*repmat(S+Shv1,1,ln);
+    ARsv  = dis.beta.*betamod.*D./repmat(N',ln,1).*(1-dis.scv1).*repmat(Sv1,1,ln);
     
-    F(1:ln,     2*ln+1:end) = [dis.red.*FOIu,  FOIu,  tm_a.*dis.red*FOIu,  tm_s.*FOIu, ...  
-                               dis.red.*(1-dis.trv1).*FOIu,  (1-dis.trv1).*FOIu,  tm_a.*dis.red.*(1-dis.trv1).*FOIu,  tm_s.*(1-dis.trv1).*FOIu];
-    F(ln+1:2*ln,2*ln+1:end) = [dis.red.*FOIv,  FOIv,  tm_a.*dis.red.*FOIv,  tm_s.*FOIv, ...  
-                               dis.red.*(1-dis.trv1).*FOIv,  (1-dis.trv1).*FOIv,  tm_a.*dis.red.*(1-dis.trv1).*FOIv,  tm_s.*(1-dis.trv1).*FOIv];
+    F(1:ln,     2*ln+1:end) = [dis.red.*ARssh,  ARssh,  tm_a.*dis.red.*ARssh,  tm_s.*ARssh, ...  
+                               dis.red.*(1-dis.trv1).*ARssh,  (1-dis.trv1).*ARssh,  tm_a.*dis.red.*(1-dis.trv1).*ARssh,  tm_s.*(1-dis.trv1).*ARssh];
+    F(ln+1:2*ln,2*ln+1:end) = [dis.red.*ARsv,  ARsv,  tm_a.*dis.red.*ARsv,  tm_s.*ARsv, ...  
+                               dis.red.*(1-dis.trv1).*ARsv,  (1-dis.trv1).*ARsv,  tm_a.*dis.red.*(1-dis.trv1).*ARsv,  tm_s.*(1-dis.trv1).*ARsv];
 
     onesn = ones(ln,1);
     vvec  = [(sig1+sig2+sig3+sig4).*onesn;
@@ -36,9 +36,9 @@ function [rt,ev] = dd_calc_rt(dis,h,g2,S,Shv1,Sv1,N,D,betamod,sig1,sig2,sig3,sig
     
     NGM = F/V;
     if nargout == 1;
-        rt      = eigs(NGM,1,'largestreal');
+        Rt      = eigs(NGM,1,'largestreal');
     else
-        [ev,rt] = eigs(NGM,1,'largestreal');
+        [ev,Rt] = eigs(NGM,1,'largestreal');
     end
     
 end

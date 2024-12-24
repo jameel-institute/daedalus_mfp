@@ -1,4 +1,4 @@
-function f=dd_plot_output(data,f1,p2,g1,cost,ccost_t,inp1,inp2,inp3)
+function f=dd_single_plot(data,f1,p2,g1,cost,ccost_t,inp1,inp2,inp3)
 
 ln        = length(data.NNs);
 lx        = length(data.obj);
