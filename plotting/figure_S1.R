@@ -20,23 +20,23 @@ source("functions/voi_dec.R")
 source("functions/voi_fit.R")
 source("functions/table_formatting.R")
 
-ctry_data <- read.csv("../countries/country_data.csv") %>%
+ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(igroup   = factor(igroup, levels = c("LLMIC","UMIC","HIC"))) %>%
              #demography
              mutate(pop      = rowSums(across(starts_with("Npop")))) %>%
              mutate(across(starts_with("Npop"), ~ .x/pop)) %>%
              #mixing
-             mutate(ps_prop  = rowSums(across(Npop_1:Npop_1)),
+             mutate(pa_prop  = rowSums(across(Npop_1:Npop_1)),
                     sa_prop  = rowSums(across(Npop_2:Npop_4)),
                     wa_prop  = rowSums(across(Npop_5:Npop_13)),
                     ra_prop  = rowSums(across(Npop_14:Npop_21))) %>%
              rowwise() %>%
              mutate(matAL    = list(matrix(unlist(c_across(matAL_1:matAL_16)), nrow = 4, byrow = FALSE)),
-                    AL_wavg  = sum(rowSums(matAL) * c_across(c(ps_prop, sa_prop, wa_prop, ra_prop))),
+                    AL_wavg  = sum(rowSums(matAL) * c_across(c(pa_prop, sa_prop, wa_prop, ra_prop))),
                     matAHT   = list(matrix(unlist(c_across(matAHT_1:matAHT_16)), nrow = 4, byrow = FALSE)),
-                    AHT_wavg = sum(rowSums(matAHT) * c_across(c(ps_prop, sa_prop, wa_prop, ra_prop))),
+                    AHT_wavg = sum(rowSums(matAHT) * c_across(c(pa_prop, sa_prop, wa_prop, ra_prop))),
                     matAS    = list(matrix(unlist(c_across(matAS_1:matAS_16)), nrow = 4, byrow = FALSE)),
-                    AS_wavg  = sum(rowSums(matAS) * c_across(c(ps_prop, sa_prop, wa_prop, ra_prop)))) %>%
+                    AS_wavg  = sum(matAS[2,])) %>%
              ungroup() %>%
              #economy
              mutate(wa_pop   = pop*wa_prop) %>%
@@ -104,7 +104,7 @@ p3 <- ggplot(ctry_data, aes(x = AL_wavg, fill = igroup)) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Population-Average Household Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.998, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p4 <- ggplot(ctry_data, aes(x = AHT_wavg, fill = igroup)) +
@@ -117,7 +117,7 @@ p4 <- ggplot(ctry_data, aes(x = AHT_wavg, fill = igroup)) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Population-Average Other-Location Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.20, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p5 <- ggplot(ctry_data, aes(x = AS_wavg, fill = igroup)) +
@@ -125,12 +125,12 @@ p5 <- ggplot(ctry_data, aes(x = AS_wavg, fill = igroup)) +
       geom_histogram(aes(y = ..density..), position = "stack", color = "black") + 
       scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
       theme_bw() +
-      scale_x_continuous(limits = c(0,5), breaks = seq(0,5,1), expand = c(0,0), position = "bottom") +
-      scale_y_continuous(limits = c(0,3), breaks = seq(0,3,1), expand = c(0,0), position = "left") +
+      scale_x_continuous(limits = c(0,15), breaks = seq(0,15,3), expand = c(0,0), position = "bottom") +
+      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left") +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-      labs(title = "", x = "Population-Average School Contacts (#/person/day)", y = "Relative Frequency") +
+      labs(title = "", x = "School-Age School Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.998, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p6 <- ggplot(ctry_data, aes(x = workp, fill = igroup)) +
@@ -141,9 +141,9 @@ p6 <- ggplot(ctry_data, aes(x = workp, fill = igroup)) +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
       scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left") +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
-      labs(title = "", x = "Adult-Average Workplace Contacts (#/person/day)", y = "Relative Frequency") +
+      labs(title = "", x = "Working-Age Workplace Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.20, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p7 <- ggplot(nns_data, aes(x = NNs, y = value, group = country, color = igroup)) +

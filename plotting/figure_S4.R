@@ -25,7 +25,7 @@ source("functions/table_formatting.R")
 #            mmp2_dist %>% group_by(variable,igroup) %>% slice_min(xvalue,n=1)), n = 30)
 #note that beta parameters are on the interval [0,1]
 
-ctry_data <- read.csv("../countries/country_data.csv") %>%
+ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(igroup   = factor(igroup, levels = c("LLMIC","UMIC","HIC")))
 
 mmp1_data <- ctry_data %>% dplyr::select(igroup,Tres,sdl,sdb,sdc,t_tit) %>%
