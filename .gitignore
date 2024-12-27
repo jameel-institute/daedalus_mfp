@@ -2,5 +2,6 @@ _OLD/
 _OPT/
 _ROI/
 _VOI/
-diseases/betas/
+input/param_influenza_h5n1.m
+input/betas/_OLD/
 output/

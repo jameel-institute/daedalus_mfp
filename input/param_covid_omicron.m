@@ -34,6 +34,6 @@ dis.Ti    = 365;
 %Transmission
 dis.red  = 0.58;
 %dis.R0  = 5.9436;
-dis.beta = 0.154665432698026;
+dis.beta = 0.120068640614638;
 
 end

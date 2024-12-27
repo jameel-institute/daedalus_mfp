@@ -81,10 +81,14 @@ dis.g2_v1 = (1-(1-dis.hv1)*dis.ph)./dis.Ts_v1;
 dis.h_v1  = (1-dis.hv1)*dis.ph./dis.Ts_v1;
 
 %Transmission
-[r0,ev] = dd_calc_Rt(dis,dis.h,dis.g2,data.NNs,zeros(ln,1),zeros(ln,1),data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
-dis.r0  = r0;
-ev      = abs(ev(1:ln));%corresponding eigenvector to seed exposed population
-dis.Ev  = ev./sum(ev);
+%dis.beta = 1;
+[r0,ev]   = dd_calc_Rt(dis,dis.h,dis.g2,data.NNs,zeros(ln,1),zeros(ln,1),data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
+%dis.r0a  = r0;
+%dis.beta = dis.R0/dis.r0a;
+%dis.r0   = dis.R0;
+dis.r0    = r0;
+ev        = abs(ev(1:ln));%corresponding eigenvector to seed exposed population
+dis.Ev    = ev./sum(ev);
 
 %% PREPAREDNESS PARAMETERS:
 

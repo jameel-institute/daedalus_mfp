@@ -26,6 +26,6 @@ dis.Ti    = 365;
 %Transmission
 dis.red  = 0;%assumed%0.58;
 %dis.R0  = 1.2;%https://pmc.ncbi.nlm.nih.gov/articles/PMC7134599/pdf/main.pdf%1.7500;%3.0000;
-dis.beta = 0.036384519941551;
+dis.beta = 0.021133390560395;
 
 end
