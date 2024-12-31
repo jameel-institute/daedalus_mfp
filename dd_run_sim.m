@@ -178,14 +178,14 @@ Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
 mu  = pd./Th;
 ddk = 10^5*sum(mu.*Hclass,2)/sum(data.Npop);
 
-sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c.*t).*d);%here, t is time since response
+sd_fun = @(a,b,c,t,d) 1./(1 + exp(a + b.*log10(d) - c.*t));%here, t is time since response
 
 if strcmp(data.inp3,'No Closures')||i==1;
     betamod = ones(size(occ));
 elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,14,2));
+    betamod = min(sd_fun(p2.sda,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sda,p2.sdb,p2.sdc,14,2));
 else
-    betamod = sd_fun(p2.sdl,p2.sdb,p2.sdc,tout-p2.Tres,ddk);
+    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,tout-p2.Tres,ddk);
 end
 
 S     = yout(:,0*ln+1:1*ln);
@@ -431,14 +431,14 @@ end
 phi = 1;%+data.amp*cos((t-32-data.phi)/(365/2*pi));
 
 ddk    = 10^5*sum(mu.*(H+Hv1))/sum(data.Npop);
-sd_fun = @(l,b,c,t,d) l + (1-l)*exp(-b*exp(-c*t)*d);%here, t is time since response
+sd_fun = @(a,b,c,t,d) 1/(1 + exp(a + b*log10(d) - c*t));%here, t is time since response
 
 if strcmp(data.inp3,'No Closures')||i==1;
     betamod = 1;
 elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sdl,p2.sdb,p2.sdc,14,2));
+    betamod = min(sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sda,p2.sdb,p2.sdc,14,2));
 else
-    betamod = sd_fun(p2.sdl,p2.sdb,p2.sdc,t-p2.Tres,ddk);
+    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk);
 end
 
 I       = (red*Ina+Ins) + (1-trv1)*(red*Inav1+Insv1) + tm_a*red*(Isa+(1-trv1)*Isav1) + tm_s.*(Iss+(1-trv1)*Issv1);

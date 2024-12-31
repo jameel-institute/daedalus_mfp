@@ -73,7 +73,7 @@ hh4 = plot(t1,d1/scal9,'-','linewidth',lw,'color','black');
 hh2 = plot(t1,h1/scal8,'-','linewidth',lw,'color','magenta');
 %hh1 = plot(t1,Q/scal7,'-','linewidth',lw,'color','green');
 hh1 = plot(t1,(I1)/scal7,'-','linewidth',lw,'color','red');
-%hh0 = plot(t1,asc_a/scal8,'-','linewidth',lw,'color','blue');
+hh0 = plot(t1,beta*maxY,'-','linewidth',lw,'color','blue');
 %hh0 = plot(t1,asc_s/scal8,'-','linewidth',lw,'color','green');
 yyaxis right;
 hh5 = plot(t1,100*(v1+v2+v3+v4)/sum(data.Npop),'-','linewidth',lw,'color','cyan');

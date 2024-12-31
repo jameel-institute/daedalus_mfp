@@ -540,17 +540,17 @@ if any(kr) & ~isempty(Tres);
     Mts       = Mts(i2);
     t         = t - Tres;%days since response time
     
-    lb      = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
-    x0      = [(0.1+min(Mts))/2, 100, -log(0.5)/14];
-    ub      = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days
-    fun     = @(params, x) params(1) + (1 - params(1)) .* exp(-params(2) * exp(-params(3) * x(:,2)) .* x(:,1));
+    lb      = [-10, 0,  0];
+    x0      = [0,   1,  0.1];
+    ub      = [10,  10, 1];
+    fun     = @(params, x) 1./(1 + exp(params(1) + params(2).*log10(x(:,1)) - params(3).*x(:,2)));
     options = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1000000);
     problem = createOptimProblem('lsqcurvefit','options',options,'x0',x0,'lb',lb,'ub',ub,'objective',fun,'xdata',[Dts, t],'ydata',Mts);
     ms      = MultiStart('UseParallel', false);
     poptim  = run(ms,problem,10);
-    %poptim  = lsqcurvefit(fun, x0, [Dts, t], Mts, lb, ub, options);
+    %poptim = lsqcurvefit(fun, x0, [Dts, t], Mts, lb, ub, options);
     
-    sdl    = poptim(1);
+    sda    = poptim(1);
     sdb    = poptim(2);
     sdc    = poptim(3);
     source = 'Our World in Data/Wang et al., 2022';
@@ -561,30 +561,23 @@ if any(kr) & ~isempty(Tres);
     % Drange = linspace(0,5,1000);
     % Trange = linspace(0,900,1000);
     % [D,T]  = meshgrid(Drange,Trange);
-    % SD     = reshape(feval(mdl,D(:),T(:)),size(D));
+    % SD     = reshape(fun(poptim,[D(:),T(:)]),size(D));
     % surf(D,T,SD);
     % zlim([0 1]);
     % colormap(flipud(cool));
     % shading interp;
     % alpha 0.8;
     % view(0,0);
-    
-    %other candidate
-    % customfit3d   = fittype('l + (1-l)/(1+exp(b*log10(d)*exp(-c*t)))',...
-    %                         'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});
-    % log10-logistic functions are used elsewhere (CIT), but this function has a value of l + (1-l)/2 at t = 0 and d = 1, without introducing another parameter for the intercept
 
-    %old algorithm
-    % customfit3d   = fittype('l + (1-l)*exp(-b*exp(-c*t)*d)',...
-    %                         'dependent',{'sd'},'independent',{'d','t'},'coefficients',{'l','b','c'});%parameters are minimum, and death and time-steepness
-    % options       = fitoptions(customfit3d);
-    % options.lower = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
-    % options.upper = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days 
-    % [poptim,gof]  = fit([Dts,t],Mts,customfit3d,options);
+    %old way
+    % lb      = [0.1, 0, 0];%lower bound of 0.1 since Mts never fell below 0.1 for any country at any time
+    % x0      = [(0.1+min(Mts))/2, 100, -log(0.5)/14];
+    % ub      = [min(Mts), 10000, -log(0.5)/7];%upper bound are values achieved during Covid; c half-life cannot be less than 7 days
+    % fun     = @(params, x) params(1) + (1 - params(1)) .* exp(-params(2) * exp(-params(3) * x(:,2)) .* x(:,1));
     
 else
     %continue;
-    sdl    = [];
+    sda    = [];
     sdb    = [];
     sdc    = [];
     source = 'Estimated, 0';
@@ -685,7 +678,7 @@ data(i).NNs     = NNs';
 data(i).obj     = obj';
 data(i).wfh     = wfh;
 data(i).Tres    = Tres;
-data(i).sdl     = sdl; 
+data(i).sda     = sda; 
 data(i).sdb     = sdb; 
 data(i).sdc     = sdc;
 data(i).t_tit   = t_tit; 
