@@ -132,13 +132,13 @@ ln  = length(data.NNs);
 fun = @(t,y)ODEs(data,D,i,t,dis,y,p2);
 
 if strcmp(data.inp3,'No Closures');
-    options = odeset('Events',@(t,y)unmitigated(t,y,data,dis,i,p2));
+    options = odeset('Events',@(t,y)unmitigated(t,y,data,dis,i,p2));%,'MaxStep',0.1);
 elseif strcmp(data.inp3,'School Closures');
-    options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));
+    options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));%,'MaxStep',0.1);
 elseif strcmp(data.inp3,'Economic Closures');
-    options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));
+    options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));%,'MaxStep',0.1);
 elseif strcmp(data.inp3,'Elimination');
-	options = odeset('Events',@(t,y)elimination(t,y,data,dis,i,p2));
+	options = odeset('Events',@(t,y)elimination(t,y,data,dis,i,p2));%,'MaxStep',0.1);
 else
     error('Unknown Mitigation Strategy!');
 end    
