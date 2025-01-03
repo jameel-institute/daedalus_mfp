@@ -149,7 +149,7 @@ mmp2_labs <- data.frame(x      = rep(0.49, 5),
                                    "Spare Hospital Beds (per 100k)",
                                    "Seeding-to-Vaccination-Start Delay (days)",
                                    "Vaccines Administered Daily (per 100k/day)",
-                                   "Coverage Relative to Herd-Immunity Threshold (%)"))
+                                   "Coverage Relative to Herd-Immunity Threshold (conditioned on IFR = 1%) (%)"))
 mmp2_leg  <- mmp2_dist %>% group_by(variable, igroup) %>%
              slice_min(xvalue, n = 1) %>%
              summarise(mu        = case_when(candidate == "norm"    ~ mean,

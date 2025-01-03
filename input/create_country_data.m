@@ -337,7 +337,7 @@ if any(kr);
     t_vax   = poptim(1);
     arate   = poptim(3)/(poptim(2)-poptim(1));
     puptake = max(T(kr,:).people_fully_vaccinated_per_hundred)/100;%uptake based on second dose only
-    puptake = puptake/(1-(1/2.87));%normalise by HIT using R0 from https://pmc.ncbi.nlm.nih.gov/articles/PMC7657547/#:~:text=The%20estimated%20summary%20reproductive%20number,CI%2C%202.39%E2%80%933.44). 
+    puptake = puptake/(1-(1/2.87))/(4^log10(100*0.01));%normalise by HIT using R0 from Billah et al. (2020) and by assumed log10-scaling using IFR from Verity et al. (2020) 
     source  = 'Our World in Data, 2022';
 
     % figure;

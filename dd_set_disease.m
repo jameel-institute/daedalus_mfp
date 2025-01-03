@@ -118,9 +118,10 @@ p2.t_tit = p2.t_tit*Td;
 %Hospital Capacity
 
 %Vaccine Uptake
+av_ifr  = dot(dis.ifr,nn)/sum(nn);
 Npop    = data.Npop;
 NNage   = [Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:end))];
-puptake = puptake*(1-(1/dis.r0));
+puptake = puptake*(1-(1/dis.r0))*(4^log10(100*av_ifr));
 puptake = min(puptake,0.95*(1-(NNage(1)/sum(NNage))));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
 upfun   = @(up) puptake*sum(NNage) - min(0.5*up,0.95)*NNage(2) - min(up,0.95)*NNage(3) - min(1.5*up,0.95)*NNage(4);
 try
