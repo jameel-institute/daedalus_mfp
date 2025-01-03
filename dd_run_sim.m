@@ -382,7 +382,7 @@ sig4 = sigs*asc_s;
 % uptake=[repmat(uptake(3),numSectors,1);uptake];
 
 %nonVax=NN0-V;
-nonVax=S+E+Ina+R;%only living, asymptomatic, non-isolating, unvaccinated individuals are eligible for vaccination
+nonVax=Sn+E+Ina+R;%only living, asymptomatic, non-isolating, unvaccinated individuals are eligible for vaccination
 %S (and R) ./nonVax accounts for the (inefficient) administration of vaccines to exposed, infectious and hospitalised people
 %nonVax approximates S+E+I+H+R (unvaccinated) and D (partially)
 %S (or R) ./nonVax is approximately 1 (or 0) when prevalence is low but is closer to 0 (or 1) when prevalence is high
@@ -390,37 +390,37 @@ nonVax=S+E+Ina+R;%only living, asymptomatic, non-isolating, unvaccinated individ
 
 if t>=pend
     v1rate_sn = zeros(ln,1);
-    v1rate_sw = zeros(ln,1);
+    %v1rate_sw = zeros(ln,1);
     v1rate_r  = zeros(ln,1);
     Vdot      = zeros(ln,1);
       
 elseif t>=startp4
     v1rate_sn = aratep4.*Sn./nonVax;
-    v1rate_sw = aratep4.*(S-Sn)./nonVax;%this is zero if nu = 0
+    %v1rate_sw = aratep4.*(S-Sn)./nonVax;
     v1rate_r  = aratep4.*R./nonVax;
     Vdot      = aratep4;
     
 elseif t>=startp3
     v1rate_sn = aratep3.*Sn./nonVax;
-    v1rate_sw = aratep3.*(S-Sn)./nonVax;
+    %v1rate_sw = aratep3.*(S-Sn)./nonVax;
     v1rate_r  = aratep3.*R./nonVax;
     Vdot      = aratep3;
     
 elseif t>=startp2
     v1rate_sn = aratep2.*Sn./nonVax;
-    v1rate_sw = aratep2.*(S-Sn)./nonVax;
+    %v1rate_sw = aratep2.*(S-Sn)./nonVax;
     v1rate_r  = aratep2.*R./nonVax;
     Vdot      = aratep2;
     
 elseif t>=startp1
     v1rate_sn = aratep1.*Sn./nonVax;
-    v1rate_sw = aratep1.*(S-Sn)./nonVax;
+    %v1rate_sw = aratep1.*(S-Sn)./nonVax;
     v1rate_r  = aratep1.*R./nonVax;
     Vdot      = aratep1;
     
 else
     v1rate_sn = zeros(ln,1);
-    v1rate_sw = zeros(ln,1);
+    %v1rate_sw = zeros(ln,1);
     v1rate_r  = zeros(ln,1);
     Vdot      = zeros(ln,1);
     
@@ -451,7 +451,7 @@ seed    = phi*beta*betamod*(D*(seedvec./NN));
 
 Sndot    = -Sn.*(foi+seed) - v1rate_sn;
 
-Sdot     = -S.*(foi+seed) + nu.*R - v1rate_sn - v1rate_sw + nuv1.*Sv1;
+Sdot     = -S.*(foi+seed) + nu.*R - v1rate_sn + nuv1.*Sv1;%- v1rate_sw
 Shv1dot  = v1rate_sn - hrv1*Shv1 - Shv1.*(foi+seed);
 Sv1dot   = hrv1*Shv1 - Sv1.*(1-scv1).*(foi+seed) - nuv1.*Sv1;
 
@@ -472,7 +472,7 @@ Hdot     = h.*Ins + h.*Iss - (g3+mu).*H;
 Hv1dot   = h_v1.*Insv1 + h_v1.*Issv1 - (g3+mu).*Hv1;
 
 Rdot     = g1.*Ina + g2.*Ins + g1.*Isa + g2.*Iss + g3.*H - nu.*R - v1rate_r;
-Rv1dot   = g1.*Inav1 + g2_v1.*Insv1 + g1*Isav1 + g2_v1.*Issv1 + g3.*Hv1 + v1rate_sw + v1rate_r;
+Rv1dot   = g1.*Inav1 + g2_v1.*Insv1 + g1*Isav1 + g2_v1.*Issv1 + g3.*Hv1 + v1rate_r;%+ v1rate_sw
 
 DEdot    = mu.*H + mu.*Hv1;     
 
