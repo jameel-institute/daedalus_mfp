@@ -21,7 +21,7 @@ dis.Tsr   = 4.0;
 dis.Tsh   = 4.0;
 dis.Threc = 7.6;
 dis.Thd   = 7.6;
-dis.Ti    = 365;
+dis.Ti    = Inf;
 
 %Transmission
 dis.red  = 0.58;

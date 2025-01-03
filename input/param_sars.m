@@ -21,7 +21,7 @@ dis.Tsr   = 4.0;%assumed same as Covid
 dis.Tsh   = 3.99 - (dis.Tlat - dis.Tinc);%taken from morgenstern%3.75;
 dis.Threc = 23.5;%taken from epireview%26.5-3.75;
 dis.Thd   = 35.9;%taken from epireview%23.7-3.75;
-dis.Ti    = 365;
+dis.Ti    = Inf;
 
 %Transmission
 dis.red  = 0;%assumed%0.58;

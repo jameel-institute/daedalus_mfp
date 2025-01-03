@@ -396,7 +396,7 @@ if t>=pend
       
 elseif t>=startp4
     v1rate_sn = aratep4.*Sn./nonVax;
-    v1rate_sw = aratep4.*(S-Sn)./nonVax;
+    v1rate_sw = aratep4.*(S-Sn)./nonVax;%this is zero if nu = 0
     v1rate_r  = aratep4.*R./nonVax;
     Vdot      = aratep4;
     
