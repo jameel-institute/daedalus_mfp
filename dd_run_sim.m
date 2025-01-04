@@ -375,43 +375,27 @@ sig4 = sigs*asc_s;
 
 %% VACCINATION:
 
-% %Uptake
-% uptake=uptake-V./NNage;
-% uptake(uptake<0)=0;
-% uptake(uptake>0)=1;
-% uptake=[repmat(uptake(3),numSectors,1);uptake];
-
-%nonVax=NN0-V;
-nonVax = S + E + Ina + R;%only living, asymptomatic, non-isolating, unvaccinated individuals are eligible for vaccination
-%S (and R) ./nonVax accounts for the (inefficient) administration of vaccines to exposed, infectious and hospitalised people
-%nonVax approximates S+E+I+H+R (unvaccinated) and D (partially)
-%S (or R) ./nonVax is approximately 1 (or 0) when prevalence is low but is closer to 0 (or 1) when prevalence is high
-%nonVax is non-zero as long as uptake is less than 100%
+%the vaccine rollout is not perfectly efficient, only susceptibles benefit from vaccination
+nonVax = S + E + Ina + Ins + Isa + Iss + H + R + DE;
 
 if t>=pend
-    v1rate_s = zeros(ln,1);
-    v1rate_r = zeros(ln,1);
-    Vdot     = zeros(ln,1);    
+    vrate_s = zeros(ln,1);
+    Vdot    = zeros(ln,1);    
 elseif t>=startp4
-    v1rate_s = aratep4.*S./nonVax;
-    v1rate_r = aratep4.*R./nonVax;
-    Vdot     = aratep4;
+    vrate_s = aratep4.*S./nonVax;
+    Vdot    = aratep4;
 elseif t>=startp3
-    v1rate_s = aratep3.*S./nonVax;
-    v1rate_r = aratep3.*R./nonVax;
-    Vdot     = aratep3;
+    vrate_s = aratep3.*S./nonVax;
+    Vdot    = aratep3;
 elseif t>=startp2
-    v1rate_s = aratep2.*S./nonVax;
-    v1rate_r = aratep2.*R./nonVax;
-    Vdot     = aratep2;
+    vrate_s = aratep2.*S./nonVax;
+    Vdot    = aratep2;
 elseif t>=startp1
-    v1rate_s = aratep1.*S./nonVax;
-    v1rate_r = aratep1.*R./nonVax;
-    Vdot     = aratep1;
+    vrate_s = aratep1.*S./nonVax;
+    Vdot    = aratep1;
 else
-    v1rate_s = zeros(ln,1);
-    v1rate_r = zeros(ln,1);
-    Vdot     = zeros(ln,1);
+    vrate_s = zeros(ln,1);
+    Vdot    = zeros(ln,1);
 end
 
 %% FOI:
@@ -437,10 +421,10 @@ seed    = phi*beta*betamod*(D*(seedvec./NN));
 
 %% EQUATIONS:
 
-Sndot    = -Sn.*(foi+seed) - v1rate_s;
+Sndot    = -Sn.*(foi+seed) - vrate_s;
 
-Sdot     = -S.*(foi+seed) + nu.*R - v1rate_s + nuv1.*Sv1;%- v1rate_sw
-Shv1dot  = v1rate_s - hrv1*Shv1 - Shv1.*(foi+seed);
+Sdot     = -S.*(foi+seed) + nu.*R - vrate_s + nuv1.*Sv1;%- v1rate_sw
+Shv1dot  = vrate_s - hrv1*Shv1 - Shv1.*(foi+seed);
 Sv1dot   = hrv1*Shv1 - Sv1.*(1-scv1).*(foi+seed) - nuv1.*Sv1;
 
 Edot     = S.*(foi+seed) + Shv1.*(foi+seed) - (sig1+sig2+sig3+sig4).*E;
@@ -459,8 +443,8 @@ Issv1dot = sig4.*Ev1 - (g2_v1+h_v1).*Issv1;
 Hdot     = h.*Ins + h.*Iss - (g3+mu).*H;
 Hv1dot   = h_v1.*Insv1 + h_v1.*Issv1 - (g3+mu).*Hv1;
 
-Rdot     = g1.*Ina + g2.*Ins + g1.*Isa + g2.*Iss + g3.*H - nu.*R - v1rate_r;
-Rv1dot   = g1.*Inav1 + g2_v1.*Insv1 + g1*Isav1 + g2_v1.*Issv1 + g3.*Hv1 + v1rate_r;%+ v1rate_sw
+Rdot     = g1.*Ina + g2.*Ins + g1.*Isa + g2.*Iss + g3.*H - nu.*R;% - v1rate_r;
+Rv1dot   = g1.*Inav1 + g2_v1.*Insv1 + g1*Isav1 + g2_v1.*Issv1 + g3.*Hv1;% + v1rate_r + v1rate_sw
 
 DEdot    = mu.*H + mu.*Hv1;     
 
