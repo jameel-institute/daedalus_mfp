@@ -69,11 +69,11 @@ dis.mu   = dis.pd./dis.Th;
 dis.nu   = 1/dis.Ti;
 
 %Vaccination
-dis.hrv1 = 1/21;%1/28;                 %time to develop v-acquired immunity
-dis.scv1 = 0.70;%0.60;                 %infection-blocking efficacy
-dis.heff = 0.85;%0.87;                 %severe-disease-blocking efficacy
+dis.hrv1 = 1/21;                       %time to develop v-acquired immunity
+dis.scv1 = 0.70;                       %infection-blocking efficacy
+dis.heff = 0.90;                       %severe-disease-blocking efficacy
 dis.hv1  = 1-((1-dis.heff)/(1-dis.scv1)); 
-dis.trv1 = 0.30;%0.52;                 %transmission-blocking efficacy
+dis.trv1 = 0.30;                       %transmission-blocking efficacy
 dis.nuv1 = 1/365;                      %duration of v-acquired immunity
 
 dis.Ts_v1 = ((1-(1-dis.hv1)*dis.ph).*dis.Tsr)  +((1-dis.hv1)*dis.ph.*dis.Tsh);
