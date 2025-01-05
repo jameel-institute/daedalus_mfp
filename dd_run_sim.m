@@ -552,7 +552,8 @@ function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     occdot = sum(Hdot+Hv1dot);
     r      = occdot/occ;
     Tcap   = t + log(p2.Hmax/occ)/r;
-    Tld    = Tcap - 5;%(20 + 5*log(abs(r)));%empirical function, unused for r < 0.025 as below
+    Tgen   = dis.Tlat + dis.Tsh;
+    Tld    = Tcap - Tgen/2;%empirical function, unused for r < 0.025 as below
     
     %% event 1: first measures
     %home-working and distancing imposed at response time

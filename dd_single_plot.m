@@ -150,60 +150,60 @@ yyaxis left;
 
 %% COSTS
 
-% f = figure('Units','centimeters','Position',[0 0 6 9]);
-% set(f,'defaulttextInterpreter','latex');
-% set(f,'defaultAxesTickLabelInterpreter','latex');
-% set(f,'defaultLegendInterpreter','latex');
-% set(f,'defaultColorbarTickLabelInterpreter','latex');
-% set(f,'DefaultAxesFontSize',12);
-% 
-% ax          = gca;
-% ax.Position = [0.25 0.20 0.65 0.70];
-% 
-% labs = categorical(["VLYL","GDPL","VSYL"]);
-% labs = reordercats(labs,[2 1 3]);
-% y    = 100*[cost(3,lx+1) cost(3,lx+2)   sum(cost(3,[1:lx,lx+3])) cost(3,ln);...
-%         sum(cost(7,:))   sum(cost(8,:)) 0                        0;...
-%         cost(6,lx+1:ln)]/sum(365*data.obj);
-% b    = bar(labs,y,'stacked','FaceColor','flat');
-% 
-% xtickangle(45);
-% ymax = 100*max([sum(cost(3,:)),sum(cost(6,:)),sum(cost(7:end,:),'all')])/sum(365*data.obj);
-% ylmt = ceil(ymax/10)*10;
-% ylmt = ylmt + 10*((ylmt-ceil(ymax))<(0.25*ylmt));%%%%%
-% ylim([0 ylmt]);
-% ylabel('Societal Costs');
-% vec_pos = get(get(gca,'ylabel'),'Position');
-% set(get(gca,'ylabel'),'Position',vec_pos + [-0.3 0 0]);
-% text(0.6,ylmt*1.05,'\%','FontSize',fs);
-% 
-% grid on;
-% grid minor;
-% box on;
-% b(1).CData = [0.00 0.00 0.00;...
-%               1.00 0.00 1.00;...
-%               1.00 0.00 1.00];
-% b(2).CData = [0.00 0.00 0.00;...
-%               1.00 1.00 0.00;...
-%               1.00 1.00 0.00];
-% b(3).CData = [0.00 0.00 0.00;...
-%               0.00 0.00 0.00;...
-%               0.00 0.00 0.00];
-% b(4).CData = [0.00 0.00 0.00;...
-%               0.00 0.00 0.00;...
-%               0.00 0.00 0.00];
-% set(gca,'FontSize',fs);
-% 
-% ax.YTick(end) = [];%%%%%
-% axes('Position',[.22 .81 .05 .05]);
-% px     = [1 5];
-% py1    = [1 2];
-% height = 1;
-% py2    = py1 + height;
-% plot(px,py1,'k','LineWidth',2);hold all;
-% plot(px,py2,'k','LineWidth',2);hold all;
-% fill([px flip(px)],[py1 flip(py2)],'w','EdgeColor','none');
-% box off;
-% axis off;
+f = figure('Units','centimeters','Position',[0 0 6 9]);
+set(f,'defaulttextInterpreter','latex');
+set(f,'defaultAxesTickLabelInterpreter','latex');
+set(f,'defaultLegendInterpreter','latex');
+set(f,'defaultColorbarTickLabelInterpreter','latex');
+set(f,'DefaultAxesFontSize',12);
+
+ax          = gca;
+ax.Position = [0.25 0.20 0.65 0.70];
+
+labs = categorical(["VLYL","GDPL","VSYL"]);
+labs = reordercats(labs,[2 1 3]);
+y    = 100*[cost(3,lx+1) cost(3,lx+2)   sum(cost(3,[1:lx,lx+3])) cost(3,ln);...
+        sum(cost(7,:))   sum(cost(8,:)) 0                        0;...
+        cost(6,lx+1:ln)]/sum(365*data.obj);
+b    = bar(labs,y,'stacked','FaceColor','flat');
+
+xtickangle(45);
+ymax = 100*max([sum(cost(3,:)),sum(cost(6,:)),sum(cost(7:end,:),'all')])/sum(365*data.obj);
+ylmt = ceil(ymax/10)*10;
+ylmt = ylmt + 10*((ylmt-ceil(ymax))<(0.25*ylmt));%%%%%
+ylim([0 ylmt]);
+ylabel('Societal Costs');
+vec_pos = get(get(gca,'ylabel'),'Position');
+set(get(gca,'ylabel'),'Position',vec_pos + [-0.3 0 0]);
+text(0.6,ylmt*1.05,'\%','FontSize',fs);
+
+grid on;
+grid minor;
+box on;
+b(1).CData = [0.00 0.00 0.00;...
+              1.00 0.00 1.00;...
+              1.00 0.00 1.00];
+b(2).CData = [0.00 0.00 0.00;...
+              1.00 1.00 0.00;...
+              1.00 1.00 0.00];
+b(3).CData = [0.00 0.00 0.00;...
+              0.00 0.00 0.00;...
+              0.00 0.00 0.00];
+b(4).CData = [0.00 0.00 0.00;...
+              0.00 0.00 0.00;...
+              0.00 0.00 0.00];
+set(gca,'FontSize',fs);
+
+ax.YTick(end) = [];%%%%%
+axes('Position',[.22 .81 .05 .05]);
+px     = [1 5];
+py1    = [1 2];
+height = 1;
+py2    = py1 + height;
+plot(px,py1,'k','LineWidth',2);hold all;
+plot(px,py2,'k','LineWidth',2);hold all;
+fill([px flip(px)],[py1 flip(py2)],'w','EdgeColor','none');
+box off;
+axis off;
 
 end
