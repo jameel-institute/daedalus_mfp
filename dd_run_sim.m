@@ -1,17 +1,16 @@
 function [data,f,g]=dd_run_sim(data,dis,p2);
 
-ln    = length(data.NNs);
-lx    = length(data.obj);
-int   = length(data.xoptim)/lx;
+ln  = length(data.NNs);
+lx  = length(data.obj);
+int = length(data.xoptim)/lx;
 
-XitMat = reshape(data.xoptim,lx,int);
-Dvec   = zeros(ln,ln,int);
+XitMat    = reshape(data.xoptim,lx,int);
+Dvec      = zeros(ln,ln,int);
 for i = 1:int;
     Dvec(:,:,i) = dd_calc_contacts(data,XitMat(:,i),data.hw(i,:));
 end
 data.Dvec = Dvec;
-
-data.Ev = dis.Ev.*XitMat(data.IntlInd,:);
+data.Ev   = dis.Ev.*XitMat(data.IntlInd,:);
 
 [data,f,g] = p2SimVax(data,dis,data.NNs,XitMat,p2);%S0 = data.NNs, i.e. entirely susceptible population
 
@@ -30,6 +29,8 @@ nc    = 20;
 zn    = zeros(ln,1);
 NN    = data.NNs;
 y0    = [S0;repmat(zn,6,1);NN-S0;repmat(zn,nc-9,1);S0];
+i     = 1;
+tend  = data.tvec(end);
 
 %initialise outputs
 Tout       = t0;
@@ -54,24 +55,13 @@ Vout       = zn';
 
 %% LOOP:
 
-i = 1;
-
-tend = data.tvec(end);
-
-while Tout(end)<tend; 
+while i < 6; 
     
     Xit = XitMat(:,i);    
     D   = data.Dvec(:,:,i);
     
     [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0,inext] = integr8(data,D,i,t0,tend,dis,y0,p2);
     
-    if tout(end)<tend;
-        data.tvec = [data.tvec(1:end-1),tout(end),tend];
-        p2.Tres   = min(p2.Tres,tout(end));
-        t0        = tout(end);
-        i         = inext;
-    end   
-
     Tout       = [Tout;tout(2:end)];  
     Tsout      = [Tsout;Ts(2:end,:)];  
     Thout      = [Thout;Th(2:end,:)];
@@ -93,6 +83,16 @@ while Tout(end)<tend;
     asout      = [asout;asc_s(2:end)];
     betamodout = [betamodout;betamod(2:end)];
     Vout       = [Vout;Vclass(2:end,:)];
+    
+    if inext < 6;
+        t0        = tout(end);
+        i         = inext;
+        data.tvec = [data.tvec(1:end-1),tout(end),tend];
+        p2.Tres   = min(p2.Tres,tout(end));
+    else
+        i              = inext;
+        data.tvec(end) = tout(end);
+    end
     
 end
     
@@ -145,12 +145,8 @@ end
 
 [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
 
-y0new     = yout(end,:)'; 
-if tout(end)<tend;
-    inext = data.inext(ie(end));
-else
-    inext = NaN;
-end
+y0new = yout(end,:)'; 
+inext = data.inext(ie(end));
 
 %% OUTPUT VARIABLES:
 
@@ -470,10 +466,16 @@ function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
     ln   = length(data.NNs);
     
     S    = y(0*ln+1:1*ln);
+    H    = y(6*ln+1:7*ln);
+    R    = y(7*ln+1:8*ln);
     Shv1 = y(8*ln+1:9*ln);
     Sv1  = y(9*ln+1:10*ln);
+    Hv1  = y(15*ln+1:16*ln);
+    Rv1  = y(16*ln+1:17*ln);
+    DE   = y(17*ln+1:18*ln);
     Sn   = y(19*ln+1:20*ln);
-    
+     
+    occ  = max(1,sum(H+Hv1));
     amp  = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     ph   = amp.*dis.ph;
     Ts   = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
@@ -494,23 +496,40 @@ function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
     direction(1)  = -1;
     isterminal(1) = 1;
     
+    %% event 2: end of simulation
+    %stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
+    E2iflag = abs(i-5);
+    E2tflag = max(0,data.tvec(end-1)+0.1-t);
+    E2vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
+    if E2iflag + E2tflag + E2vflag == 0;
+        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+        E2vflag = max(0,Rt2-1);
+    end
+    
+    value(2)      = E2iflag + E2tflag + E2vflag;
+    direction(2)  = -1;
+    isterminal(2) = 1;
+    
 end
 
 function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     
-    ln    = length(data.NNs);
+    ln     = length(data.NNs);
     
-    S     = y(0*ln+1:1*ln);
-    Ins   = y(4*ln+1:5*ln);
-    Iss   = y(5*ln+1:6*ln);
-    H     = y(6*ln+1:7*ln);
-    Shv1  = y(8*ln+1:9*ln);
-    Sv1   = y(9*ln+1:10*ln);
-    Insv1 = y(13*ln+1:14*ln);
-    Issv1 = y(14*ln+1:15*ln);
-    Hv1   = y(15*ln+1:16*ln);
-    Sn    = y(19*ln+1:20*ln);
-    
+    S      = y(0*ln+1:1*ln);
+    Ins    = y(4*ln+1:5*ln);
+    Iss    = y(5*ln+1:6*ln);
+    H      = y(6*ln+1:7*ln);
+    R      = y(7*ln+1:8*ln);
+    Shv1   = y(8*ln+1:9*ln);
+    Sv1    = y(9*ln+1:10*ln);
+    Insv1  = y(13*ln+1:14*ln);
+    Issv1  = y(14*ln+1:15*ln);
+    Hv1    = y(15*ln+1:16*ln);
+    Sn     = y(19*ln+1:20*ln);
+    Rv1    = y(16*ln+1:17*ln);
+    DE     = y(17*ln+1:18*ln);
+
     occ    = max(1,sum(H+Hv1));
     Hmax   = p2.Hmax;
     amp    = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
@@ -585,6 +604,20 @@ function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     direction(5)  = -1;
     isterminal(5) = 1;
     
+    %% event 6: end of simulation
+    %stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
+    E6iflag = abs(i-5);
+    E6tflag = max(0,data.tvec(end-1)+0.1-t);
+    E6vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
+    if E6iflag + E6tflag + E6vflag == 0;
+        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+        E6vflag = max(0,Rt2-1);
+    end
+    
+    value(6)      = E6iflag + E6tflag + E6vflag;
+    direction(6)  = -1;
+    isterminal(6) = 1;
+    
 end
 
 function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
@@ -594,11 +627,14 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     S     = y(0*ln+1:1*ln);
     E     = y(1*ln+1:2*ln);
     H     = y(6*ln+1:7*ln);
+    R     = y(7*ln+1:8*ln);
     Shv1  = y(8*ln+1:9*ln);
     Sv1   = y(9*ln+1:10*ln);
     Ev1   = y(10*ln+1:11*ln);
     Hv1   = y(15*ln+1:16*ln);
     Sn    = y(19*ln+1:20*ln);
+    Rv1   = y(16*ln+1:17*ln);
+    DE    = y(17*ln+1:18*ln);
     
     occ   = max(1,sum(H+Hv1));
     amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
@@ -698,5 +734,19 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     value(4)      = E4iflag + E4tflag + E4vflag;
     direction(4)  = -1;
     isterminal(4) = 1;
+    
+    %% event 5: end of simulation
+    %stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
+    E5iflag = abs(i-5);
+    E5tflag = max(0,data.tvec(end-1)+0.1-t);
+    E5vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
+    if E5iflag + E5tflag + E5vflag == 0;
+        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+        E5vflag = max(0,Rt2-1);
+    end
+    
+    value(5)      = E5iflag + E5tflag + E5vflag;
+    direction(5)  = -1;
+    isterminal(5) = 1;
     
 end

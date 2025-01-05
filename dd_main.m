@@ -20,15 +20,14 @@ function dd_main
     p2_array   = cell(lloc,nsamples,ldis);
 
     load('input/country.mat','data');
-    data.tvec    = 1+[0 365*4];
+    data.tvec    = 1+[0 365*40];
     country_data = readtable('input/country_data.csv');
     
     for h = 1:lloc;
         inp1 = locations{h};
         parfor i = 1:nsamples;
             ldata   = data;
-            ldata   = dd_set_country(ldata,country_data,inp1);
-            %for l  = 1:2;if l==2;ldata.t_vax = min(ldata.t_vax,100);end
+            ldata   = dd_set_country(ldata,country_data,inp1);%for l  = 1:2;if l==2;ldata.t_vax = min(ldata.t_vax,100);end
             row     = dd_store_input(inp1,i,ldata);
             samples = [samples;row];
             for j = 1:ldis;
@@ -57,9 +56,9 @@ function dd_main
         try
             [~,~,g] = dd_run_sim(data,dis,p2);
             [~,~,c] = dd_calc_loss(data,dis,g);
-            sec     = c;
+            sec     = [g(end,1),c];
         catch
-            sec      = nan(1,16);
+            sec     = nan(1,16);
         end
         output = [output;sec];
         end

@@ -1,13 +1,13 @@
 function sec = dd_single(inp1,inp2,inp3)
     
     load('input/country.mat','data');
-    CD        = readtable('input/country_data.csv');
-    data      = dd_set_country(data,CD,inp1);
-    data.tvec = 1+[0 365*4];
+    CD         = readtable('input/country_data.csv');
+    data       = dd_set_country(data,CD,inp1);
+    data.tvec  = 1+[0 365*40];
     
-    [dis,p2] = dd_set_disease(data,inp2);
+    [dis,p2]   = dd_set_disease(data,inp2);
     
-    data = dd_set_strategy(data,inp3);
+    data       = dd_set_strategy(data,inp3);
 
     [data,f,g] = dd_run_sim(data,dis,p2);
 
