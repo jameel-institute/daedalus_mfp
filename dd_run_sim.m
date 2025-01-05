@@ -145,8 +145,12 @@ end
 
 [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
 
-y0new = yout(end,:)'; 
-inext = data.inext(ie(end));
+y0new = yout(end,:)';
+if ~isempty(ie);
+    inext = data.inext(ie(end));
+else
+    inext = 6;
+end
 
 %% OUTPUT VARIABLES:
 
@@ -165,14 +169,14 @@ Vclass   = yout(:,18*ln+1:19*ln);
 
 %% TIME-DEPENDENT PARAMETERS:
 
-occ   = max(1,sum(Hclass,2));
+occ   = sum(Hclass,2);
 Hmax  = p2.Hmax;
 th0   = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
 
 pd  = min(th0.*dis.pd',1);
 Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
 mu  = pd./Th;
-ddk = 10^5*sum(mu.*Hclass,2)/sum(data.Npop);
+ddk = max(0,10^5*sum(mu.*Hclass,2)/sum(data.Npop));
 
 sd_fun = @(a,b,c,t,d) 1./(1 + exp(a + b.*log10(d) - c.*t));%here, t is time since response
 
@@ -271,7 +275,7 @@ Sn    = y(19*ln+1:20*ln);
 
 %% HOSPITAL OCCUPANCY:
 
-occ   = max(1,sum(H+Hv1));
+occ   = sum(H+Hv1);
 Hmax  = p2.Hmax;
 
 %% TIME-DEPENDENT DISEASE PARAMETERS:
@@ -398,7 +402,7 @@ end
 
 phi = 1;%+data.amp*cos((t-32-data.phi)/(365/2*pi));
 
-ddk    = 10^5*sum(mu.*(H+Hv1))/sum(data.Npop);
+ddk    = max(0,10^5*sum(mu.*(H+Hv1))/sum(data.Npop));
 sd_fun = @(a,b,c,t,d) 1/(1 + exp(a + b*log10(d) - c*t));%here, t is time since response
 
 if strcmp(data.inp3,'No Closures')||i==1;
@@ -475,7 +479,7 @@ function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
     DE   = y(17*ln+1:18*ln);
     Sn   = y(19*ln+1:20*ln);
      
-    occ  = max(1,sum(H+Hv1));
+    occ  = sum(H+Hv1);
     amp  = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     ph   = amp.*dis.ph;
     Ts   = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
@@ -530,7 +534,7 @@ function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     Rv1    = y(16*ln+1:17*ln);
     DE     = y(17*ln+1:18*ln);
 
-    occ    = max(1,sum(H+Hv1));
+    occ    = max(0.01,sum(H+Hv1));%capped due to division by occ below
     Hmax   = p2.Hmax;
     amp    = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     th0    = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
@@ -636,7 +640,7 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
     Rv1   = y(16*ln+1:17*ln);
     DE    = y(17*ln+1:18*ln);
     
-    occ   = max(1,sum(H+Hv1));
+    occ   = sum(H+Hv1);
     amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
     ph    = amp.*dis.ph;
     Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);

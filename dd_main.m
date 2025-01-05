@@ -20,7 +20,7 @@ function dd_main
     p2_array   = cell(lloc,nsamples,ldis);
 
     load('input/country.mat','data');
-    data.tvec    = 1+[0 365*40];
+    data.tvec    = 1+[0 365*10];
     country_data = readtable('input/country_data.csv');
     
     for h = 1:lloc;

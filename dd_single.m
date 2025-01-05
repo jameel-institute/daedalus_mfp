@@ -3,7 +3,7 @@ function sec = dd_single(inp1,inp2,inp3)
     load('input/country.mat','data');
     CD         = readtable('input/country_data.csv');
     data       = dd_set_country(data,CD,inp1);
-    data.tvec  = 1+[0 365*40];
+    data.tvec  = 1+[0 365*10];
     
     [dis,p2]   = dd_set_disease(data,inp2);
     
