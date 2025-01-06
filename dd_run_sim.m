@@ -12,27 +12,26 @@ end
 data.Dvec = Dvec;
 data.Ev   = dis.Ev.*XitMat(data.IntlInd,:);
 
-[data,f,g] = p2SimVax(data,dis,data.NNs,XitMat,p2);%S0 = data.NNs, i.e. entirely susceptible population
+[data,f,g] = p2SimVax(data,dis,XitMat,p2);
 
 end
 
 %%
 
-function [data,f,g]=p2SimVax(data,dis,S0,XitMat,p2)               
+function [data,f,g]=p2SimVax(data,dis,XitMat,p2)               
 %% IC:
 
-t0    = data.tvec(1);
 ln    = length(data.NNs);
 lx    = length(data.obj);
 adInd = 3;
-nc    = 20;
-zn    = zeros(ln,1);
-NN    = data.NNs;
-y0    = [S0;repmat(zn,6,1);NN-S0;repmat(zn,nc-9,1);S0];
-i     = 1;
-tend  = data.tvec(end);
+
+t0   = data.tvec(1);
+y0   = dis.y0;
+i    = 1;
+tend = data.tvec(end);
 
 %initialise outputs
+zn         = zeros(ln,1);
 Tout       = t0;
 Tsout      = dis.Ts';
 Thout      = dis.Th';
@@ -171,7 +170,8 @@ Vclass   = yout(:,18*ln+1:19*ln);
 
 occ   = sum(Hclass,2);
 Hmax  = p2.Hmax;
-th0   = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
+th    = p2.th;
+th0   = max(1,1+th*((occ-Hmax)/(2*Hmax-Hmax)));
 
 pd  = min(th0.*dis.pd',1);
 Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
@@ -212,6 +212,14 @@ r      = occdot./occ;
 dDclass = mu.*H + mu.*Hv1;     
 
 trate  = p2.trate;
+asca   = p2.asca;
+ascb   = p2.ascb;
+ascc   = p2.ascc;
+pcta   = p2.pcta;
+pctb   = p2.pctb;
+opsa   = p2.opsa;
+opsb   = p2.opsb;
+opc    = p2.opc;
 ps     = dis.ps;
 siga   = dis.siga;
 sigs   = dis.sigs;
@@ -220,8 +228,8 @@ Ev1    = yout(:,10*ln+1:11*ln);
 incid  = max(0,10^5*((siga+sigs)*sum(E+Ev1,2))/sum(data.Npop));
 
 if i~=5;
-    asc_s  = 1./(1+exp(0.7623+1.605*log10(incid)-1.416*log10(trate)));
-    propCT = 1./(1+exp(2.159+1.697*log10(incid)));
+    asc_s  = 1./(1+exp(asca+ascb*log10(incid)+ascc*log10(trate)));
+    propCT = 1./(1+exp(pcta+pctb*log10(incid)));
     asc_a  = propCT.*asc_s + (1-propCT)*0;
     
     asc_a  = min(asc_a,(trate./incid).*(0*(1-propCT) + (1-ps)*propCT));
@@ -277,12 +285,13 @@ Sn    = y(19*ln+1:20*ln);
 
 occ   = sum(H+Hv1);
 Hmax  = p2.Hmax;
+th    = p2.th;
 
 %% TIME-DEPENDENT DISEASE PARAMETERS:
 
 %Amplitudes
 amp = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
-th0 = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
+th0 = max(1,1+th*((occ-Hmax)/(2*Hmax-Hmax)));
 
 %Probabilities
 ps = dis.ps;
@@ -320,6 +329,14 @@ nuv1  = dis.nuv1;
 
 %Preparedness
 trate   = p2.trate;
+asca    = p2.asca;
+ascb    = p2.ascb;
+ascc    = p2.ascc;
+pcta    = p2.pcta;
+pctb    = p2.pctb;
+opsa    = p2.opsa;
+opsb    = p2.opsb;
+opc     = p2.opc;
 startp1 = p2.startp1;
 startp2 = p2.startp2;
 startp3 = p2.startp3;
@@ -340,8 +357,8 @@ if t<p2.t_tit;
     
 elseif t<p2.end && i~=5;
     incid  = max(0,10^5*((siga+sigs)*sum(E+Ev1))/sum(data.Npop));
-    asc_s  = 1/(1+exp(0.7623+1.605*log10(incid)-1.416*log10(trate)));
-    propCT = 1/(1+exp(2.159+1.697*log10(incid)));
+    asc_s  = 1/(1+exp(asca+ascb*log10(incid)+ascc*log10(trate)));
+    propCT = 1/(1+exp(pcta+pctb*log10(incid)));
     asc_a  = propCT*asc_s + (1-propCT)*0;
     
     asc_a = min(asc_a,(trate/incid)*(0*(1-propCT) + (1-ps)*propCT));
@@ -349,8 +366,8 @@ elseif t<p2.end && i~=5;
     asc_a = max(trate/10^5*(0*(1-propCT) + (1-ps)*propCT),asc_a);
     asc_s = max(trate/10^5*(1*(1-propCT) + ps*propCT),asc_s);
     
-    onsPCR_s = 11.3224-2.6260*log10(trate);
-    onsPCR_c = onsPCR_s - 5.6304;
+    onsPCR_s = opsa+opsb*log10(trate);
+    onsPCR_c = onsPCR_s+opc;
     Teff_c   = max(0,Tinc+onsPCR_c-Tlat);
     Teff_s   = max(0,Tinc+onsPCR_s-Tlat);
     mult_ac  = min(Teff_c,Tay)./Tay;
@@ -533,11 +550,12 @@ function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
     Sn     = y(19*ln+1:20*ln);
     Rv1    = y(16*ln+1:17*ln);
     DE     = y(17*ln+1:18*ln);
-
+    
     occ    = max(0.01,sum(H+Hv1));%capped due to division by occ below
     Hmax   = p2.Hmax;
+    th     = p2.th;
     amp    = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
-    th0    = max(1,1+1.87*((occ-Hmax)/(2*Hmax-Hmax)));
+    th0    = max(1,1+th*((occ-Hmax)/(2*Hmax-Hmax)));
     ph     = amp.*dis.ph;
     pd     = min(th0*dis.pd,1);
     Ts     = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
@@ -655,9 +673,17 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
         
     elseif t<p2.end && i~=5;
         trate  = p2.trate;
+        asca   = p2.asca;
+        ascb   = p2.ascb;
+        ascc   = p2.ascc;
+        pcta   = p2.pcta;
+        pctb   = p2.pctb;
+        opsa   = p2.opsa;
+        opsb   = p2.opsb;
+        opc    = p2.opc;
         incid  = max(0,10^5*((dis.siga+dis.sigs)*sum(E+Ev1))/sum(data.Npop));
-        asc_s  = 1/(1+exp(0.7623+1.605*log10(incid)-1.416*log10(trate)));
-        propCT = 1/(1+exp(2.159+1.697*log10(incid)));
+        asc_s  = 1/(1+exp(asca+ascb*log10(incid)+ascc*log10(trate)));
+        propCT = 1/(1+exp(pcta+pctb*log10(incid)));
         asc_a  = propCT*asc_s + (1-propCT)*0;
         
         asc_a  = min(asc_a,(trate/incid)*(0*(1-propCT) + (1-dis.ps)*propCT));
@@ -665,8 +691,8 @@ function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
         asc_a  = max(trate/10^5*(0*(1-propCT) + (1-dis.ps)*propCT),asc_a);
         asc_s  = max(trate/10^5*(1*(1-propCT) + dis.ps*propCT),asc_s);
         
-        onsPCR_s = 11.3224-2.6260*log10(trate);
-        onsPCR_c = onsPCR_s - 5.6304;
+        onsPCR_s = opsa+opsb*log10(trate);
+        onsPCR_c = onsPCR_s+opc;
         Teff_c   = max(0,dis.Tinc+onsPCR_c-dis.Tlat);
         Teff_s   = max(0,dis.Tinc+onsPCR_s-dis.Tlat);
         mult_ac  = min(Teff_c,dis.Tay)./dis.Tay;

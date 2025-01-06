@@ -1,64 +1,46 @@
 function [dis,p2] = dd_set_disease(data,inp2)
 
-%% COUNTRY PARAMETERS:
+ln    = length(data.NNs);
+lx    = length(data.obj);
+adInd = 3;
+
+%% DISEASE PARAMETERS:
+
+if ~ismcc;
+    addpath('input');
+end
+dis = feval(strcat('param_',lower(strrep(inp2,' ','_'))));
 
 %Population by Age
-nn     = data.Npop';
-nn     = [nn(1:16),sum(nn(17:end))];%last age range for disease is 80+
-nntot  = [nn(1),sum(nn(2:4)),sum(nn(5:13)),sum(nn(14:end))];
-ranges = [1,3,9,4];
-nntot  = repelem(nntot,ranges);
-nnprop = nn./nntot;
-subs   = 1:4;
-subs   = repelem(subs,ranges);
-
-%Population by Sector
-ln          = length(data.NNs);
-lx          = length(data.obj);
-adInd       = 3;
-
-%Contact Matrix
-Dout = dd_calc_contacts(data,ones(lx,1),zeros(1,lx));
-
-%% INITIAL DISEASE PARAMETERS:
-
-addpath('input');
-
-if strcmp(inp2,'Influenza 2009');
-    dis = param_influenza_2009;
-elseif strcmp(inp2,'Influenza 1957');
-    dis = param_influenza_1957;
-elseif strcmp(inp2,'Influenza 1918');
-    dis = param_influenza_1918;
-elseif strcmp(inp2,'Covid Omicron');
-    dis = param_covid_omicron;    
-elseif strcmp(inp2,'Covid Delta');
-    dis = param_covid_delta;   
-elseif strcmp(inp2,'Covid Wildtype');
-    dis = param_covid_wildtype;    
-elseif strcmp(inp2,'SARS');
-    dis = param_sars;
-else
-    error('Unknown Disease!');
-end   
-
-%Probabilities
-phgs    = dis.ihr./dis.ps;
-pdgh    = dis.ifr./dis.ihr;
-phgs    = accumarray(subs',phgs.*nnprop);
-dis.ph  = [repmat(phgs(adInd),lx,1);phgs];
+no      = data.Npop';
+nn      = [no(1:16),sum(no(17:end))];%last age range for disease is 80+
 nnh     = nn.*dis.ihr;
-nnhtot  = [nnh(1),sum(nnh(2:4)),sum(nnh(5:13)),sum(nnh(14:end))];
-nnhtot  = repelem(nnhtot,ranges);
+nnd     = nn.*dis.ifr;
+nnc     = [nn(1),sum(nn(2:4)),sum(nn(5:13)),sum(nn(14:end))];
+nnhc    = [nnh(1),sum(nnh(2:4)),sum(nnh(5:13)),sum(nnh(14:end))];
+nndc    = [nnd(1),sum(nnd(2:4)),sum(nnd(5:13)),sum(nnd(14:end))];
+nntot   = repelem(nnc,[1,3,9,4]);
+nnhtot  = repelem(nnhc,[1,3,9,4]);
+nndtot  = repelem(nndc,[1,3,9,4]);
+nnprop  = nn./nntot;
 nnhprop = nnh./nnhtot;
-pdgh    = accumarray(subs',pdgh.*nnhprop);
-dis.pd  = [repmat(pdgh(adInd),lx,1);pdgh];
+nndprop = nnd./nndtot;
+subs    = [1:4];
+subs    = repelem(subs,[1,3,9,4]);
+
+%Proportions
+phgs   = dis.ihr./dis.ps;
+pdgh   = dis.ifr./dis.ihr;
+phgs   = accumarray(subs',phgs.*nnprop);
+pdgh   = accumarray(subs',pdgh.*nnhprop);
+dis.ph = [repmat(phgs(adInd),lx,1);phgs];
+dis.pd = [repmat(pdgh(adInd),lx,1);pdgh];
 
 %Durations
 dis.Ts = ((1-dis.ph).*dis.Tsr)   + (dis.ph.*dis.Tsh);
 dis.Th = ((1-dis.pd).*dis.Threc) + (dis.pd.*dis.Thd);
 
-%Rates
+%Transition Rates
 dis.siga = (1-dis.ps)/dis.Tlat;
 dis.sigs = dis.ps/dis.Tlat;
 dis.g1   = 1/dis.Tay;
@@ -68,19 +50,25 @@ dis.h    = dis.ph./dis.Ts;
 dis.mu   = dis.pd./dis.Th;
 dis.nu   = 1/dis.Ti;
 
-%Vaccination
-dis.hrv1 = 1/21;                       %time to develop v-acquired immunity
-dis.scv1 = 0.70;                       %infection-blocking efficacy
-dis.heff = 0.90;                       %severe-disease-blocking efficacy
+%Vaccine Proportions
+dis.scv1 = 0.70;%infection-blocking efficacy
+dis.heff = 0.90;%severe-disease-blocking efficacy
+dis.trv1 = 0.30;%transmission-blocking efficacy
 dis.hv1  = 1-((1-dis.heff)/(1-dis.scv1)); 
-dis.trv1 = 0.30;                       %transmission-blocking efficacy
-dis.nuv1 = 1/365;                      %duration of v-acquired immunity
 
-dis.Ts_v1 = ((1-(1-dis.hv1)*dis.ph).*dis.Tsr)  +((1-dis.hv1)*dis.ph.*dis.Tsh);
+%Vaccine Durations
+Tsc       = 21; %time to develop v-acquired immunity
+dis.Ts_v1 = ((1-(1-dis.hv1)*dis.ph).*dis.Tsr) + ((1-dis.hv1)*dis.ph.*dis.Tsh);
+Tiv       = 365;%duration of v-acquired immunity
+
+%Vaccine Transition Rates
+dis.hrv1  = 1/Tsc;                       
 dis.g2_v1 = (1-(1-dis.hv1)*dis.ph)./dis.Ts_v1;
 dis.h_v1  = (1-dis.hv1)*dis.ph./dis.Ts_v1;
+dis.nuv1  = 1/Tiv;                      
 
 %Transmission
+Dout      = dd_calc_contacts(data,ones(lx,1),zeros(1,lx));
 %dis.beta = 1;
 [r0,ev]   = dd_calc_Rt(dis,dis.h,dis.g2,data.NNs,zeros(ln,1),zeros(ln,1),data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
 %dis.r0a  = r0;
@@ -90,40 +78,57 @@ dis.r0    = r0;
 ev        = abs(ev(1:ln));%corresponding eigenvector to seed exposed population
 dis.Ev    = ev./sum(ev);
 
-%% PREPAREDNESS PARAMETERS:
+%Initial Condition
+zn     = zeros(ln,1);
+R0     = zn;%entirely naive population
+y0     = [data.NNs-R0;repmat(zn,6,1);R0;repmat(zn,11,1);data.NNs-R0];
+dis.y0 = y0;
+
+%% OTHER DISEASE-DEPENDENT PARAMETERS:
+
+la     = [data.la(1:16),dot(data.la(17:end),[no(17),sum(no(18:end))])/nn(end)];
+lg     = accumarray(subs',la.*nndprop)';
+dis.lg = [repmat(lg(adInd),1,lx),lg];
 
 p2 = struct;
 
-p2.Tres  = data.Tres;                       %Response Time
-p2.t_tit = data.t_tit;                      %Test-Isolate-Trace Time
-p2.trate = data.trate;                      %Test-Isolate-Trace Rate
-p2.sda   = data.sda;                        %Distancing Multiplier Minimum
-p2.sdb   = data.sdb;                        %Distancing Death Sensitivity
-p2.sdc   = data.sdc;                        %Distancing Time Relaxation
-p2.Hmax  = data.Hmax*sum(data.Npop)/10^5;   %Hospital Capacity
-t_vax    = data.t_vax;                      %Vaccine Administration Time
-arate    = data.arate*sum(data.Npop/10^5);  %Vaccine Administration Rate
-puptake  = data.puptake;                    %Vaccine Uptake
-
-%Response Time
+%Distancing
+Tres    = data.Tres;%response time (in terms of doubling times)
+p2.sda  = data.sda; %distancing multiplier intercept
+p2.sdb  = data.sdb; %distancing death sensitivity
+p2.sdc  = data.sdc; %distancing time relaxation
 r       = dd_calc_r(dis,dis.h,dis.g2,dis.mu,dis.g3,data.NNs, ...
                     zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1), ...
                     data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
 Td      = log(2)/r;
-p2.Tres = p2.Tres*Td;
+p2.Tres = Tres*Td;
 
-%Test-Isolate-Trace
-p2.t_tit = p2.t_tit*Td;
+%Surveillance
+t_tit    = data.t_tit;%case-isolation-tracing start time (in terms of doubling times)
+p2.trate = data.trate;%case-isolation-tracing testing rate
+p2.t_tit = t_tit*Td;
+p2.asca  = 0.7623;%ascertainment proportion coefficients
+p2.ascb  = 1.605;
+p2.ascc  = -1.416;
+p2.pcta  = 2.159;%ascertainment method coefficients
+p2.pctb  = 1.697;
+p2.opsa  = 11.3224;%symptom-driven onset-PCR delay coefficients  
+p2.opsb  = -2.6260;
+p2.opc   = -5.6304;%traced onset-PCR delay coefficient
 
-%Hospital Capacity
+%Healthcare
+p2.Hmax = data.Hmax*sum(nn/10^5);%spare hospital capacity
+p2.th   = 1.87;%Johnson et al. (2023)
 
-%Vaccine Uptake
+%Vaccination
+t_vax   = data.t_vax;             %vaccine administration start time
+arate   = data.arate*sum(nn/10^5);%vaccine administration rate
+puptake = data.puptake;           %vaccine uptake
+%Uptake
 av_ifr  = dot(dis.ifr,nn)/sum(nn);
-Npop    = data.Npop;
-NNage   = [Npop(1),sum(Npop(2:4)),sum(Npop(5:13)),sum(Npop(14:end))];
-puptake = puptake*(1-(1/dis.r0))*(4^log10(100*av_ifr));
-puptake = min(puptake,0.95*(1-(NNage(1)/sum(NNage))));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
-upfun   = @(up) puptake*sum(NNage) - min(0.5*up,0.95)*NNage(2) - min(up,0.95)*NNage(3) - min(1.5*up,0.95)*NNage(4);
+puptake = puptake*(1-(1/r0))*(4^log10(100*av_ifr));
+puptake = min(puptake,0.95*(1-(nnc(1)/sum(nnc))));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
+upfun   = @(up) puptake*sum(nnc) - min(0.5*up,0.95)*nnc(2) - min(up,0.95)*nnc(3) - min(1.5*up,0.95)*nnc(4);
 try
     up  = fzero(upfun,[0 2]);
 catch
@@ -134,48 +139,33 @@ u2      = min(0.5*up,0.95);
 u3      = min(up,0.95);
 u4      = min(1.5*up,0.95);
 uptake  = [u1,u2,u3,u4];
-
-%Vaccine Administration Rate
-t_ages     = min((uptake.*NNage)/arate,Inf);%arate may be 0
+%Administration Rate
+t_ages      = min((uptake.*nnc)/arate,Inf);%prevent NaN if numerator and denominator both zero
 if strcmp(inp2,'Influenza 1918');
     t_ages  = [t_ages(3),t_ages(4),t_ages(2),t_ages(1)];
-    aratep1 = [0;0;arate;0];%Period 1 - working-age%to be split across all economic sectors in heSimCovid19vax.m
-    aratep2 = [0;0;0;arate];%Period 2 - retired-age
-    aratep3 = [0;arate;0;0];%Period 3 - school-age
-    aratep4 = [0;0;0;0];    %Period 4 - pre-school-age
+    aratep1 = [0;0;arate;0];%period 1 - working-age
+    aratep2 = [0;0;0;arate];%period 2 - retired-age
+    aratep3 = [0;arate;0;0];%period 3 - school-age
+    aratep4 = [0;0;0;0];    %period 4 - pre-school-age
 else
     t_ages  = [t_ages(4),t_ages(3),t_ages(2),t_ages(1)];
-    aratep1 = [0;0;0;arate];%Period 1 - retired-age
-    aratep2 = [0;0;arate;0];%Period 2 - working-age%to be split across all economic sectors in heSimCovid19vax.m
-    aratep3 = [0;arate;0;0];%Period 3 - school-age
-    aratep4 = [0;0;0;0];    %Period 4 - pre-school-age
+    aratep1 = [0;0;0;arate];%period 1 - retired-age
+    aratep2 = [0;0;arate;0];%period 2 - working-age
+    aratep3 = [0;arate;0;0];%period 3 - school-age
+    aratep4 = [0;0;0;0];    %period 4 - pre-school-age
 end
-NNprop                  = ones(ln,1);
-workingage              = sum(data.NNs([1:lx,lx+adInd]));
-NNprop([1:lx,lx+adInd]) = data.NNs([1:lx,lx+adInd])/workingage;
-p2.aratep1              = NNprop.*[repmat(aratep1(3),lx,1);aratep1];    
-p2.aratep2              = NNprop.*[repmat(aratep2(3),lx,1);aratep2];
-p2.aratep3              = NNprop.*[repmat(aratep3(3),lx,1);aratep3];
-p2.aratep4              = NNprop.*[repmat(aratep4(3),lx,1);aratep4];
-
-%Vaccine Administration Time
+nadprop                  = ones(ln,1);
+nadprop([1:lx,lx+adInd]) = data.NNs([1:lx,lx+adInd])/sum(data.NNs([1:lx,lx+adInd]));%adult population proportion
+p2.aratep1               = nadprop.*[repmat(aratep1(adInd),lx,1);aratep1];    
+p2.aratep2               = nadprop.*[repmat(aratep2(adInd),lx,1);aratep2];
+p2.aratep3               = nadprop.*[repmat(aratep3(adInd),lx,1);aratep3];
+p2.aratep4               = nadprop.*[repmat(aratep4(adInd),lx,1);aratep4];
+%Administration Time
 tpoints    = cumsum([t_vax,t_ages]);
 p2.startp1 = tpoints(1);
 p2.startp2 = tpoints(2);
 p2.startp3 = tpoints(3);
 p2.startp4 = tpoints(4);
-p2.end     = tpoints(5);%End of Rollout
-
-%% COST PARAMETERS:
-
-na     = [data.Npop(1:16)',sum(data.Npop(17:end))];%length is 17 to match ifr
-la     = [data.la(1:16),...
-          dot(data.la(17:end),[data.Npop(17),sum(data.Npop(18:end))])/sum(data.Npop(17:end))];
-napd   = na.*dis.ifr;
-lg     = [dot(la(1),napd(1))/sum(napd(1)),...
-          dot(la(2:4),napd(2:4))/sum(napd(2:4)),...
-          dot(la(5:13),napd(5:13))/sum(napd(5:13)),...
-          dot(la(14:end),napd(14:end))/sum(napd(14:end))];
-dis.lg = [repmat(lg(3),1,45),lg];
+p2.end     = tpoints(5);%end of rollout
 
 end
