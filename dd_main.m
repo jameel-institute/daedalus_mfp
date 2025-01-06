@@ -55,7 +55,7 @@ for k = 1:lstrat;
     p2   = p2_array{h,i,j};
     try
         [~,~,g] = dd_run_sim(data,dis,p2);
-        [~,~,c] = dd_calc_loss(data,dis,g);
+        [~,c]   = dd_calc_loss(data,dis,g);
         sec     = [g(end,1),c];
     catch
         sec     = nan(1,16);
@@ -63,7 +63,7 @@ for k = 1:lstrat;
     output = [output;sec];
     end
     dd_store_output(output,strcat(string(locations{h}),'_',string(diseases{j}),'_',string(strategies{k})),taskdir);
-    %p2Plot(data,f,p2,g,cost,NaN,inp1,inp2,inp3);
+    %p2Plot(data,f,p2,g,cost,inp1,inp2,inp3);
     %disp([h,j,k,i]);
 end
 end
