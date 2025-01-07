@@ -82,7 +82,7 @@ dis.Ev    = ev./sum(ev);
 zn     = zeros(ln,1);
 R0     = zn;%entirely naive population
 y0     = [data.NNs-R0;repmat(zn,6,1);R0;repmat(zn,11,1);data.NNs-R0];
-dis.y0 = y0;
+dis.y0 = y0;%seeding is defined in dd_run_sim.m
 
 %% OTHER DISEASE-DEPENDENT PARAMETERS:
 

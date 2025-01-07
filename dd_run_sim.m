@@ -1,25 +1,4 @@
-function [data,f,g]=dd_run_sim(data,dis,p2);
-
-ln  = length(data.NNs);
-lx  = length(data.obj);
-int = length(data.xoptim)/lx;
-
-XitMat    = reshape(data.xoptim,lx,int);
-Dvec      = zeros(ln,ln,int);
-for i = 1:int;
-    Dvec(:,:,i) = dd_calc_contacts(data,XitMat(:,i),data.hw(i,:));
-end
-data.Dvec = Dvec;
-data.Ev   = dis.Ev.*XitMat(data.IntlInd,:);
-
-[data,f,g] = p2SimVax(data,dis,XitMat,p2);
-
-end
-
-%%
-
-function [data,f,g]=p2SimVax(data,dis,XitMat,p2)               
-%% IC:
+function [data,f,g] = dd_run_sim(data,dis,p2);
 
 ln    = length(data.NNs);
 lx    = length(data.obj);
@@ -56,7 +35,6 @@ Vout       = zn';
 
 while i < 6; 
     
-    Xit = XitMat(:,i);    
     D   = data.Dvec(:,:,i);
     
     [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0,inext] = integr8(data,D,i,t0,tend,dis,y0,p2);
@@ -74,7 +52,7 @@ while i < 6;
     Hout       = [Hout;Hclass(2:end,:)];
     Dout       = [Dout;Dclass(2:end,:)];
     dDout      = [dDout;dDclass(2:end,:)]; 
-    X          = Xit'.*ones(length(tout),lx);
+    X          = data.xconf(i,:).*ones(length(tout),lx);
     Xout       = [Xout;X(1:end-1,:)];      
     hw         = data.hw(i,:).*ones(length(tout),lx);
     hwout      = [hwout;hw(1:end-1,:)];
@@ -130,17 +108,7 @@ function [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hcla
 ln  = length(data.NNs);
 fun = @(t,y)ODEs(data,D,i,t,dis,y,p2);
 
-if strcmp(data.inp3,'No Closures');
-    options = odeset('Events',@(t,y)unmitigated(t,y,data,dis,i,p2));%,'MaxStep',0.1);
-elseif strcmp(data.inp3,'School Closures');
-    options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));%,'MaxStep',0.1);
-elseif strcmp(data.inp3,'Economic Closures');
-    options = odeset('Events',@(t,y)reactive_closures(t,y,data,dis,i,p2));%,'MaxStep',0.1);
-elseif strcmp(data.inp3,'Elimination');
-	options = odeset('Events',@(t,y)elimination(t,y,data,dis,i,p2));%,'MaxStep',0.1);
-else
-    error('Unknown Mitigation Strategy!');
-end    
+options = odeset('Events', @(t,y) data.ev_fn(t,y,data,dis,i,p2));%,'MaxStep',0.1);   
 
 [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
 
@@ -433,7 +401,7 @@ end
 I       = (red*Ina+Ins) + (1-trv1)*(red*Inav1+Insv1) + tm_a*red*(Isa+(1-trv1)*Isav1) + tm_s.*(Iss+(1-trv1)*Issv1);
 foi     = phi*beta*betamod*(D*(I./NN));
 
-seedvec = 1e-9*sum(data.Npop)*data.Ev(:,i);%one billionth of the population
+seedvec = 1e-9*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth of the population
 seed    = phi*beta*betamod*(D*(seedvec./NN));
 
 %% EQUATIONS:
@@ -478,306 +446,4 @@ f(y<eps) = max(0,f(y<eps));
 
 g=h.*(Ins+Iss)+h_v1.*(Insv1+Issv1);%Hin
 
-end
-
-%%
-
-function [value,isterminal,direction] = unmitigated(t,y,data,dis,i,p2)
-    
-    ln   = length(data.NNs);
-    
-    S    = y(0*ln+1:1*ln);
-    H    = y(6*ln+1:7*ln);
-    R    = y(7*ln+1:8*ln);
-    Shv1 = y(8*ln+1:9*ln);
-    Sv1  = y(9*ln+1:10*ln);
-    Hv1  = y(15*ln+1:16*ln);
-    Rv1  = y(16*ln+1:17*ln);
-    DE   = y(17*ln+1:18*ln);
-    Sn   = y(19*ln+1:20*ln);
-     
-    occ  = sum(H+Hv1);
-    amp  = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
-    ph   = amp.*dis.ph;
-    Ts   = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-    g2   = (1-ph)./Ts;
-    h    = ph./Ts;
-    
-    %% event 1: end of testing
-    %stop testing at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
-    E1iflag = floor(i/5);
-    E1tflag = max(0,data.tvec(end-1)+0.1-t);
-    E1vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
-    if E1iflag == 0 && E1tflag == 0 && E1vflag ~=0;
-        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E1vflag = max(0,Rt2-1);
-    end
-    
-    value(1)      = E1iflag + E1tflag + E1vflag;
-    direction(1)  = -1;
-    isterminal(1) = 1;
-    
-    %% event 2: end of simulation
-    %stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
-    E2iflag = abs(i-5);
-    E2tflag = max(0,data.tvec(end-1)+0.1-t);
-    E2vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
-    if E2iflag + E2tflag + E2vflag == 0;
-        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E2vflag = max(0,Rt2-1);
-    end
-    
-    value(2)      = E2iflag + E2tflag + E2vflag;
-    direction(2)  = -1;
-    isterminal(2) = 1;
-    
-end
-
-function [value,isterminal,direction] = reactive_closures(t,y,data,dis,i,p2)
-    
-    ln     = length(data.NNs);
-    
-    S      = y(0*ln+1:1*ln);
-    Ins    = y(4*ln+1:5*ln);
-    Iss    = y(5*ln+1:6*ln);
-    H      = y(6*ln+1:7*ln);
-    R      = y(7*ln+1:8*ln);
-    Shv1   = y(8*ln+1:9*ln);
-    Sv1    = y(9*ln+1:10*ln);
-    Insv1  = y(13*ln+1:14*ln);
-    Issv1  = y(14*ln+1:15*ln);
-    Hv1    = y(15*ln+1:16*ln);
-    Sn     = y(19*ln+1:20*ln);
-    Rv1    = y(16*ln+1:17*ln);
-    DE     = y(17*ln+1:18*ln);
-    
-    occ    = max(0.01,sum(H+Hv1));%capped due to division by occ below
-    Hmax   = p2.Hmax;
-    th     = p2.th;
-    amp    = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
-    th0    = max(1,1+th*((occ-Hmax)/(2*Hmax-Hmax)));
-    ph     = amp.*dis.ph;
-    pd     = min(th0*dis.pd,1);
-    Ts     = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-    Th     = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
-    g2     = (1-ph)./Ts;
-    g3     = (1-pd)./Th;
-    h      = ph./Ts;
-    mu     = pd./Th;
-    h_v1   = dis.h_v1;
-    Hdot   = h.*Ins      +h.*Iss        -(g3+mu).*H;
-    Hv1dot = h_v1.*Insv1 +h_v1.*Issv1   -(g3+mu).*Hv1;
-    occdot = sum(Hdot+Hv1dot);
-    r      = occdot/occ;
-    Tcap   = t + log(p2.Hmax/occ)/r;
-    Tgen   = dis.Tlat + dis.Tsh;
-    Tld    = Tcap - Tgen/2;%empirical function, unused for r < 0.025 as below
-    
-    %% event 1: first measures
-    %home-working and distancing imposed at response time
-    E1iflag = abs(i-1);
-    E1tflag = max(0,data.tvec(end-1)+0.1-t);
-    E1vflag = max(0,p2.Tres-t);
-        
-    value(1)      = E1iflag + E1tflag + E1vflag;
-    direction(1)  = -1;
-    isterminal(1) = 1;
-    
-    %% event 2: early lockdown
-    %lockdown if less than 4 days before hospital capacity expected to be breached and growth rate is large
-    E2iflag = abs((i-2)*(i-4));
-    E2tflag = max(0,data.tvec(end-1)+0.1-t);
-    E2vflag = max(0,Tld-t) + max(0,0.025-r);  
-    
-    value(2)      = E2iflag + E2tflag + E2vflag;
-    direction(2)  = -1;
-    isterminal(2) = 1;
-    
-    %% event 3: late lockdown
-    %lockdown if hospital occupancy greater than 95% of capacity
-    E3iflag = abs((i-1)*(i-2)*(i-4));
-    E3tflag = max(0,data.tvec(end-1)+0.1-t);
-    E3vflag = max(0,0.95*p2.Hmax-occ);  
-    
-    value(3)      = E3iflag + E3tflag + E3vflag;
-    direction(3)  = -1;
-    isterminal(3) = 1;
-    
-    %% event 4: partial reopening
-    %partially reopen after 1 week if hospital occupancy less than 25% of capacity
-    E4iflag = abs(i-3);
-    E4tflag = max(0,data.tvec(end-1)+7-t);
-    E4vflag = max(0,occ-0.25*p2.Hmax);  
-    
-    value(4)      = E4iflag + E4tflag + E4vflag;
-    direction(4)  = -1;
-    isterminal(4) = 1;
-    
-    %% event 5: end of closures and testing
-    %remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign and (below 25% occupancy or low non-lockdown growth rate or 90 days since end of rollout), 2.5 years after response time
-    E5iflag = floor(i/5);
-    E5tflag = max(0,data.tvec(end-1)+0.1-t);
-    E5vflag = (max(0,p2.end-t) + max(0,occ-0.25*p2.Hmax)*(max(0,r-0.025) + abs((i-1)*(i-2)*(i-4)))*max(0,p2.end+90-t))*max(0,p2.Tres+2.5*365-t);
-    if E5iflag == 0 && E5tflag == 0 && E5vflag ~=0;
-        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E5vflag = max(0,Rt2-1);
-    end
-    
-    value(5)      = E5iflag + E5tflag + E5vflag;
-    direction(5)  = -1;
-    isterminal(5) = 1;
-    
-    %% event 6: end of simulation
-    %stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
-    E6iflag = abs(i-5);
-    E6tflag = max(0,data.tvec(end-1)+0.1-t);
-    E6vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
-    if E6iflag + E6tflag + E6vflag == 0;
-        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E6vflag = max(0,Rt2-1);
-    end
-    
-    value(6)      = E6iflag + E6tflag + E6vflag;
-    direction(6)  = -1;
-    isterminal(6) = 1;
-    
-end
-
-function [value,isterminal,direction] = elimination(t,y,data,dis,i,p2)
-    
-    ln    = length(data.NNs);
-    
-    S     = y(0*ln+1:1*ln);
-    E     = y(1*ln+1:2*ln);
-    H     = y(6*ln+1:7*ln);
-    R     = y(7*ln+1:8*ln);
-    Shv1  = y(8*ln+1:9*ln);
-    Sv1   = y(9*ln+1:10*ln);
-    Ev1   = y(10*ln+1:11*ln);
-    Hv1   = y(15*ln+1:16*ln);
-    Sn    = y(19*ln+1:20*ln);
-    Rv1   = y(16*ln+1:17*ln);
-    DE    = y(17*ln+1:18*ln);
-    
-    occ   = sum(H+Hv1);
-    amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
-    ph    = amp.*dis.ph;
-    Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-    g2    = (1-ph)./Ts;
-    h     = ph./Ts;
-    if t<p2.t_tit;   
-        asc_a = 0;
-        asc_s = 0;
-        tm_a  = 1;
-        tm_s  = 1;
-        
-    elseif t<p2.end && i~=5;
-        trate  = p2.trate;
-        asca   = p2.asca;
-        ascb   = p2.ascb;
-        ascc   = p2.ascc;
-        pcta   = p2.pcta;
-        pctb   = p2.pctb;
-        opsa   = p2.opsa;
-        opsb   = p2.opsb;
-        opc    = p2.opc;
-        incid  = max(0,10^5*((dis.siga+dis.sigs)*sum(E+Ev1))/sum(data.Npop));
-        asc_s  = 1/(1+exp(asca+ascb*log10(incid)+ascc*log10(trate)));
-        propCT = 1/(1+exp(pcta+pctb*log10(incid)));
-        asc_a  = propCT*asc_s + (1-propCT)*0;
-        
-        asc_a  = min(asc_a,(trate/incid)*(0*(1-propCT) + (1-dis.ps)*propCT));
-        asc_s  = min(asc_s,(trate/incid)*(1*(1-propCT) + dis.ps*propCT));
-        asc_a  = max(trate/10^5*(0*(1-propCT) + (1-dis.ps)*propCT),asc_a);
-        asc_s  = max(trate/10^5*(1*(1-propCT) + dis.ps*propCT),asc_s);
-        
-        onsPCR_s = opsa+opsb*log10(trate);
-        onsPCR_c = onsPCR_s+opc;
-        Teff_c   = max(0,dis.Tinc+onsPCR_c-dis.Tlat);
-        Teff_s   = max(0,dis.Tinc+onsPCR_s-dis.Tlat);
-        mult_ac  = min(Teff_c,dis.Tay)./dis.Tay;
-        mult_sc  = min(Teff_c,Ts)./Ts;
-        mult_ss  = min(Teff_s,Ts)./Ts;
-        
-        tm_a = mult_ac;
-        tm_s = mult_sc*propCT + mult_ss*(1-propCT);
-    
-    else       
-        asc_a = 0;
-        asc_s = 0;
-        tm_a  = 1;
-        tm_s  = 1;
-            
-    end
-    sig1  = dis.siga*(1-asc_a);
-    sig2  = dis.sigs*(1-asc_s);
-    sig3  = dis.siga*asc_a;
-    sig4  = dis.sigs*asc_s;
-    
-    %% event 1: first lockdown
-    %lockdown at first occurence of: response time, 95% of hospital capacity
-    E1iflag = abs(i-1);
-    E1tflag = max(0,data.tvec(end-1)+0.1-t);
-    E1vflag = max(0,p2.Tres-t)*max(0,0.95*p2.Hmax-occ);
-        
-    value(1)      = E1iflag + E1tflag + E1vflag;
-    direction(1)  = -1;
-    isterminal(1) = 1;
-    
-    %% event 2: domestic reopening
-    %reopen domestic economy after 1 week if Rt<1  
-    E2iflag = abs(i-2);
-    E2tflag = max(0,data.tvec(end-1)+7-t);
-    E2vflag = 1;
-    if E2iflag == 0 && E2tflag == 0;
-        [Rt1,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
-        E2vflag = max(0,Rt1-1);
-    end
-
-    value(2)      = E2iflag + E2tflag + E2vflag;
-    direction(2)  = -1;
-    isterminal(2) = 1;
-    
-    %% event 3: relockdown
-    %lockdown again after 1 week if Rt>1.2
-    E3iflag = abs(i-3);
-    E3tflag = max(0,data.tvec(end-1)+7-t);
-    E3vflag = 1;
-    if E3iflag == 0 && E3tflag == 0;
-        [Rt1,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
-        E3vflag = max(0,1.2-Rt1);
-    end
-
-    value(3)      = E3iflag + E3tflag + E3vflag;
-    direction(3)  = -1;
-    isterminal(3) = 1;
-    
-    %% event 4: end of closures and testing
-    %remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
-    E4iflag = floor(i/5);
-    E4tflag = max(0,data.tvec(end-1)+0.1-t);
-    E4vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
-    if E4iflag == 0 && E4tflag == 0 && E4vflag ~=0;
-        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E4vflag = max(0,Rt2-1);
-    end
-    
-    value(4)      = E4iflag + E4tflag + E4vflag;
-    direction(4)  = -1;
-    isterminal(4) = 1;
-    
-    %% event 5: end of simulation
-    %stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
-    E5iflag = abs(i-5);
-    E5tflag = max(0,data.tvec(end-1)+0.1-t);
-    E5vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
-    if E5iflag + E5tflag + E5vflag == 0;
-        [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-        E5vflag = max(0,Rt2-1);
-    end
-    
-    value(5)      = E5iflag + E5tflag + E5vflag;
-    direction(5)  = -1;
-    isterminal(5) = 1;
-    
 end
