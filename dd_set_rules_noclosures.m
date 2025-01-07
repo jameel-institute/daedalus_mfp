@@ -11,13 +11,13 @@ Hv1  = y(15*ln+1:16*ln);
 Rv1  = y(16*ln+1:17*ln);
 DE   = y(17*ln+1:18*ln);
 Sn   = y(19*ln+1:20*ln);
- 
-occ  = sum(H+Hv1);
-amp  = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
+
+amp  = min((Sn + (S-Sn).*(1-dis.heff))./S, 1);
 ph   = amp.*dis.ph;
 Ts   = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
 g2   = (1-ph)./Ts;
 h    = ph./Ts;
+occ  = sum(H+Hv1);
 
 %% event 1: end of testing
 %stop testing at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time

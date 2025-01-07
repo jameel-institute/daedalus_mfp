@@ -1,4 +1,4 @@
-function dd_store_output(array,title,taskdir);
+function dd_store_output(array,title,taskdir)
 
 T = array2table(array);
 

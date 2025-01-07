@@ -1,4 +1,4 @@
-function data = dd_set_strategy(data,inp3);
+function data = dd_set_strategy(data,inp3)
 
 ln        = length(data.NNs);
 lx        = length(data.obj);

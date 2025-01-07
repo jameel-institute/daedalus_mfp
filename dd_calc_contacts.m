@@ -1,4 +1,4 @@
-function f = dd_calc_contacts(data,x,hw);
+function f = dd_calc_contacts(data,x,hw)
 
 %define number of strata, sectors, adult index and population
 ln    = length(data.NNs);

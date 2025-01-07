@@ -14,40 +14,30 @@ Sn    = y(19*ln+1:20*ln);
 Rv1   = y(16*ln+1:17*ln);
 DE    = y(17*ln+1:18*ln);
 
-occ   = sum(H+Hv1);
-amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
+amp   = min((Sn + (S-Sn).*(1-dis.heff))./S, 1);
 ph    = amp.*dis.ph;
 Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
 g2    = (1-ph)./Ts;
 h     = ph./Ts;
+occ   = sum(H+Hv1);
 if t<p2.t_tit;   
     asc_a = 0;
     asc_s = 0;
     tm_a  = 1;
     tm_s  = 1;
-    
 elseif t<p2.end && i~=5;
-    trate  = p2.trate;
-    asca   = p2.asca;
-    ascb   = p2.ascb;
-    ascc   = p2.ascc;
-    pcta   = p2.pcta;
-    pctb   = p2.pctb;
-    opsa   = p2.opsa;
-    opsb   = p2.opsb;
-    opc    = p2.opc;
     incid  = max(0,10^5*((dis.siga+dis.sigs)*sum(E+Ev1))/sum(data.Npop));
-    asc_s  = 1/(1+exp(asca+ascb*log10(incid)+ascc*log10(trate)));
-    propCT = 1/(1+exp(pcta+pctb*log10(incid)));
+    asc_s  = 1/(1+exp(p2.asca + p2.ascb*log10(incid) + p2.ascc*log10(p2.trate)));
+    propCT = 1/(1+exp(p2.pcta + p2.pctb*log10(incid)));
     asc_a  = propCT*asc_s + (1-propCT)*0;
     
-    asc_a  = min(asc_a,(trate/incid)*(0*(1-propCT) + (1-dis.ps)*propCT));
-    asc_s  = min(asc_s,(trate/incid)*(1*(1-propCT) + dis.ps*propCT));
-    asc_a  = max(trate/10^5*(0*(1-propCT) + (1-dis.ps)*propCT),asc_a);
-    asc_s  = max(trate/10^5*(1*(1-propCT) + dis.ps*propCT),asc_s);
+    asc_a = min(asc_a,(p2.trate/incid)*(0*(1-propCT) + (1-dis.ps)*propCT));
+    asc_s = min(asc_s,(p2.trate/incid)*(1*(1-propCT) + dis.ps*propCT));
+    asc_a = max(p2.trate/10^5*(0*(1-propCT) + (1-dis.ps)*propCT),asc_a);
+    asc_s = max(p2.trate/10^5*(1*(1-propCT) + dis.ps*propCT),asc_s);
     
-    onsPCR_s = opsa+opsb*log10(trate);
-    onsPCR_c = onsPCR_s+opc;
+    onsPCR_s = p2.opsa + p2.opsb*log10(p2.trate);
+    onsPCR_c = onsPCR_s + p2.opc;
     Teff_c   = max(0,dis.Tinc+onsPCR_c-dis.Tlat);
     Teff_s   = max(0,dis.Tinc+onsPCR_s-dis.Tlat);
     mult_ac  = min(Teff_c,dis.Tay)./dis.Tay;
@@ -56,18 +46,17 @@ elseif t<p2.end && i~=5;
     
     tm_a = mult_ac;
     tm_s = mult_sc*propCT + mult_ss*(1-propCT);
-
-else       
+else
     asc_a = 0;
     asc_s = 0;
     tm_a  = 1;
-    tm_s  = 1;
-        
+    tm_s  = 1;   
 end
-sig1  = dis.siga*(1-asc_a);
-sig2  = dis.sigs*(1-asc_s);
-sig3  = dis.siga*asc_a;
-sig4  = dis.sigs*asc_s;
+
+sig1 = dis.siga*(1-asc_a);
+sig2 = dis.sigs*(1-asc_s);
+sig3 = dis.siga*asc_a;
+sig4 = dis.sigs*asc_s;
 
 %% event 1: first lockdown
 %lockdown at first occurence of: response time, 95% of hospital capacity
