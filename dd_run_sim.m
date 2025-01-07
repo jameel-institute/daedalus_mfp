@@ -9,214 +9,37 @@ y0   = dis.y0;
 i    = 1;
 tend = data.tvec(end);
 
-%initialise outputs
-zn         = zeros(ln,1);
-Tout       = t0;
-Tsout      = dis.Ts';
-Thout      = dis.Th';
-phout      = dis.ph';   
-Iout       = zn';
-Isaout     = zn';
-Isavout    = zn';
-Issout     = zn';
-Issvout    = zn';
-Insout     = zn';
-Hout       = zn';
-Dout       = zn';
-dDout      = zn';
-Xout       = [];
-hwout      = [];
-aaout      = 0;
-asout      = 0;
-betamodout = 1;
-Vout       = zn';
-
-%% LOOP:
+output = struct;
 
 while i < 6; 
+    D = data.Dvec(:,:,i);
     
-    D   = data.Dvec(:,:,i);
-    
-    [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0,inext] = integr8(data,D,i,t0,tend,dis,y0,p2);
-    
-    Tout       = [Tout;tout(2:end)];  
-    Tsout      = [Tsout;Ts(2:end,:)];  
-    Thout      = [Thout;Th(2:end,:)];
-    phout      = [phout;ph(2:end,:)];
-    Iout       = [Iout;Iclass(2:end,:)];
-    Isaout     = [Isaout;Isaclass(2:end,:)];
-    Isavout    = [Isavout;Isavlass(2:end,:)];
-    Issout     = [Issout;Issclass(2:end,:)];
-    Issvout    = [Issvout;Issvlass(2:end,:)];
-    Insout     = [Insout;Insclass(2:end,:)];
-    Hout       = [Hout;Hclass(2:end,:)];
-    Dout       = [Dout;Dclass(2:end,:)];
-    dDout      = [dDout;dDclass(2:end,:)]; 
-    X          = data.xconf(i,:).*ones(length(tout),lx);
-    Xout       = [Xout;X(1:end-1,:)];      
-    hw         = data.hw(i,:).*ones(length(tout),lx);
-    hwout      = [hwout;hw(1:end-1,:)];
-    aaout      = [aaout;asc_a(2:end)];
-    asout      = [asout;asc_s(2:end)];
-    betamodout = [betamodout;betamod(2:end)];
-    Vout       = [Vout;Vclass(2:end,:)];
-    
+    fun                = @(t,y)ODEs(data,D,i,t,dis,y,p2);
+    options            = odeset('Events', @(t,y) data.ev_fn(t,y,data,dis,i,p2));%,'MaxStep',0.1);   
+    [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
+     output            = dd_run_postprocessing(data,dis,i,p2,output,tout,yout);
+
+    if ~isempty(ie);
+        inext = data.inext(ie(end));
+    else
+        inext = 6;
+    end
+
     if inext < 6;
         t0        = tout(end);
+        y0        = yout(end,:)';
         i         = inext;
         data.tvec = [data.tvec(1:end-1),tout(end),tend];
         p2.Tres   = min(p2.Tres,tout(end));
     else
         i              = inext;
         data.tvec(end) = tout(end);
-    end
-    
-end
-    
-%% OUTPUTS:  
-
-Xout  = [Xout;Xout(end,:)];
-hwout = [hwout;hwout(end,:)];
-g     = [Tout,Xout,hwout,Isaout,Isavout,Issout,Issvout,Insout,Hout,Dout,Vout,betamodout,Tsout,Thout,phout];
-f     = [Tout,...
-         sum(Iout,2),...
-         sum(Hout,2),...
-         sum(Dout,2),...
-         aaout,...
-         asout,...
-         betamodout,...  
-         sum(Vout(:,lx+1),2),...
-         sum(Vout(:,lx+2),2),...
-         sum(Vout(:,[1:lx,lx+adInd]),2),...
-         sum(Vout(:,lx+4),2),...
-         sum(Dout(:,lx+1),2),...
-         sum(Dout(:,lx+2),2),...
-         sum(Dout(:,[1:lx,lx+adInd]),2),...
-         sum(Dout(:,lx+4),2),...
-         sum(dDout(:,lx+1),2),...
-         sum(dDout(:,lx+2),2),...
-         sum(dDout(:,[1:lx,lx+adInd]),2),...
-         sum(dDout(:,lx+4),2)];
-  
-end
-
-%%
-
-function [tout,Ts,Th,ph,Iclass,Isaclass,Isavlass,Issclass,Issvlass,Insclass,Hclass,Dclass,dDclass,asc_a,asc_s,betamod,Vclass,y0new,inext] = integr8(data,D,i,t0,tend,dis,y0,p2)
-%% CALL:
-
-ln  = length(data.NNs);
-fun = @(t,y)ODEs(data,D,i,t,dis,y,p2);
-
-options = odeset('Events', @(t,y) data.ev_fn(t,y,data,dis,i,p2));%,'MaxStep',0.1);   
-
-[tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
-
-y0new = yout(end,:)';
-if ~isempty(ie);
-    inext = data.inext(ie(end));
-else
-    inext = 6;
-end
-
-%% OUTPUT VARIABLES:
-
-Iclass   = yout(:, 2*ln+1: 3*ln) + yout(:, 3*ln+1: 4*ln) + ...
-           yout(:, 4*ln+1: 5*ln) + yout(:, 5*ln+1: 6*ln) + ...
-           yout(:,11*ln+1:12*ln) + yout(:,12*ln+1:13*ln) + ...
-           yout(:,13*ln+1:14*ln) + yout(:,14*ln+1:15*ln);
-Isaclass = yout(:, 3*ln+1: 4*ln); 
-Isavlass = yout(:,12*ln+1:13*ln);
-Issclass = yout(:, 5*ln+1: 6*ln);
-Issvlass = yout(:,14*ln+1:15*ln);
-Insclass = yout(:, 4*ln+1: 5*ln) + yout(:,13*ln+1:14*ln);
-Hclass   = yout(:, 6*ln+1: 7*ln) + yout(:,15*ln+1:16*ln);
-Dclass   = yout(:,17*ln+1:18*ln);
-Vclass   = yout(:,18*ln+1:19*ln);
-
-%% TIME-DEPENDENT PARAMETERS:
-
-occ   = sum(Hclass,2);
-Hmax  = p2.Hmax;
-th    = p2.th;
-th0   = max(1,1+th*((occ-Hmax)/(2*Hmax-Hmax)));
-
-pd  = min(th0.*dis.pd',1);
-Th  = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
-mu  = pd./Th;
-ddk = max(0,10^5*sum(mu.*Hclass,2)/sum(data.Npop));
-
-sd_fun = @(a,b,c,t,d) 1./(1 + exp(a + b.*log10(d) - c.*t));%here, t is time since response
-
-if strcmp(data.inp3,'No Closures')||i==1;
-    betamod = ones(size(occ));
-elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sda,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sda,p2.sdb,p2.sdc,14,2));
-else
-    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,tout-p2.Tres,ddk);
-end
-
-S     = yout(:,0*ln+1:1*ln);
-Sn    = yout(:,19*ln+1:20*ln);
-Ins   = yout(:,4*ln+1:5*ln);
-Iss   = yout(:,5*ln+1:6*ln);
-Insv1 = yout(:,13*ln+1:14*ln);
-Issv1 = yout(:,14*ln+1:15*ln);
-H     = yout(:,6*ln+1:7*ln);
-Hv1   = yout(:,15*ln+1:16*ln);
-
-amp   = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
-ph    = amp.*dis.ph';
-Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-g3    = (1-pd)./Th;
-h     = ph./Ts;
-h_v1  = dis.h_v1;
-
-Hdot   = h.*Ins      +h.*Iss        -(g3+mu).*H;
-Hv1dot = h_v1'.*Insv1 +h_v1'.*Issv1   -(g3+mu).*Hv1;
-occdot = sum(Hdot+Hv1dot,2);
-r      = occdot./occ;
-
-dDclass = mu.*H + mu.*Hv1;     
-
-trate  = p2.trate;
-asca   = p2.asca;
-ascb   = p2.ascb;
-ascc   = p2.ascc;
-pcta   = p2.pcta;
-pctb   = p2.pctb;
-opsa   = p2.opsa;
-opsb   = p2.opsb;
-opc    = p2.opc;
-ps     = dis.ps;
-siga   = dis.siga;
-sigs   = dis.sigs;
-E      = yout(:,1*ln+1:2*ln);
-Ev1    = yout(:,10*ln+1:11*ln);
-incid  = max(0,10^5*((siga+sigs)*sum(E+Ev1,2))/sum(data.Npop));
-
-if i~=5;
-    asc_s  = 1./(1+exp(asca+ascb*log10(incid)+ascc*log10(trate)));
-    propCT = 1./(1+exp(pcta+pctb*log10(incid)));
-    asc_a  = propCT.*asc_s + (1-propCT)*0;
-    
-    asc_a  = min(asc_a,(trate./incid).*(0*(1-propCT) + (1-ps)*propCT));
-    asc_s  = min(asc_s,(trate./incid).*(1*(1-propCT) + ps*propCT));
-    asc_a  = max(trate/10^5*(0*(1-propCT) + (1-ps)*propCT),asc_a);
-    asc_s  = max(trate/10^5*(1*(1-propCT) + ps*propCT),asc_s);    
-
-    asc_a  = asc_a.*(tout>p2.t_tit).*(tout<p2.end);    
-    asc_s  = asc_s.*(tout>p2.t_tit).*(tout<p2.end);    
-
-else
-    asc_a  = zeros(size(tout));
-    asc_s  = zeros(size(tout));
-
+        f              = output.f;
+        g              = output.g;
+    end    
 end
 
 end
-
-%%
 
 function [f,g]=ODEs(data,D,i,t,dis,y,p2)
 
