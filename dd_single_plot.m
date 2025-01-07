@@ -1,29 +1,29 @@
-function f=dd_single_plot(data,f1,p2,g1,cost,inp1,inp2,inp3)
+function f=dd_single_plot(data,g1,p2,f1,cost,inp1,inp2,inp3)
 
 ln        = length(data.NNs);
 lx        = length(data.obj);
 tvec      = data.tvec;
 thresh    = p2.Hmax;
 
-t1    = f1(:,1); 
-I1    = f1(:,2);
-h1    = f1(:,3);
-d1    = sum(f1(:,16:19),2);
+t1    = g1(:,1); 
+I1    = g1(:,2);
+h1    = g1(:,3);
+d1    = sum(g1(:,16:19),2);
 % ddiff = diff(d1,1);
 % tdiff = diff(t1,1);
 % d1    = [0;ddiff./tdiff];
-asc_a = f1(:,5);
-asc_s = f1(:,6);
-beta  = f1(:,7);
-v1    = f1(:,8);
-v2    = f1(:,9);
-v3    = f1(:,10);
-v4    = f1(:,11);
+asc_a = g1(:,5);
+asc_s = g1(:,6);
+beta  = g1(:,7);
+v1    = g1(:,8);
+v2    = g1(:,9);
+v3    = g1(:,10);
+v4    = g1(:,11);
 
-isoasyu = g1(:,1+2*lx+0*ln+[1:ln]);
-isoasyv = g1(:,1+2*lx+1*ln+[1:ln]);
-isosymu = g1(:,1+2*lx+2*ln+[1:ln]);
-isosymv = g1(:,1+2*lx+3*ln+[1:ln]);
+isoasyu = f1(:,1+2*lx+0*ln+[1:ln]);
+isoasyv = f1(:,1+2*lx+1*ln+[1:ln]);
+isosymu = f1(:,1+2*lx+2*ln+[1:ln]);
+isosymv = f1(:,1+2*lx+3*ln+[1:ln]);
 Q       = sum(isoasyu+isoasyv+isosymu+isosymv,2);
 
 scal4 = sum(data.Npop)/(10^4);
@@ -37,7 +37,7 @@ maxY  = 100000;%ceil(max([d1'/scal5,thresh/scal4,h1'/scal4,I1'/scal3])/10000)*10
 
 T               = repmat(t1',lx+1,1);
 S               = 0.5:1:lx+0.5;
-x               = g1(:,1+[1:lx])';
+x               = f1(:,1+[1:lx])';
 X               = [x;ones(1,length(t1))];
 
 %% EPIDEMIC TRAJECTORY
