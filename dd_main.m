@@ -5,7 +5,7 @@ parpool;
 taskdir = './';%strcat('output/',datestr(now,'yyyy-mm-dd_HH-MM-SS'),'/');
 %mkdir(taskdir);
 
-locations  = {'LLMIC'};%,'UMIC','HIC'};
+locations  = {'LLMIC','UMIC','HIC'};
 diseases   = {'Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Delta','Covid Wildtype','SARS'};
 strategies = {'No Closures','School Closures','Economic Closures','Elimination'};
 
