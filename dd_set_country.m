@@ -131,10 +131,6 @@ end
 %https://www.transportation.gov/office-policy/transportation-policy/revised-departmental-guidance-on-valuation-of-a-statistical-life-in-economic-analysis
 na        = [data.Npop(1:17)',sum(data.Npop(18:end))];%length is 18 to match life table
 la        = data.la;
-lg        = [dot(la(1),na(1))/sum(na(1)),...
-             dot(la(2:4),na(2:4))/sum(na(2:4)),...
-             dot(la(5:13),na(5:13))/sum(na(5:13)),...
-             dot(la(14:end),na(14:end))/sum(na(14:end))];
 gdp       = 365*sum(data.obj);%in millions USD
 gdppc     = gdp/sum(na);
 if all(strcmp(country_data.igroup,'LLMIC')) || (all(strcmp(country_data.igroup,'UMIC')) && gdppc < 0.008809);
@@ -142,7 +138,7 @@ if all(strcmp(country_data.igroup,'LLMIC')) || (all(strcmp(country_data.igroup,'
 elseif (all(strcmp(country_data.igroup,'UMIC')) && gdppc > 0.008809) || all(strcmp(country_data.igroup,'HIC'));
     vsl   = 10.9*((gdppc/0.060362)^0.85);
 end
-defivalue = vsl/(dot(lg,[na(1);sum(na(2:4));sum(na(5:13));sum(na(14:end))])/sum(na));
+defivalue = vsl/(dot(la,na)/sum(na));
 data.vly  = defivalue;
 
 %vsy

@@ -84,7 +84,11 @@ dis.y0 = y0;%seeding is defined in dd_run_sim.m
 
 %% OTHER DISEASE-DEPENDENT PARAMETERS:
 
-la     = [data.la(1:16),dot(data.la(17:end),[no(17),sum(no(18:end))])/nn(end)];
+if nn(end) ~= 0;
+    la = [data.la(1:16), dot(data.la(17:end),[no(17),sum(no(18:end))])/nn(end)];
+else
+    la = [data.la(1:16), 0];
+end
 lg     = accumarray(subs',la.*nndprop)';
 dis.lg = [repmat(lg(adInd),1,lx),lg];
 
