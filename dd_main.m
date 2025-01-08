@@ -11,7 +11,6 @@ strategies = {'No Closures','School Closures','Economic Closures','Elimination'}
 
 lloc       = length(locations);
 nsamples   = 5000;
-samples    = table();
 ldis       = length(diseases);
 lstrat     = length(strategies);
 
@@ -24,11 +23,12 @@ data.tvec    = 1+[0 365*10];
 country_data = readtable('input/country_data.csv');
 
 for h = 1:lloc;
-    inp1 = locations{h};
+    inp1    = locations{h};
+    samples = table();
     parfor i = 1:nsamples;
         ldata   = data;
         ldata   = dd_set_country(ldata,country_data,inp1);%for l  = 1:2;if l==2;ldata.t_vax = min(ldata.t_vax,100);end
-        row     = dd_store_input(inp1,i,ldata);
+        row     = dd_store_input(i,ldata);
         samples = [samples;row];
         for j = 1:ldis;
             inp2             = diseases{j};    
@@ -42,8 +42,8 @@ for h = 1:lloc;
             data_array{h,i,k} = ldata;
         end
     end
+    writetable(samples,strcat(taskdir,string(locations{h}),'_data.csv'));
 end
-writetable(samples, strcat(taskdir,'sample_data.csv'));
 
 for h = 1:lloc;
 for j = 1:ldis;
@@ -56,9 +56,9 @@ for k = 1:lstrat;
     try
         [~,f,~] = dd_run_sim(data,dis,p2);
         [~,c]   = dd_calc_loss(data,dis,f);
-        sec     = [f(end,1)-f(1,1),c];
+        sec     = [i,f(end,1)-f(1,1),c];
     catch
-        sec     = nan(1,16);
+        sec     = [i,nan(1,16)];
     end
     output = [output;sec];
     end
