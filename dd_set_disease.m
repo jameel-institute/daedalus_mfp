@@ -6,9 +6,7 @@ adInd = 3;
 
 %% DISEASE PARAMETERS:
 
-if ~ismcc;
-    addpath('input');
-end
+%addpath('input');
 dis = feval(strcat('param_',lower(strrep(inp2,' ','_'))));
 
 %Population by Age
