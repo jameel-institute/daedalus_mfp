@@ -1,55 +1,104 @@
 library(dplyr)
 library(purrr)
 library(tidyr)
+library(readr)
 library(stringr)
+library(fitdistrplus)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
 library(ggplot2)
 library(ggh4x)
 library(cowplot)
 library(ggpattern)
+library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
-source("functions/calc_cost_pc.R")
-source("functions/find_best_strats.R")
-source("functions/calc_cost_bdown.R")
 source("functions/parse_inputs.R")
-source("functions/voi_dec.R")
+source("functions/calc_loss_pc.R")
+source("functions/voi_decision.R")
 source("functions/voi_fit.R")
-source("functions/table_formatting.R")
+#source("functions/table_formatting.R")
 
-file_list <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
-arch_data <- lapply(file_list, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>% 
-             calc_cost_pc() %>% parse_inputs() 
-arch_voi  <- voi_dec(arch_data, list(c("mean_age", "sd_age", "skew_age", "le"),
-                                     c("comm", "IGHC", "schoolA2", "workp"),
-                                     c("EPOP", "TES", "gvapw", "wfh"),
-                                     c("Tres", "t_tit", "trate"),
-                                     c("sdb", "sdl"),
-                                     c("Hmax"),
-                                     c("t_vax", "arate", "puptake"))) %>%
-             mutate(parameter = case_when(parameter == "mean_age,sd_age,skew_age,le" ~ "Demography",
-                                          parameter == "comm,IGHC,schoolA2,workp" ~ "Mixing",
-                                          parameter == "EPOP,TES,gvapw,wfh" ~ "Economy",
-                                          parameter == "Tres,t_tit,trate" ~ "Surveillance",
-                                          parameter == "sdb,sdl" ~ "Distancing",
-                                          parameter == "Hmax" ~ "Healthcare",
-                                          parameter == "t_vax,arate,puptake" ~ "Vaccination")) %>%
-             mutate(parameter = factor(parameter, levels = c("Surveillance", "Distancing", "Healthcare", "Vaccination", 
-                                                            "Demography", "Mixing", "Economy")))
+list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
+input_files  <- list_files[grepl("_data\\.csv$", list_files)]
+input_data   <- lapply(input_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>% parse_inputs() #slightly slow
+output_files <- list_files[!grepl("_data\\.csv$", list_files)]
+output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>% 
+                left_join(input_data %>% dplyr::select(location, country, mean_age, pr_le, AL_wavg, AHT_wavg, AS_wavg, workp,
+                                                       epop, pr_workf, pr_gvapw, pr_wfh, Tres, sda, sdb, sdc, t_tit, trate, 
+                                                       Hmax, t_vax, arate, puptake), by = c("location", "country")) %>%
+                (function(x) calc_loss_pc(input_data,x)) %>% 
+                dplyr::select(-gdp, -tdur, -starts_with("vlyl"), -starts_with("gdpl"), -vsyl, -VLYLpc, -GDPLpc, -VSYLpc)
+evppi_values <- voi_decision(output_data, as.list(setdiff(names(output_data), c("location", "country", "disease", "strategy", "SLpc")))) %>%
+                group_by(location, disease) %>% 
+                slice_max(order_by = res, n = 1) %>% 
+                ungroup()
+output_data  <- output_data %>% left_join(evppi_values, by = c("location", "disease")) %>%
+                rowwise() %>% 
+                mutate(xaxis = get(parameter)) %>% 
+                ungroup()
+evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, upper = u) %>%
+                group_by(location, disease, xaxis) %>% 
+                mutate(alpha = ifelse(SLpc == min(SLpc), 1, 0.25)) %>% 
+                ungroup() %>%
+                mutate(group = cumsum(alpha == 0.25 | lag(alpha == 0.25, default = FALSE))) %>%
+                group_by(location, disease, strategy) %>%
+                mutate(alpha = ifelse(!any(alpha == 1) & alpha == 0.25, 0, alpha)) %>%
+                ungroup()
+output_data  <- output_data %>% #slow
+                group_by(location, disease, strategy, xaxis) %>%
+                mutate(alpha = {l <- location
+                                d <- disease
+                                s <- strategy
+                                x <- xaxis
+                                evppi_fits %>% filter(location == l, disease == d, strategy == s) %>%
+                                               slice(which.min(abs(xaxis - x))) %>% pull(alpha)}) %>%
+                mutate(alpha = floor(alpha)) %>%
+                ungroup()
+evppi_labs  <-  evppi_fits %>% 
+                group_by(disease, location) %>%
+                summarize(xlabel = unique(parameter), .groups = "drop") %>% #may vary by income group(@)
+                mutate(xlabel = case_when(xlabel == "mean_age" ~ "Average Age (years)",
+                                          xlabel == "pr_le" ~ "@ Life Expectancy (years)",
+                                          xlabel == "AL_wavg" ~ "Household Contacts (#/person/day)",
+                                          xlabel == "AHT_wavg" ~ "Other-Location Contacts (#/person/day)",
+                                          xlabel == "AS_wavg" ~ "School Contacts (#/child/day)",
+                                          xlabel == "workp" ~ "Workplace Contacts (#/adult/day)",
+                                          xlabel == "epop" ~ "Employment-Population Ratio (%)",
+                                          xlabel == "pr_workf" ~ "@ Sector Workforce (%)",
+                                          xlabel == "pr_gvapw" ~ "@ GVA per Worker ($)",
+                                          xlabel == "pr_wfh" ~ "@ Home-Working Ratio (%)",
+                                          xlabel == "Tres" ~ "Response Time (doubling times)",
+                                          xlabel == "sda" ~ "Transmission Multiplier Intercept",
+                                          xlabel == "sdb" ~ "Transmission Death-Sensitivity",
+                                          xlabel == "sdc" ~ "Transmission Time-Relaxation",
+                                          xlabel == "t_tit" ~ "Testing Start-Time (doubling times)",
+                                          xlabel == "trate" ~ "Testing Rate (per 100k/day)",
+                                          xlabel == "Hmax" ~ "Spare Hospital Capacity (per 100k)",
+                                          xlabel == "t_vax" ~ "Vaccination Start-Time (days)",
+                                          xlabel == "arate" ~ "Vaccination Rate (per 100k/day)",
+                                          xlabel == "puptake" ~ "Vaccination Coverage (% of HIT)"),
+                       xx = rep(c(0.16, 0.49, 0.81), 7),
+                       xy = rep(seq(0.80, 0.01, by = -0.131), each = 3))
 
-gg <- ggplot(arch_voi, aes(x = rank, y = res, fill = parameter)) +  
-      facet_grid(disease ~ location, switch = "y", scales = "free_y") +
-      geom_bar(stat = "identity", position = "dodge", linewidth = 0.3, color = "black") +
-      scale_fill_manual(values = c("Demography" = "black", "Mixing" = "white", "Economy" = "goldenrod",
-                                   "Surveillance" = "palegreen", "Distancing" = "slategray2", 
-                                   "Healthcare" = "purple", "Vaccination" = "lightsalmon")) +
-      theme_bw() + 
-      scale_y_continuous(expand=c(0,0), position="right", labels = scales::label_number(scale = 100, suffix = "")) + 
-      theme(panel.spacing = unit(1, "lines")) + 
-      labs(title = "", x = "", y = "EVPPI (%)") +
-      guides(fill = guide_legend(title = NULL, ncol = 2, byrow = FALSE)) +
-      theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),  
-            legend.position = c(0.205, 0.9996), legend.justification = c(1, 1), legend.box.just = "right", 
-            legend.key.size = unit(0.5, "cm"), legend.text = element_text(size = 7))
+gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alpha)) +
+      facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
+      geom_ribbon(data = evppi_fits %>% filter(alpha == 1), 
+                  aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), color = NA, alpha = 0.25) +
+      geom_point(shape = 19, size = 0.25, stroke = 0.25) +
+      geom_line(data = evppi_fits, linewidth = 0.5) +
+      scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
+                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
+      scale_fill_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
+                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
+      scale_alpha(range = c(0, 1)) +
+      theme_bw() +
+      scale_x_continuous(expand = c(0, 0), position = "bottom") +
+      scale_y_continuous(expand = c(0, 0), position = "right") +
+      #facetted_pos_scales(x = list(disease == "Covid-Omicron-X" & location == "HIC" ~ scale_x_continuous(labels = "Hospital Capacity"))) +
+      theme(panel.spacing = unit(1.25, "lines")) +
+      labs(title = "", x = "", y = "Societal Loss (% of GDP)") +
+      guides(color = guide_legend(title = NULL), fill = "none", alpha = "none") +
+      theme(legend.position = "top", legend.box.just = "right", legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
+gg <- ggdraw(gg) + draw_text(evppi_labs$xlabel, x = evppi_labs$xx, y = evppi_labs$xy, hjust = 0.5, vjust = 0.5, size = 9)
 
-ggsave("figure_2.png", plot = gg, height = 14, width = 10)
+ggsave("figure_2n.png", plot = gg, height = 14, width = 10)

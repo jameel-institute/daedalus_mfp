@@ -10,15 +10,13 @@ library(ggh4x)
 library(cowplot)
 library(ggpattern)
 library(patchwork)
-source("functions/add_scenario_cols.R")
-source("functions/order_scenario_cols.R")
-source("functions/calc_cost_pc.R")
-source("functions/find_best_strats.R")
-source("functions/calc_cost_bdown.R")
-source("functions/parse_inputs.R")
-source("functions/voi_dec.R")
-source("functions/voi_fit.R")
-source("functions/table_formatting.R")
+#source("functions/add_scenario_cols.R")
+#source("functions/order_scenario_cols.R")
+#source("functions/calc_cost_pc.R")
+#source("functions/parse_inputs.R")
+#source("functions/voi_dec.R")
+#source("functions/voi_fit.R")
+#source("functions/table_formatting.R")
 
 ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(igroup   = factor(igroup, levels = c("LLMIC","UMIC","HIC"))) %>%
@@ -44,7 +42,6 @@ ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(NNs_46   = 1 - rowSums(across(starts_with("NNs")))) %>%
              mutate(across(obj_1:obj_45, ~ ifelse(wa_pop * get(sub("obj", "NNs", cur_column())) == 0, 0, 
                                            365*10^6* .x / (wa_pop * get(sub("obj", "NNs", cur_column()))))))
-
 npop_data <- ctry_data %>% dplyr::select(igroup, country, starts_with("Npop_")) %>%
              pivot_longer(cols = starts_with("Npop_"), names_to = "Npop", values_to = "value") %>%
              mutate(Npop = parse_number(Npop))

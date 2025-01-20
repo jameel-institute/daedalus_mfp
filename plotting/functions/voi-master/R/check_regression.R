@@ -119,6 +119,9 @@ check_plot_default <- function(mod){
   bw <- 2 * IQR(dat$res) / length(dat$res)^(1/3)
   p1 <- ggplot2::ggplot(dat, aes(x=res)) +
     ggplot2::geom_histogram(binwidth=bw) +
+    ggplot2::geom_vline(aes(xintercept = mean(res, na.rm = TRUE)), 
+                        color = "red", 
+                        linetype = "dashed") +
     xlab("Residuals") + ylab("Frequency")
   p2 <- ggplot2::ggplot(dat, aes(x=fit, y=res)) +
     ggplot2::geom_point() +

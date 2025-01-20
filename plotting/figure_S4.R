@@ -10,15 +10,13 @@ library(ggh4x)
 library(cowplot)
 library(ggpattern)
 library(patchwork)
-source("functions/add_scenario_cols.R")
-source("functions/order_scenario_cols.R")
-source("functions/calc_cost_pc.R")
-source("functions/find_best_strats.R")
-source("functions/calc_cost_bdown.R")
-source("functions/parse_inputs.R")
-source("functions/voi_dec.R")
-source("functions/voi_fit.R")
-source("functions/table_formatting.R")
+#source("functions/add_scenario_cols.R")
+#source("functions/order_scenario_cols.R")
+#source("functions/calc_cost_pc.R")
+#source("functions/parse_inputs.R")
+#source("functions/voi_dec.R")
+#source("functions/voi_fit.R")
+#source("functions/table_formatting.R")
 
 #extract fitted parameters from mmpx_dist dataframes
 # print(rbind(mmp1_dist %>% group_by(igroup,variable) %>% slice_min(xvalue,n=1), 
@@ -28,7 +26,6 @@ source("functions/table_formatting.R")
 
 ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(igroup = factor(igroup, levels = c("LLMIC","UMIC","HIC")))
-
 mmp1_data <- ctry_data %>% dplyr::select(igroup,Tres,sda,sdb,sdc,t_tit) %>%
              pivot_longer(cols = c(Tres,sda,sdb,sdc,t_tit), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "Tres" ~ "Distancing: Response Time",
@@ -84,7 +81,8 @@ mmp1_labs <- data.frame(x      = rep(0.49, 5),
                                    "Transmission Multiplier Death-Sensitivity Coefficient",
                                    "Transmission Multiplier Time-Relaxation Coefficient",
                                    "Seeding-to-Testing-Start Delay (doubling times)"))
-mmp1_leg  <- mmp1_dist %>% group_by(variable, igroup) %>%
+mmp1_leg  <- mmp1_dist %>% 
+             group_by(variable, igroup) %>%
              slice_min(xvalue, n = 1) %>%
              summarise(mu        = case_when(candidate == "norm"    ~ mean,
                                              candidate == "lnorm"   ~ exp(meanlog + (sdlog^2 / 2)),
@@ -95,11 +93,10 @@ mmp1_leg  <- mmp1_dist %>% group_by(variable, igroup) %>%
                                              candidate == "lnorm"   ~ "Lognormal",
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
-                                             candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
+                                             candidate == "beta"    ~ "Beta")) %>%
              mutate(x      = rep(c(0.26, 0.58, 0.90), 5), 
                     y      = rep(seq(0.94, 0.10, by = -0.195), each = 3),
                     legend = paste(candidate, "\n μ =", round(mu,3)))
-
 mmp2_data <- ctry_data %>% dplyr::select(igroup,trate,Hmax,t_vax,arate,puptake) %>%
              pivot_longer(cols = c(trate,Hmax,t_vax,arate,puptake), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "trate" ~ "Surveillance: Testing Rate",
@@ -150,7 +147,8 @@ mmp2_labs <- data.frame(x      = rep(0.49, 5),
                                    "Seeding-to-Vaccination-Start Delay (days)",
                                    "Vaccines Administered Daily (per 100k/day)",
                                    "Coverage Relative to Herd-Immunity Threshold (conditioned on IFR = 1%) (%)"))
-mmp2_leg  <- mmp2_dist %>% group_by(variable, igroup) %>%
+mmp2_leg  <- mmp2_dist %>% 
+             group_by(variable, igroup) %>%
              slice_min(xvalue, n = 1) %>%
              summarise(mu        = case_when(candidate == "norm"    ~ mean,
                                              candidate == "lnorm"   ~ exp(meanlog + (sdlog^2 / 2)),
@@ -161,7 +159,7 @@ mmp2_leg  <- mmp2_dist %>% group_by(variable, igroup) %>%
                                              candidate == "lnorm"   ~ "Lognormal",
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
-                                             candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
+                                             candidate == "beta"    ~ "Beta")) %>%
              mutate(mu     = ifelse(variable == "Vaccination: Coverage", 100*mu, mu),
                     x      = rep(c(0.25, 0.57, 0.89), 5), 
                     y      = rep(seq(0.94, 0.10, by = -0.195), each = 3),

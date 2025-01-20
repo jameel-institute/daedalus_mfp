@@ -1,91 +1,109 @@
 library(dplyr)
 library(purrr)
 library(tidyr)
+library(readr)
 library(stringr)
+library(fitdistrplus)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
 library(ggplot2)
 library(ggh4x)
 library(cowplot)
 library(ggpattern)
+library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
-source("functions/calc_cost_pc.R")
-source("functions/find_best_strats.R")
-source("functions/calc_cost_bdown.R")
-source("functions/parse_inputs.R")
-source("functions/voi_dec.R")
-source("functions/voi_fit.R")
-source("functions/table_formatting.R")
+source("functions/calc_loss_pc.R")
+#source("functions/parse_inputs.R")
+#source("functions/voi_dec.R")
+#source("functions/voi_fit.R")
+#source("functions/table_formatting.R")
 
-file_list <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
-arch_data <- lapply(file_list, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
-             calc_cost_pc() %>% parse_inputs()
-arch_voi  <- voi_dec(arch_data, combn(c("mean_age", "sd_age", "skew_age", "le", "comm", "IGHC", "schoolA2", "workp", "EPOP", "TES", 
-                                        "gvapw", "wfh", "Tres", "t_tit", "trate", "sdb", "sdl", "Hmax", "t_vax", "arate", "puptake"), 
-                                      1, simplify = FALSE)) %>%
-             group_by(location, disease) %>% slice_max(order_by = res, n = 1) %>% ungroup()
-arch_data <- arch_data %>% left_join(arch_voi, by = c("location", "disease")) %>%
-             rowwise() %>% mutate(xaxis = get(parameter)) %>% ungroup()
-arch_fit  <- voi_fit(arch_data) %>% mutate(l = pmax(0,l)) %>% rename(xaxis = x, SECpc = y, lower = l, upper = u) %>%
-             group_by(location, disease, xaxis) %>% mutate(alpha = ifelse(SECpc == min(SECpc), 1, 0)) %>% ungroup() %>%  
-             mutate(group = cumsum(alpha == 0 | lag(alpha == 0, default = FALSE))) %>% 
-             group_by(location, disease, strategy) %>%
-             mutate(alpha = ifelse(any(alpha == 1) & alpha == 0, 0.25, alpha)) %>%
-             ungroup()
-arch_data <- arch_data %>% group_by(location, disease, strategy, xaxis) %>%
-             mutate(alpha = {l <- location
-                             d <- disease
-                             s <- strategy
-                             x <- xaxis
-                             arch_fit %>% filter(location == l, disease == d, strategy == s) %>%
-                                          slice(which.min(abs(xaxis - x))) %>% pull(alpha)}) %>% 
-             mutate(alpha = floor(alpha)) %>% ungroup() 
-arch_lab  <- arch_fit %>% group_by(disease, location) %>% 
-             summarize(xlabel = unique(parameter), .groups = 'drop') %>%
-             mutate(xlabel = case_when(xlabel == "mean_age" ~ "Mean Age (years)", 
-                                       xlabel == "sd_age" ~ "SD Age (years)", 
-                                       xlabel == "skew_age" ~ "Skewness Age", 
-                                       xlabel == "le" ~ "Life Expectancy (years)",
-                                       xlabel == "comm" ~ "Mean Household Contacts (per person/day)", 
-                                       xlabel == "IGHC" ~ "Inter-Generation Household Contacts (%)",
-                                       xlabel == "schoolA2" ~ "Mean School Contacts (per person/day)", 
-                                       xlabel == "workp" ~ "Mean Workplace Contacts (per person/day)",
-                                       xlabel == "EPOP" ~ "Employment-Population Ratio (%)", 
-                                       xlabel == "TES" ~ "Teritary Sector Employment (%)",
-                                       xlabel == "gvapw" ~ "GVA per Worker ($m)", 
-                                       xlabel == "wfh" ~ "Home-Working Ratio (%)",
-                                       xlabel == "Tres" ~ "Response Time (day)", 
-                                       xlabel == "t_tit" ~ "Testing Start-Time (day)",
-                                       xlabel == "trate" ~ "Testing Rate (per 100k/day)", 
-                                       xlabel == "sdb" ~ "Distancing Sensitivity",
-                                       xlabel == "sdl" ~ "Distancing Maximum", 
-                                       xlabel == "Hmax" ~ "Hospital Capacity (per 100k)",
-                                       xlabel == "t_vax" ~ "Vaccination Start-Time (day)", 
-                                       xlabel == "arate" ~ "Vaccination Rate (per 100k/day)",
-                                       xlabel == "puptake" ~ "Vaccination Coverage (%)"),  
-                    xx = rep(c(0.16, 0.49, 0.81), 7),
-                    xy = rep(seq(0.838, 0, by = -0.1375), each = 3))
+list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
+input_files  <- list_files[grepl("_data\\.csv$", list_files)]
+input_data   <- lapply(input_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols()
+output_files <- list_files[!grepl("_data\\.csv$", list_files)]
+output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
+                (function(x) calc_loss_pc(input_data,x)) %>% mutate(x = VLYLpc, y = GDPLpc + VSYLpc) %>%
+                group_by(location, disease, strategy) %>%
+                mutate(mean_x    = mean(x),
+                       q1_x      = quantile(x, 0.25),
+                       q3_x      = quantile(x, 0.75),
+                       bound_x   = quantile(x, 0.95),
+                       mean_y    = mean(y),
+                       q1_y      = quantile(y, 0.25),
+                       q3_y      = quantile(y, 0.75),
+                       bound_y   = quantile(y, 0.95),
+                       mean_SLpc = mean(SLpc)) %>%
+                group_by(location, disease) %>%
+                mutate(bound_x = max(bound_x), 
+                       bound_y = max(bound_y)) %>%
+                filter(x <= bound_x & y <= bound_y) %>%
+                group_by(location, country, disease) %>% 
+                mutate(min_strat = (SLpc == min(SLpc))) %>% #includes strategies with equal losses
+                group_by(location, disease, strategy) %>% 
+                mutate(alpha = 1 - abs(cor(x, y))) %>% 
+                #   mutate(alpha = case_when(
+                #            disease == "Influenza-2009-X" & strategy == "Elimination" & (GDPLpc+VSYLpc) < 50 ~ alpha/6,
+                #            disease == "Influenza-1957-X" & strategy != "No Closures" ~ alpha/3,
+                #            disease == "Influenza-1918-X" | 
+                #            disease == "Covid-Delta-X" | 
+                #            disease == "Covid-Wildtype-X" & strategy == "No Closures" ~ alpha/3,
+                #            location == "HIC" & disease == "SARS-X" & strategy == "No Closures" ~ alpha*20,
+                #            TRUE ~ alpha)) %>%
+                mutate(alpha = 0.05 + alpha/10) %>%
+                mutate(alpha = ifelse(min_strat, 1, alpha)) %>%
+                ungroup()
+output_stats <- output_data %>% #for quicker plotting
+                group_by(location, disease, strategy) %>% 
+                summarise(mean_x    = unique(mean_x), 
+                          q1_x      = unique(q1_x), 
+                          q3_x      = unique(q3_x),
+                          mean_y    = unique(mean_y), 
+                          q1_y      = unique(q1_y), 
+                          q3_y      = unique(q3_y),
+                          mean_SLpc = unique(mean_SLpc)) %>%
+                group_by(location, disease) %>%
+                mutate(min_mean  = (mean_SLpc == min(mean_SLpc)),
+                       min_mean2 = {
+                         strategy_means <- mean_SLpc[!duplicated(strategy)]
+                         sorted_means   <- sort(strategy_means)
+                         (mean_SLpc == sorted_means[2])}) %>%
+                group_by(location, disease, strategy) %>%
+                mutate(min_any   = any(min_mean, min_mean2),
+                       alpha     = ifelse(min_any, 1, 0.25))
+output_grid  <- output_data %>%
+                group_by(location, disease) %>%
+                summarise(intercept = seq(0, unique(bound_x + bound_y), length.out = 20),
+                          bound     = max(SLpc[min_strat == TRUE])) 
 
-gg <- ggplot(data = arch_data, aes(x = xaxis, y = SECpc, color = strategy, alpha = alpha)) +
+gg <- ggplot(output_stats, aes(x = x, y = y, fill = strategy, alpha = alpha)) +
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
-      geom_ribbon(data = arch_fit %>% filter(alpha == 1), 
-                  aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), color = NA, alpha = 0.25) +
-      geom_point(shape = 19, size = 0.2, stroke = 0.25) +
-      geom_line(data = arch_fit, linewidth = 0.7) +
+      geom_abline(data = output_grid, aes(slope = -1, intercept = intercept), linewidth = 0.1, color = "grey") +  
+      geom_point(data = output_data %>% filter(min_strat == FALSE),
+                 aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha),
+                 shape = 19, size = 0.25, stroke = 0.25) +
+      geom_point(data = output_data %>% filter(min_strat == TRUE),
+                 aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha),
+                 shape = 19, size = 0.25, stroke = 0.25) +
+      # geom_point(data = arch_data %>% filter(min_strat == TRUE & strategy == "No Closures"),
+      #            aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha),
+      #            shape = 19, size = 0.2, stroke = 0.25) +
+      geom_abline(data = output_grid, aes(slope = -1, intercept = bound), linewidth = 0.25, color = "black") +
+      geom_linerange(aes(x = mean_x, y = mean_y, xmin = q1_x, xmax = q3_x), linewidth = 0.25, color = "black") +
+      geom_linerange(aes(x = mean_x, y = mean_y, ymin = q1_y, ymax = q3_y), linewidth = 0.25, color = "black") +
+      geom_point(aes(x = mean_x, y = mean_y),
+                 shape = 21, size = 2.5, stroke = 0.25, color = "black") +
       scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy", 
                                     "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
       scale_fill_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy", 
                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
-      scale_alpha(range = c(0, 1)) +     
+      scale_alpha_continuous(range = c(0.05, 1)) +
       theme_bw() +
-      scale_x_log10(expand = c(0, 0), position = "bottom") +
-      scale_y_continuous(expand = c(0, 0), position = "right") +
-      #facetted_pos_scales(x = list(disease == "Covid-Omicron-X" & location == "HIC" ~ scale_x_continuous(labels = "Hospital Capacity"))) +   
-      theme(panel.spacing = unit(1.25, "lines")) +
-      labs(title = "", x = "", y = "Societal Loss (% of GDP)") +
-      guides(color = guide_legend(title = NULL), fill = "none", alpha = "none") + 
-      theme(legend.position = c(0.14, 0.9995), legend.justification = c(1, 1), legend.box.just = "right", 
-            legend.key.size = unit(0.5, "cm"), legend.text = element_text(size = 7))
-gg <- ggdraw(gg) + draw_text(arch_lab$xlabel, x = arch_lab$xx, y = arch_lab$xy, hjust = 0.5, vjust = 0.5, size = 9)
+      scale_x_continuous(position = "bottom", expand = c(0.01, 0)) +
+      scale_y_continuous(position = "right", expand = c(0.02, 0)) +
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.spacing = unit(1.00, "lines")) +
+      labs(title = "", x = "VLYL (% of GDP)", y = "GDPL + VSYL (% of GDP)") +
+      guides(color = "none", fill = guide_legend(title = NULL), alpha = "none") + 
+      theme(legend.position = "top", legend.box.just = "right", legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
-ggsave("figure_3.png", plot = gg, height = 14, width = 10)
+ggsave("figure_3n.png", plot = gg, height = 14, width = 10)
