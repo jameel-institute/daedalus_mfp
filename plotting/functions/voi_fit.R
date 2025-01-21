@@ -7,7 +7,6 @@ voi_fit <- function(df) {
                                               pars       = parameter,
                                               return_fit = TRUE)) %>%
                unnest_wider(res) %>%      
-               mutate(x = if_else(parameter %in% c("Hmax","trate","sdb","sdc","arate"), 10^x,x)) %>%
                ungroup() 
   return(df)
   
