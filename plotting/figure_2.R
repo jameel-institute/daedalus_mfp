@@ -4,6 +4,8 @@ library(tidyr)
 library(readr)
 library(stringr)
 library(fitdistrplus)
+library(caret)
+library(MASSExtra)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
 library(ggplot2)
 library(ggh4x)
@@ -44,16 +46,16 @@ evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, 
                 group_by(location, disease, strategy) %>%
                 mutate(alpha = ifelse(!any(alpha == 1) & alpha == 0.25, 0, alpha)) %>%
                 ungroup()
-output_data  <- output_data %>% #slow
-                group_by(location, disease, strategy, xaxis) %>%
-                mutate(alpha = {l <- location
-                                d <- disease
-                                s <- strategy
-                                x <- xaxis
-                                evppi_fits %>% filter(location == l, disease == d, strategy == s) %>%
-                                               slice(which.min(abs(xaxis - x))) %>% pull(alpha)}) %>%
-                mutate(alpha = floor(alpha)) %>%
-                ungroup()
+# output_data  <- output_data %>% #slow
+#                 group_by(location, disease, strategy, xaxis) %>%
+#                 mutate(alpha = {l <- location
+#                                 d <- disease
+#                                 s <- strategy
+#                                 x <- xaxis
+#                                 evppi_fits %>% filter(location == l, disease == d, strategy == s) %>%
+#                                                slice(which.min(abs(xaxis - x))) %>% pull(alpha)}) %>%
+#                 mutate(alpha = floor(alpha)) %>%
+#                 ungroup()
 evppi_labs  <-  evppi_fits %>% 
                 group_by(disease, location) %>%
                 summarize(xlabel = unique(parameter), .groups = "drop") %>% #may vary by income group(@)
@@ -84,7 +86,7 @@ gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alp
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
       geom_ribbon(data = evppi_fits %>% filter(alpha == 1), 
                   aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), color = NA, alpha = 0.25) +
-      geom_point(shape = 19, size = 0.25, stroke = 0.25) +
+      #geom_point(shape = 19, size = 0.25, stroke = 0.25) +
       geom_line(data = evppi_fits, linewidth = 0.5) +
       scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
                                     "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +

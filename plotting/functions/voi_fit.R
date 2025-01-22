@@ -1,24 +1,18 @@
 voi_fit <- function(df) {
   
   df <- df %>% group_by(location, disease, strategy) %>%
+               mutate(xaxis  = get(unique(parameter)),
+                      lambda = if (all(xaxis > 0)) {BoxCoxTrans(xaxis)$lambda} else {NA},
+                      xaxis  = if (all(xaxis > 0)) {predict(BoxCoxTrans(xaxis), xaxis)} else {xaxis}) %>%
                summarise(parameter = unique(parameter),
+                         lambda    = unique(lambda),
                          res       = evppivar(outputs    = SLpc,
-                                              inputs     = cur_data() %>% dplyr::select(unique(parameter)) %>% as.data.frame(),
-                                              pars       = parameter,
+                                              inputs     = pick(xaxis),
+                                              pars       = "xaxis",
                                               return_fit = TRUE)) %>%
-               unnest_wider(res) %>%      
+               unnest_wider(res) %>%
+               mutate(x = if (!is.na(unique(lambda))) {bc_inv(x, unique(lambda))} else {x}) %>%
                ungroup() 
   return(df)
   
 }
-
-# %>% mutate(trate = log10(trate),
-#            sdb   = log10(sdb),
-#            Hmax  = log10(Hmax),
-#            arate = log10(arate)) %>% %>%
-# mutate(parts = str_split(parameter, ",", simplify = TRUE),
-#        p1    = parts[, 1],
-#        p2    = if (ncol(parts) == 2) {parts[, 2]} else {NA_character_},
-#        x     = if_else(p1 %in% c("trate", "sdb", "Hmax", "arate"), 10^x, x),
-#        y     = if_else(p2 %in% c("trate", "sdb", "Hmax", "arate"), 10^y, y)) %>%
-# select(-parts, -p1, -p2)

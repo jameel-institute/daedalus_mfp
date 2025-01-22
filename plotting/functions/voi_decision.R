@@ -4,6 +4,7 @@ voi_decision <- function(df, p_list) {
                rename(t1 = "No Closures", t2 = "School Closures", t3 = "Economic Closures", t4 = "Elimination") %>%
                mutate(across(c(t1, t2, t3, t4), ~ - .)) %>% #net benefit is negative loss
                group_by(location, disease) %>%
+               mutate(across(all_of(unlist(p_list)), ~ if (all(.x > 0)) {predict(BoxCoxTrans(.x), .x)} else {.x})) %>% 
                summarise(parameter = sapply(p_list, function(x) paste(x, collapse = ",")),
                          res       = evppi(outputs = cur_data() %>% dplyr::select(t1, t2, t3, t4) %>% as.data.frame(),
                                            inputs  = pick(unlist(p_list)),
@@ -14,21 +15,3 @@ voi_decision <- function(df, p_list) {
   return(df)
   
 }
-
-# mutate(trate = log10(trate),
-#        sdb   = log10(sdb),
-#        Hmax  = log10(Hmax),
-#        arate = log10(arate)) %>% 
-          
-          
-          
-           
-
-
-
-          
-          
-
-
-          
-          
