@@ -1,5 +1,11 @@
-
 fitted_gam <- function(y, inputs, pars, verbose=FALSE, ...){
+  
+    #new
+    is_negative <- all(y <= 0)
+    if (is_negative) 
+      {y <- -y} 
+    else {y}
+
     opts <- list(...)
     gam_formula <- opts$gam_formula
     pars <- clean_pars(pars)
@@ -7,8 +13,8 @@ fitted_gam <- function(y, inputs, pars, verbose=FALSE, ...){
     if (is.null(gam_formula))
         gam_formula <- default_gam_formula(pars)
     gam_formula <- formula(sprintf("y ~ %s", gam_formula))
-    model <- mgcv::gam(gam_formula, data = inputs)
-    res <- model$fitted
+    model <- mgcv::gam(gam_formula,  family = Gamma(link = "log"), data = inputs)
+    res <- (model$fitted) * ifelse(is_negative, -1, 1)
     attr(res, "model") <- model
     res
 }

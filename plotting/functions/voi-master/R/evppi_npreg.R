@@ -76,10 +76,12 @@ fitted_npreg <- function(nb, inputs, pars, method, se=FALSE, B=NULL, verbose, ..
     nopt <- ncol(nb)
     nsim <- nrow(nb)
     ## Transforming to incremental net benefit allows us to do one fewer regression
+    # undoing this due to log link
     ref <- list(...)$ref # reference decision option
     if (is.null(ref)) ref <- 1
     else ref <- check_ref(ref, nb)
-    inb <- nb[, -ref, drop=FALSE] - nb[,ref]
+    #inb <- nb[, -ref, drop=FALSE] - nb[,ref]
+    inb <- nb
     fitted <- matrix(0, nrow=nsim, ncol=nopt)
     if (se) {
         if (method=="bart"){
@@ -88,13 +90,13 @@ fitted_npreg <- function(nb, inputs, pars, method, se=FALSE, B=NULL, verbose, ..
         }
         fitted_rep <- array(0, dim=c(B, nsim, nopt))
     }
-    models <- vector(nopt-1, mode="list")
-    for (i in 1:(nopt-1)){
-        if (verbose) message(sprintf("Decision option %s",i+1)) 
+    models <- vector(nopt, mode="list")
+    for (i in 1:nopt){
+        if (verbose) message(sprintf("Decision option %s",i)) 
         fit <- fitted_npreg_fn(method)(y=inb[,i], inputs=inputs, pars=pars, verbose=verbose, se=se, ...) 
-        fitted[,i+1] <- as.vector(fit)
+        fitted[,i] <- as.vector(fit)
         if (se){
-            fitted_rep[,,i+1] <- fitted_npreg_rep_call(method, attr(fit,"model"), B, verbose)
+            fitted_rep[,,i] <- fitted_npreg_rep_call(method, attr(fit,"model"), B, verbose)
         }
         models[[i]] <- attr(fit, "model")
     }

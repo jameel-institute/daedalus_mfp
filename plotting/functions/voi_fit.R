@@ -1,9 +1,9 @@
 voi_fit <- function(df) {
   
   df <- df %>% group_by(location, disease, strategy) %>%
-               mutate(xaxis  = get(unique(parameter)),
-                      lambda = if (all(xaxis > 0)) {BoxCoxTrans(xaxis)$lambda} else {NA},
-                      xaxis  = if (all(xaxis > 0)) {predict(BoxCoxTrans(xaxis), xaxis)} else {xaxis}) %>%
+               mutate(xaxis  = get(unique(parameter)) + 1e-10,
+                      lambda = if (all(xaxis > 0)) {BoxCox.lambda(xaxis, lower = 0, upper = 1)} else {NA},
+                      xaxis  = if (all(xaxis > 0)) {BoxCox(xaxis, unique(lambda))} else {xaxis}) %>%
                summarise(parameter = unique(parameter),
                          lambda    = unique(lambda),
                          res       = evppivar(outputs    = SLpc,
@@ -11,7 +11,7 @@ voi_fit <- function(df) {
                                               pars       = "xaxis",
                                               return_fit = TRUE)) %>%
                unnest_wider(res) %>%
-               mutate(x = if (!is.na(unique(lambda))) {bc_inv(x, unique(lambda))} else {x}) %>%
+               mutate(x = if (!is.na(unique(lambda))) {InvBoxCox(x, unique(lambda))} else {x}) %>%
                ungroup() 
   return(df)
   
