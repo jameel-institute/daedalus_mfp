@@ -82,10 +82,10 @@ gg <- ggplot(output_stats, aes(x = x, y = y, fill = strategy, alpha = alpha)) +
       geom_abline(data = output_grid, aes(slope = -1, intercept = intercept), linewidth = 0.1, color = "grey") +  
       geom_point(data = output_data %>% filter(min_strat == FALSE),
                  aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha),
-                 shape = 19, size = 0.25, stroke = 0.25) +
+                 shape = 19, size = 0.10, stroke = 0.25) +
       geom_point(data = output_data %>% filter(min_strat == TRUE),
                  aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha),
-                 shape = 19, size = 0.25, stroke = 0.25) +
+                 shape = 19, size = 0.10, stroke = 0.25) +
       # geom_point(data = arch_data %>% filter(min_strat == TRUE & strategy == "No Closures"),
       #            aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha),
       #            shape = 19, size = 0.2, stroke = 0.25) +

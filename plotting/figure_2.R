@@ -37,24 +37,53 @@ output_data  <- output_data %>% left_join(evppi_values, by = c("location", "dise
                 rowwise() %>% 
                 mutate(xaxis = get(parameter)) %>% 
                 ungroup()
-evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, upper = u) %>%
-                group_by(location, disease, xaxis) %>% 
-                mutate(alpha = ifelse(SLpc == min(SLpc), 1, 0.25)) %>% 
+evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, upper = u)
+#prettification: bound x, define alpha, bound y, labels
+output_data  <- output_data %>%
+                group_by(location, disease) %>%
+                mutate(bound_xl = quantile(xaxis, 0.05),
+                       bound_xu = quantile(xaxis, 0.95)) %>%
                 ungroup() %>%
-                mutate(group = cumsum(alpha == 0.25 | lag(alpha == 0.25, default = FALSE))) %>%
+                filter(xaxis >= bound_xl & xaxis <= bound_xu)
+evppi_fits  <-  evppi_fits %>%
+                left_join(output_data %>% dplyr::select(location, disease, bound_xl, bound_xu) %>% 
+                          distinct(location, disease, .keep_all = TRUE), by = c("location", "disease")) %>%
+                filter(xaxis >= bound_xl & xaxis <= bound_xu) %>%
+                group_by(location, disease, xaxis) %>% 
+                mutate(alpha = ifelse(SLpc == min(SLpc), 1, 0.50)) %>% 
+                ungroup() %>%
+                mutate(group = cumsum(alpha == 0.50 | lag(alpha == 0.50, default = FALSE))) %>%
                 group_by(location, disease, strategy) %>%
-                mutate(alpha = ifelse(!any(alpha == 1) & alpha == 0.25, 0, alpha)) %>%
+                mutate(alpha = ifelse(!any(alpha == 1) & alpha == 0.50, 0, alpha)) %>%
                 ungroup()
-# output_data  <- output_data %>% #slow
-#                 group_by(location, disease, strategy, xaxis) %>%
-#                 mutate(alpha = {l <- location
-#                                 d <- disease
-#                                 s <- strategy
-#                                 x <- xaxis
-#                                 evppi_fits %>% filter(location == l, disease == d, strategy == s) %>%
-#                                                slice(which.min(abs(xaxis - x))) %>% pull(alpha)}) %>%
-#                 mutate(alpha = floor(alpha)) %>%
-#                 ungroup()
+evppi_fitsX  <- evppi_fits %>%
+                group_by(location, disease) %>% 
+                summarise(nxaxis = unique(xaxis), .groups = "drop")
+output_dataX <- output_data %>% 
+                group_by(location, disease) %>% 
+                summarise(xaxis = unique(xaxis), .groups = "drop") %>%
+                left_join(evppi_fitsX, by = c("location", "disease")) %>%
+                group_by(location, disease, xaxis) %>% 
+                slice(which.min(abs(xaxis - nxaxis)))
+output_data  <- output_data %>%
+                left_join(output_dataX, by = c("location", "disease", "xaxis")) %>%
+                left_join(evppi_fits %>% rename(nxaxis = xaxis) %>% dplyr::select(location, disease, strategy, nxaxis, alpha),
+                          by = c("location", "disease", "strategy", "nxaxis")) %>%
+                mutate(alpha = 0.5*floor(alpha))
+evppi_fitsY  <- evppi_fits %>%
+                filter(alpha > 0) %>%
+                group_by(location, disease) %>% 
+                summarise(lower = min(lower),
+                          upper = max(upper),, .groups = "drop")
+output_data <-  output_data %>%
+                left_join(evppi_fitsY, by = c("location", "disease")) %>%
+                group_by(location, disease) %>%
+                mutate(bound_yl = quantile(SLpc[alpha > 0], 0.05),
+                       bound_yu = quantile(SLpc[alpha > 0], 0.95)) %>%
+                ungroup() %>%
+                mutate(bound_yl = min(bound_yl, lower),
+                       bound_yu = max(bound_yu, upper)) %>%
+                filter(SLpc >= bound_yl & SLpc <= bound_yu)
 evppi_labs  <-  evppi_fits %>% 
                 group_by(disease, location) %>%
                 summarize(xlabel = unique(parameter), .groups = "drop") %>% #may vary by income group(@)
@@ -83,9 +112,10 @@ evppi_labs  <-  evppi_fits %>%
 
 gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alpha)) +
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
-      geom_ribbon(data = evppi_fits %>% filter(alpha == 1), 
-                  aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), color = NA, alpha = 0.25) +
-      #geom_point(shape = 19, size = 0.25, stroke = 0.25) +
+      geom_ribbon(data = evppi_fits %>% filter(alpha != 0), 
+                  aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), 
+                  color = NA, alpha = 0.50) +
+      geom_point(shape = 19, size = 0.10, stroke = 0.25) +
       geom_line(data = evppi_fits, linewidth = 0.5) +
       scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
                                     "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
@@ -93,8 +123,8 @@ gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alp
                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
       scale_alpha(range = c(0, 1)) +
       theme_bw() +
-      scale_x_continuous(expand = c(0, 0), position = "bottom") +
-      scale_y_continuous(expand = c(0, 0), position = "right") +
+      scale_x_log10(expand = c(0, 0), position = "bottom") +
+      scale_y_log10(expand = c(0, 0), position = "right") +
       #facetted_pos_scales(x = list(disease == "Covid-Omicron-X" & location == "HIC" ~ scale_x_continuous(labels = "Hospital Capacity"))) +
       theme(panel.spacing = unit(1.25, "lines")) +
       labs(title = "", x = "", y = "Societal Loss (% of GDP)") +

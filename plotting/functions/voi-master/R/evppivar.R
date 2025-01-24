@@ -64,7 +64,7 @@ evppivar <- function(outputs,
       if (length(pars) == 1) {
         grid   <- expand.grid(x = x_seq)
         colnames(grid) <- pars
-        pred   <- predict(model, newdata = grid, se.fit = TRUE)
+        pred   <- predict(model, newdata = grid, type = "response", se.fit = TRUE)
         grid$y <- pred$fit
         grid$l <- pred$fit - pred$se.fit*qnorm(1-0.05/2)
         grid$u <- pred$fit + pred$se.fit*qnorm(1-0.05/2)
