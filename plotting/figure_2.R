@@ -45,7 +45,7 @@ output_data  <- output_data %>%
                        bound_xu = quantile(xaxis, 0.95)) %>%
                 ungroup() %>%
                 filter(xaxis >= bound_xl & xaxis <= bound_xu)
-evppi_fits  <-  evppi_fits %>%
+evppi_fits   <- evppi_fits %>%
                 left_join(output_data %>% dplyr::select(location, disease, bound_xl, bound_xu) %>% 
                           distinct(location, disease, .keep_all = TRUE), by = c("location", "disease")) %>%
                 filter(xaxis >= bound_xl & xaxis <= bound_xu) %>%
@@ -70,21 +70,22 @@ output_data  <- output_data %>%
                 left_join(evppi_fits %>% rename(nxaxis = xaxis) %>% dplyr::select(location, disease, strategy, nxaxis, alpha),
                           by = c("location", "disease", "strategy", "nxaxis")) %>%
                 mutate(alpha = 0.5*floor(alpha))
+evppi_fits   <- evppi_fits %>%
+                filter(alpha > 0)
 evppi_fitsY  <- evppi_fits %>%
-                filter(alpha > 0) %>%
                 group_by(location, disease) %>% 
                 summarise(lower = min(lower),
                           upper = max(upper),, .groups = "drop")
-output_data <-  output_data %>%
+output_data  <- output_data %>%
                 left_join(evppi_fitsY, by = c("location", "disease")) %>%
                 group_by(location, disease) %>%
                 mutate(bound_yl = quantile(SLpc[alpha > 0], 0.05),
                        bound_yu = quantile(SLpc[alpha > 0], 0.95)) %>%
-                ungroup() %>%
                 mutate(bound_yl = min(bound_yl, lower),
                        bound_yu = max(bound_yu, upper)) %>%
+                ungroup() %>%
                 filter(SLpc >= bound_yl & SLpc <= bound_yu)
-evppi_labs  <-  evppi_fits %>% 
+evppi_labs   <- evppi_fits %>% 
                 group_by(disease, location) %>%
                 summarize(xlabel = unique(parameter), .groups = "drop") %>% #may vary by income group(@)
                 mutate(xlabel = case_when(xlabel == "mean_age" ~ "Average Age (years)",
@@ -112,7 +113,7 @@ evppi_labs  <-  evppi_fits %>%
 
 gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alpha)) +
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
-      geom_ribbon(data = evppi_fits %>% filter(alpha != 0), 
+      geom_ribbon(data = evppi_fits, 
                   aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), 
                   color = NA, alpha = 0.50) +
       geom_point(shape = 19, size = 0.10, stroke = 0.25) +
