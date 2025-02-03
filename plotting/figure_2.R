@@ -1,3 +1,9 @@
+# x: what if you didn't transform?
+# gam formula: cr vs. cs vs. ps? # of knots k? fx = TRUE? not seeing much difference
+# gam: select = TRUE? gamma = 2? method = "REML"? ps = 100+? only ps making a difference
+# monotonicity: mono.con (horrible), scam package
+# filter relevant strategies from fig 1 first then do evppi to decide between them
+
 library(dplyr)
 library(purrr)
 library(tidyr)
@@ -37,24 +43,28 @@ output_data  <- output_data %>% left_join(evppi_values, by = c("location", "dise
                 rowwise() %>% 
                 mutate(xaxis = get(parameter)) %>% 
                 ungroup()
-evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, upper = u)
+evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, upper = u) %>% 
+                left_join(evppi_values, by = c("location", "disease", "parameter"))
 #prettification: bound x, define alpha, bound y, labels
 output_data  <- output_data %>%
                 group_by(location, disease) %>%
                 mutate(bound_xl = quantile(xaxis, 0.05),
                        bound_xu = quantile(xaxis, 0.95)) %>%
-                ungroup() %>%
-                filter(xaxis >= bound_xl & xaxis <= bound_xu)
+                ungroup() #%>%
+                #filter(xaxis >= bound_xl & xaxis <= bound_xu)
 evppi_fits   <- evppi_fits %>%
                 left_join(output_data %>% dplyr::select(location, disease, bound_xl, bound_xu) %>% 
                           distinct(location, disease, .keep_all = TRUE), by = c("location", "disease")) %>%
-                filter(xaxis >= bound_xl & xaxis <= bound_xu) %>%
+                #filter(xaxis >= bound_xl & xaxis <= bound_xu) %>%
                 group_by(location, disease, xaxis) %>% 
                 mutate(alpha = ifelse(SLpc == min(SLpc), 1, 0.50)) %>% 
                 ungroup() %>%
                 mutate(group = cumsum(alpha == 0.50 | lag(alpha == 0.50, default = FALSE))) %>%
                 group_by(location, disease, strategy) %>%
                 mutate(alpha = ifelse(!any(alpha == 1) & alpha == 0.50, 0, alpha)) %>%
+                ungroup() %>%
+                group_by(location, disease) %>%
+                mutate(alpha = ifelse(res < 0.01 & alpha > 0, 0.10, alpha)) %>%
                 ungroup()
 evppi_fitsX  <- evppi_fits %>%
                 group_by(location, disease) %>% 
@@ -69,7 +79,7 @@ output_data  <- output_data %>%
                 left_join(output_dataX, by = c("location", "disease", "xaxis")) %>%
                 left_join(evppi_fits %>% rename(nxaxis = xaxis) %>% dplyr::select(location, disease, strategy, nxaxis, alpha),
                           by = c("location", "disease", "strategy", "nxaxis")) %>%
-                mutate(alpha = 0.5*floor(alpha))
+                mutate(alpha = 0.50*floor(alpha))
 evppi_fits   <- evppi_fits %>%
                 filter(alpha > 0)
 evppi_fitsY  <- evppi_fits %>%
@@ -114,8 +124,8 @@ evppi_labs   <- evppi_fits %>%
 gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alpha)) +
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
       geom_ribbon(data = evppi_fits, 
-                  aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy)), 
-                  color = NA, alpha = 0.50) +
+                  aes(ymin = lower, ymax = upper, fill = strategy, group = interaction(group, strategy), alpha = 0.50*floor(alpha)), 
+                  color = NA) +
       geom_point(shape = 19, size = 0.10, stroke = 0.25) +
       geom_line(data = evppi_fits, linewidth = 0.5) +
       scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
