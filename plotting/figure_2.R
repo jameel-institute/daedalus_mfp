@@ -1,4 +1,5 @@
 # x: what if you didn't transform?
+# x: what if you didn't even parse?
 # gam formula: cr vs. cs vs. ps? # of knots k? fx = TRUE? not seeing much difference
 # gam: select = TRUE? gamma = 2? method = "REML"? ps = 100+? only ps making a difference
 # monotonicity: mono.con (horrible), scam package
