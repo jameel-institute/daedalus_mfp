@@ -112,13 +112,12 @@ if i~=5;
     asc_a  = max(trate/10^5*(0*(1-propCT) + (1-ps)*propCT),asc_a);
     asc_s  = max(trate/10^5*(1*(1-propCT) + ps*propCT),asc_s);    
 
-    asc_a  = asc_a.*(tout>p2.t_tit).*(tout<p2.end);    
-    asc_s  = asc_s.*(tout>p2.t_tit).*(tout<p2.end);    
+    asc_a  = asc_a.*(tout>=p2.t_tit);    
+    asc_s  = asc_s.*(tout>=p2.t_tit);    
 
 else
     asc_a  = zeros(size(tout));
     asc_s  = zeros(size(tout));
-
 end
 
 X  = data.xconf(i,:).*ones(length(tout),lx);

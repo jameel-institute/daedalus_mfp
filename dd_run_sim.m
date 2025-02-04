@@ -105,12 +105,7 @@ mu  = pd./Th;
 
 %% CASE ISOLATION AND TRACING
 
-if t<p2.t_tit;   
-    asc_a = 0;
-    asc_s = 0;
-    tm_a  = 1;
-    tm_s  = 1;
-elseif t<p2.end && i~=5;
+if t>=p2.t_tit && i~=5;
     incid  = max(0,10^5*((dis.siga+dis.sigs)*sum(E+Ev1))/sum(data.Npop));
     asc_s  = 1/(1+exp(p2.asca + p2.ascb*log10(incid) + p2.ascc*log10(p2.trate)));
     propCT = 1/(1+exp(p2.pcta + p2.pctb*log10(incid)));
