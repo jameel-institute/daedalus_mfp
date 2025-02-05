@@ -93,7 +93,7 @@ isterminal(3) = 1;
 
 %% event 4: end of closures and testing
 %remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
-E4iflag = floor(i/5);
+E4iflag = abs((i-2)*(i-3));
 E4tflag = max(0,data.tvec(end-1)+0.1-t);
 E4vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
 if E4iflag == 0 && E4tflag == 0 && E4vflag ~=0;

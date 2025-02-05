@@ -102,8 +102,9 @@ p2.sdc  = data.sdc; %distancing time relaxation
 r       = dd_calc_r(dis,dis.h,dis.g2,dis.mu,dis.g3,data.NNs, ...
                     zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1), ...
                     data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
+r       = max(0,r);
 Td      = log(2)/r;
-p2.Tres = Tres*Td;
+p2.Tres = min(Tres*Td, data.tvec(1)+180);%must respond before vaccine rollout
 
 %Surveillance
 t_tit    = data.t_tit;%case-isolation-tracing start time (in terms of doubling times)

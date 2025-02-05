@@ -77,7 +77,7 @@ isterminal(4) = 1;
 
 %% event 5: end of closures and testing
 %remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign and (below 25% occupancy or low non-lockdown growth rate or 90 days since end of rollout), 2.5 years after response time
-E5iflag = floor(i/5);
+E5iflag = abs((i-2)*(i-3)*(i-4));
 E5tflag = max(0,data.tvec(end-1)+0.1-t);
 E5vflag = (max(0,p2.end-t) + max(0,occ-0.25*p2.Hmax)*(max(0,r-0.025) + abs((i-1)*(i-2)*(i-4)))*max(0,p2.end+90-t))*max(0,p2.Tres+2.5*365-t);
 if E5iflag == 0 && E5tflag == 0 && E5vflag ~=0;
