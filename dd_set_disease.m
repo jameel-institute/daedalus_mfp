@@ -95,16 +95,18 @@ dis.lg = [repmat(lg(adInd),1,lx),lg];
 p2 = struct;
 
 %Distancing
-Tres    = data.Tres;%response time (in terms of doubling times)
-p2.sda  = data.sda; %distancing multiplier intercept
-p2.sdb  = data.sdb; %distancing death sensitivity
-p2.sdc  = data.sdc; %distancing time relaxation
-r       = dd_calc_r(dis,dis.h,dis.g2,dis.mu,dis.g3,data.NNs, ...
-                    zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1), ...
-                    data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
-r       = max(0,r);
-Td      = log(2)/r;
-p2.Tres = min(Tres*Td, data.tvec(1)+240);%must respond before vaccine rollout
+Tres     = data.Tres;%response time (in terms of doubling times)
+p2.sda   = data.sda; %distancing multiplier intercept
+p2.sdb   = data.sdb; %distancing death sensitivity
+p2.sdc   = data.sdc; %distancing time relaxation
+r        = dd_calc_r(dis,dis.h,dis.g2,dis.mu,dis.g3,data.NNs, ...
+                     zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1), ...
+                     data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);
+r        = max(0,r);
+Td       = log(2)/r;
+p2.Tres  = min(Tres*Td, data.tvec(1)+240);%must respond before vaccine rollout
+p2.tmand = NaN;
+p2.dmand = NaN;
 
 %Surveillance
 t_tit    = data.t_tit;%case-isolation-tracing start time (in terms of doubling times)

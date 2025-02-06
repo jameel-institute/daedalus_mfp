@@ -26,6 +26,8 @@ while i < 6;
         i         = inext;
         data.tvec = [data.tvec(1:end-1),t0,tend];
         p2.Tres   = min(p2.Tres,tout(end));
+        p2.tmand  = t0-p2.Tres;
+        p2.dmand  = output.dmand;
     else
         i              = inext;
         data.tvec(end) = tout(end);
@@ -146,7 +148,7 @@ sd_fun = @(a,b,c,t,d) 1/(1 + exp(a + b*log10(d) - c*t));%here, t is time since r
 if i==1;%strcmp(data.inp3,'No Closures')||
     betamod = 1;
 elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sda,p2.sdb,p2.sdc,14,2));
+    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,p2.tmand,max(p2.dmand,ddk));
 else
     betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk);
 end

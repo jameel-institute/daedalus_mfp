@@ -58,7 +58,7 @@ sd_fun = @(a,b,c,t,d) 1./(1 + exp(a + b.*log10(d) - c.*t));%here, t is time sinc
 if i==1;%strcmp(data.inp3,'No Closures')||
     betamod = ones(size(occ));
 elseif any(i==data.imand);
-    betamod = min(sd_fun(p2.sda,p2.sdb,p2.sdc,tout-p2.Tres,ddk), sd_fun(p2.sda,p2.sdb,p2.sdc,14,2));
+    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,p2.tmand,max(p2.dmand,ddk));
 else
     betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,tout-p2.Tres,ddk);
 end
@@ -122,6 +122,8 @@ end
 
 X  = data.xconf(i,:).*ones(length(tout),lx);
 hw = data.hw(i,:).*ones(length(tout),lx);
+
+output.dmand = ddk(end);
 
 %% STORE OUTPUT AT EACH ITERATION 
 
