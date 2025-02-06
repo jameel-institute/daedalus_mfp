@@ -68,7 +68,7 @@ isterminal(3) = 1;
 %% event 4: partial reopening
 %partially reopen after 1 week if hospital occupancy less than 25% of capacity
 E4iflag = abs(i-3);
-E4tflag = max(0,data.tvec(end-1)+7-t);
+E4tflag = max(0,data.tvec(end-1)+14-t);
 E4vflag = max(0,occ-0.25*p2.Hmax);  
 
 value(4)      = E4iflag + E4tflag + E4vflag;

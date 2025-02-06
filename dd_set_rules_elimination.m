@@ -66,7 +66,7 @@ isterminal(1) = 1;
 %% event 2: domestic reopening
 %reopen domestic economy after 1 week if Rt<1  
 E2iflag = abs(i-2);
-E2tflag = max(0,data.tvec(end-1)+7-t);
+E2tflag = max(0,data.tvec(end-1)+14-t);
 E2vflag = 1;
 if E2iflag == 0 && E2tflag == 0;
     [Rt1,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
@@ -80,7 +80,7 @@ isterminal(2) = 1;
 %% event 3: relockdown
 %lockdown again after 1 week if Rt>1.2
 E3iflag = abs(i-3);
-E3tflag = max(0,data.tvec(end-1)+7-t);
+E3tflag = max(0,data.tvec(end-1)+14-t);
 E3vflag = 1;
 if E3iflag == 0 && E3tflag == 0;
     [Rt1,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,3),1,sig1,sig2,sig3,sig4,tm_a,tm_s);
