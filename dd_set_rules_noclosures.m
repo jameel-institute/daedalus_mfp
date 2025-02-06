@@ -19,26 +19,22 @@ g2   = (1-ph)./Ts;
 h    = ph./Ts;
 occ  = sum(H+Hv1);
 
-%% event 1: end of testing
-%stop testing at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
-E1iflag = floor(i/5);
+%% event 1: first measures
+%distancing at first occurence of: response time, 95% of hospital capacity
+E1iflag = abs(i-1);
 E1tflag = max(0,data.tvec(end-1)+0.1-t);
-E1vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
-if E1iflag == 0 && E1tflag == 0 && E1vflag ~=0;
-    [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-    E1vflag = max(0,Rt2-1);
-end
-
+E1vflag = max(0,p2.Tres-t)*max(0,0.95*p2.Hmax-occ);
+    
 value(1)      = E1iflag + E1tflag + E1vflag;
 direction(1)  = -1;
 isterminal(1) = 1;
 
-%% event 2: end of simulation
-%stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
-E2iflag = abs(i-5);
+%% event 2: end of testing
+%stop testing at first occurence of: Rt<1 if lifted, end of vaccination campaign, 2.5 years after response time
+E2iflag = abs(i-2);
 E2tflag = max(0,data.tvec(end-1)+0.1-t);
-E2vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
-if E2iflag + E2tflag + E2vflag == 0;
+E2vflag = max(0,p2.end-t)*max(0,p2.Tres+2.5*365-t);
+if E2iflag == 0 && E2tflag == 0 && E2vflag ~=0;
     [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
     E2vflag = max(0,Rt2-1);
 end
@@ -46,5 +42,19 @@ end
 value(2)      = E2iflag + E2tflag + E2vflag;
 direction(2)  = -1;
 isterminal(2) = 1;
-    
+
+%% event 3: end of simulation
+%stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
+E3iflag = abs(i-5);
+E3tflag = max(0,data.tvec(end-1)+0.1-t);
+E3vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
+if E3iflag + E3tflag + E3vflag == 0;
+    [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+    E3vflag = max(0,Rt2-1);
+end
+
+value(3)      = E3iflag + E3tflag + E3vflag;
+direction(3)  = -1;
+isterminal(3) = 1;
+
 end

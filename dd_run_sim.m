@@ -143,7 +143,7 @@ sig4 = dis.sigs*asc_s;
 ddk    = max(0,10^5*sum(mu.*(H+Hv1))/sum(data.Npop));
 sd_fun = @(a,b,c,t,d) 1/(1 + exp(a + b*log10(d) - c*t));%here, t is time since response time
 
-if strcmp(data.inp3,'No Closures')||i==1;
+if i==1;%strcmp(data.inp3,'No Closures')||
     betamod = 1;
 elseif any(i==data.imand);
     betamod = min(sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk), sd_fun(p2.sda,p2.sdb,p2.sdc,14,2));

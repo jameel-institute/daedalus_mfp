@@ -36,7 +36,7 @@ Tgen   = dis.Tlat + dis.Tsh;
 Tld    = Tcap - Tgen/2;%empirical function, unused for r < 0.025 as below
 
 %% event 1: first measures
-%home-working and distancing imposed at response time
+%distancing imposed at response time
 E1iflag = abs(i-1);
 E1tflag = max(0,data.tvec(end-1)+0.1-t);
 E1vflag = max(0,p2.Tres-t);
