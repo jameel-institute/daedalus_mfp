@@ -39,7 +39,7 @@ deaths        = f(:,1+2*lx+6*ln+notEd);
 abs_ill       = isoasyu + isoasyv + isosymu + isosymv + nissym + hospts + deaths;%number of workers absent
 abs_ill_pc    = max(0,abs_ill./data.NNs(notEd)');%proportion of workers absent
 abs_ill_pcop  = abs_ill_pc.*f(:,1+notEd);%proportion of workers absent in open sectors
-abs_ilop_int  = trapz(t,abs_ill_pcop);%proportion of worker-days of absence
+abs_ilop_int  = trapz(t,abs_ill_pcop) + (3651-t(end))*max(0,deaths(end,:)./data.NNs(notEd)');%proportion of worker-days of absence, accounting for deaths up to 10 years
 gdpl_lbs      = abs_ilop_int.*data.obj(notEd)';
 cost(4,notEd) = gdpl_lbs;
 
@@ -73,7 +73,7 @@ hospts       = f(:,1+2*lx+5*ln+Stu);
 deaths       = f(:,1+2*lx+6*ln+Stu);
 abs_ill      = isoasyu + isoasyv + isosymu + isosymv + nissym + hospts + deaths;%number of students absent from open schools
 abs_ill_open = abs_ill.*f(:,1+data.EdInd);%number of students absent in open schools
-abs_ilop_int = trapz(t,abs_ill_open)/365;%number of student-years of absence
+abs_ilop_int = (trapz(t,abs_ill_open)/365) + ((3651-t(end))*deaths(end)/365);%number of student-years of absence, accounting for deaths up to 10 years
 cost(7,lx+1) = abs_ilop_int;
 vsyl_sts     = abs_ilop_int*data.vsy;
 cost(8,lx+1) = vsyl_sts;
