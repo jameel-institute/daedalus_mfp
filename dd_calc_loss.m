@@ -64,14 +64,14 @@ ph           = f(:,1+2*lx+8*ln+1+2*ln+Stu);
 phv          = (1-dis.hv1)*dis.ph(Stu);
 Ts           = f(:,1+2*lx+8*ln+1+Stu);
 Tiso         = dis.Tlat + max([dis.Tay,dis.Tsr,dis.Tsh]);
-isoasyu      = (f(:,1+2*lx+0*ln+Stu)./dis.Tay).*Tiso;%.*(1-(1/3));
-isoasyv      = (f(:,1+2*lx+1*ln+Stu)./dis.Tay).*Tiso;%.*(1-(1/3));
+isoasyu      = (f(:,1+2*lx+0*ln+Stu)./dis.Tay).*Tiso;
+isoasyv      = (f(:,1+2*lx+1*ln+Stu)./dis.Tay).*Tiso;
 isosymu      = (f(:,1+2*lx+2*ln+Stu)./Ts).*(Tiso.*(1-ph) + Ts.*ph);              
 isosymv      = (f(:,1+2*lx+3*ln+Stu)./dis.Ts_v1(Stu)).*(Tiso.*(1-phv) + dis.Ts_v1(Stu).*phv);
 nissym       = f(:,1+2*lx+4*ln+Stu);
 hospts       = f(:,1+2*lx+5*ln+Stu);
 deaths       = f(:,1+2*lx+6*ln+Stu);
-abs_ill      = isoasyu + isoasyv + isosymu + isosymv + nissym + hospts + deaths;%number of students absent
+abs_ill      = isoasyu + isoasyv + isosymu + isosymv + nissym + hospts + deaths;%number of students absent from open schools
 abs_ill_open = abs_ill.*f(:,1+data.EdInd);%number of students absent in open schools
 abs_ilop_int = trapz(t,abs_ill_open)/365;%number of student-years of absence
 cost(7,lx+1) = abs_ilop_int;
@@ -79,7 +79,7 @@ vsyl_sts     = abs_ilop_int*data.vsy;
 cost(8,lx+1) = vsyl_sts;
 
 %student demand: learning losses due to school closures
-abs_clos     = students.*(1-f(:,1+data.EdInd));%.*(1-(1/3));%number of students absent
+abs_clos     = (1-f(:,1+data.EdInd)).*((students - abs_ill)*(1-(1/3)) + abs_ill);%number of students absent from closed schools: well students can avail of remote schooling
 abs_clos_int = trapz(t,abs_clos)/365;%(diff(t)'*presl)/365;%number of student-years of absence
 cost(7,lx+2) = abs_clos_int;
 vsyl_std     = abs_clos_int*data.vsy;
