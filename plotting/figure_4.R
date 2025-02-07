@@ -38,30 +38,30 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                 count(strategy) %>% 
                 mutate(proportion = n / sum(n)) %>%
                 mutate(strategy = case_when(strategy %in% c("No Closures", "School Closures", "Economic Closures", "Elimination") ~ strategy,
-                                            strategy == "School Closures, Economic Closures" ~ "Untriggered Closures",
-                                            strategy == "School Closures, Economic Closures, Elimination" ~ "Untriggered Closures",
+                                            strategy == "No Closures, School Closures, Economic Closures" ~ "Untriggered Closures",
+                                            strategy == "No Closures, School Closures, Economic Closures, Elimination" ~ "Untriggered Closures",
                                             TRUE ~ "Other")) %>%
                 group_by(location, disease, mean_vly_range, strategy) %>%
                 summarise(proportion = sum(proportion), 
                           mean_vly   = unique(mean_vly)) %>%
-                mutate(strategy = factor(strategy, levels = c("No Closures", "Untriggered Closures", "School Closures", 
+                mutate(strategy = factor(strategy, levels = c("Untriggered Closures", "No Closures", "School Closures", 
                                                               "Economic Closures", "Elimination", "Other")))
 
 gg <- ggplot(output_data, aes(x = mean_vly_range, y = proportion, fill = strategy, pattern_density = strategy)) +
       facet_grid2(disease ~ location, switch = "y", scales = "fixed") +
-      geom_area_pattern(pattern = "stripe", pattern_color = "darkgreen", pattern_fill = "darkgreen") +
+      geom_area_pattern(pattern = "stripe", pattern_color = "navy", pattern_fill = "darkgreen") +
       geom_vline(aes(xintercept = mean_vly), linetype = "dashed", color = "white") +
-      scale_fill_manual(values = c("No Closures" = "magenta4", "Untriggered Closures" = "navy", "School Closures" = "navy",
+      scale_fill_manual(values = c("Untriggered Closures" = "magenta4", "No Closures" = "magenta4", "School Closures" = "navy",
                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod",  "Other" = "grey"))+  
-      scale_pattern_density_manual(values = c("No Closures" = 0, "Untriggered Closures" = 0.2, "School Closures" = 0,
+      scale_pattern_density_manual(values = c("Untriggered Closures" = 0.2, "No Closures" = 0, "School Closures" = 0,
                                               "Economic Closures" = 0, "Elimination" = 0, "Other" = 0),
-                                   breaks = c("No Closures", "Untriggered Closures", "School Closures", "Economic Closures", "Elimination")) +
+                                   breaks = c("Untriggered Closures", "No Closures", "School Closures", "Economic Closures", "Elimination")) +
       theme_bw() +
       scale_x_log10(breaks = c(0.001,0.003,0.01,0.03,0.1,0.3), expand = c(0,0), position = "bottom", labels = scales::label_number(scale = 1000000, suffix = "")) +
       scale_y_continuous(expand = c(0,0), position = "right") +
       theme(panel.spacing = unit(1.00, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(title = "", x = "Average VLY ($, nominal)", y = "Proportion Loss-Minimising") +
-      guides(fill = "none", pattern_density = guide_legend(title = NULL, override.aes = list(fill = c("magenta4","navy","navy","darkgreen","goldenrod")))) +
+      guides(fill = "none", pattern_density = guide_legend(title = NULL, override.aes = list(fill = c("magenta4","magenta4","navy","darkgreen","goldenrod")))) +
       theme(legend.position = "top", legend.box.just = "right", legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
-ggsave("figure_4n.png", plot = gg, height = 14, width = 10)
+ggsave("figure_4.png", plot = gg, height = 14, width = 10)

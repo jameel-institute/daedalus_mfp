@@ -36,51 +36,55 @@ Tgen   = dis.Tlat + dis.Tsh;
 Tld    = Tcap - Tgen/2;%empirical function, unused for r < 0.025 as below
 
 %% event 1: first measures
-%distancing imposed at response time
+%distancing at first occurence of: response time, 95% of hospital capacity
 E1iflag = abs(i-1);
 E1tflag = max(0,data.tvec(end-1)+0.1-t);
-E1vflag = max(0,p2.Tres-t);
+E1vflag = max(0,p2.Tres-t)*max(0,0.95*p2.Hmax-occ);
     
 value(1)      = E1iflag + E1tflag + E1vflag;
 direction(1)  = -1;
 isterminal(1) = 1;
 
-%% event 2: early lockdown
-%lockdown if less than 4 days before hospital capacity expected to be breached and growth rate is large
+%% event 2: lockdown
+%lockdown at first occurence of: hospital occupancy greater than 95% of capacity, less than 4 days before hospital capacity expected to be breached and growth rate is large
 E2iflag = abs((i-2)*(i-4));
 E2tflag = max(0,data.tvec(end-1)+0.1-t);
-E2vflag = max(0,Tld-t) + max(0,0.025-r);  
+E2vflag = max(0,0.95*p2.Hmax-occ)*(max(0,Tld-t) + max(0,0.025-r));  
 
 value(2)      = E2iflag + E2tflag + E2vflag;
 direction(2)  = -1;
 isterminal(2) = 1;
 
-%% event 3: late lockdown
-%lockdown if hospital occupancy greater than 95% of capacity
-E3iflag = abs((i-1)*(i-2)*(i-4));
-E3tflag = max(0,data.tvec(end-1)+0.1-t);
-E3vflag = max(0,0.95*p2.Hmax-occ);  
+%% event 3: partial reopening
+%partially reopen after 1 week if hospital occupancy less than 25% of capacity
+E3iflag = abs(i-3);
+E3tflag = max(0,data.tvec(end-1)+14-t);
+E3vflag = max(0,occ-0.25*p2.Hmax);  
 
 value(3)      = E3iflag + E3tflag + E3vflag;
 direction(3)  = -1;
 isterminal(3) = 1;
 
-%% event 4: partial reopening
-%partially reopen after 1 week if hospital occupancy less than 25% of capacity
-E4iflag = abs(i-3);
-E4tflag = max(0,data.tvec(end-1)+14-t);
-E4vflag = max(0,occ-0.25*p2.Hmax);  
+%% event 4: end of closures and testing
+%remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign and (below 25% occupancy or low non-lockdown growth rate or 90 days since end of rollout), 2.5 years after response time
+E4iflag = abs((i-2)*(i-3)*(i-4));
+E4tflag = max(0,data.tvec(end-1)+0.1-t);
+E4vflag = (max(0,p2.end-t) + max(0,occ-0.25*p2.Hmax)*(max(0,r-0.025) + abs((i-1)*(i-2)*(i-4)))*max(0,p2.end+90-t))*max(0,p2.Tres+2.5*365-t);
+if E4iflag == 0 && E4tflag == 0 && E4vflag ~=0;
+    [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
+    E4vflag = max(0,Rt2-1);
+end
 
 value(4)      = E4iflag + E4tflag + E4vflag;
 direction(4)  = -1;
 isterminal(4) = 1;
 
-%% event 5: end of closures and testing
-%remove measures at first occurence of: Rt<1 if lifted, end of vaccination campaign and (below 25% occupancy or low non-lockdown growth rate or 90 days since end of rollout), 2.5 years after response time
-E5iflag = abs((i-2)*(i-3)*(i-4));
+%% event 5: end of simulation
+%stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
+E5iflag = abs(i-5);
 E5tflag = max(0,data.tvec(end-1)+0.1-t);
-E5vflag = (max(0,p2.end-t) + max(0,occ-0.25*p2.Hmax)*(max(0,r-0.025) + abs((i-1)*(i-2)*(i-4)))*max(0,p2.end+90-t))*max(0,p2.Tres+2.5*365-t);
-if E5iflag == 0 && E5tflag == 0 && E5vflag ~=0;
+E5vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
+if E5iflag + E5tflag + E5vflag == 0;
     [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
     E5vflag = max(0,Rt2-1);
 end
@@ -88,19 +92,5 @@ end
 value(5)      = E5iflag + E5tflag + E5vflag;
 direction(5)  = -1;
 isterminal(5) = 1;
-
-%% event 6: end of simulation
-%stop simulation when all measures have been removed, the DFE has been reached and Rt<=1
-E6iflag = abs(i-5);
-E6tflag = max(0,data.tvec(end-1)+0.1-t);
-E6vflag = max(0,0.99*sum(data.NNs)-sum(S+R+Rv1+DE)) + max(0,occ-0.000001*sum(data.NNs));
-if E6iflag + E6tflag + E6vflag == 0;
-    [Rt2,~] = dd_calc_Rt(dis,h,g2,S,Shv1,Sv1,data.NNs,data.Dvec(:,:,5),1,dis.siga,dis.sigs,0,0,1,1);
-    E6vflag = max(0,Rt2-1);
-end
-
-value(6)      = E6iflag + E6tflag + E6vflag;
-direction(6)  = -1;
-isterminal(6) = 1;
     
 end

@@ -76,4 +76,4 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
       theme(legend.position = c(0.077, 0.999), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.5, "cm"), legend.text = element_text(size = 7))
 
-ggsave("figure_1n.png", plot = gg, height = 14, width = 10)
+ggsave("figure_1.png", plot = gg, height = 14, width = 10)
