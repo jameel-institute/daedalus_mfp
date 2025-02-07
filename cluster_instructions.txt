@@ -1,9 +1,9 @@
 INSTRUCTIONS:
 
-1. Set taskdir = './'; and comment out mkdir(taskdir);
-2. Remove all instances of addpath() in dd_set_disease.m
-3. Define dd_main inputs
-4. Open MATLAB R2022a
+1. Open MATLAB R2022a
+2. Set taskdir = './'; and comment out mkdir(taskdir);
+3. Remove all instances of addpath() in dd_set_disease.m
+4. Define dd_main inputs
 5. Run: mcc('-m', 'dd_main.m', 'dd_calc_Rt.m', 'dd_calc_r.m', 'dd_run_sim.m', 'dd_set_rules_elimination.m', 'dd_set_strategy.m', 'dd_store_input.m', 'dd_calc_contacts.m', 'dd_set_country.m', 'dd_set_rules_noclosures.m', 'dd_single.m', 'dd_store_output.m', 'dd_calc_loss.m', 'dd_run_postprocessing.m', 'dd_set_disease.m', 'dd_set_rules_seclosures.m', 'dd_single_plot.m', 'input/param_covid_omicron.m', 'input/param_influenza_1918.m', 'input/param_influenza_2009.m', 'input/param_sars.m', 'input/param_covid_delta.m', 'input/param_covid_wildtype.m', 'input/param_influenza_1957.m', '-a','C:\Program Files\MATLAB\R2022a\toolbox*')
 6. Move dd_main.m (to track changes), created .exe file, input directory, run and launch files to Q drive
 7. Update run and launch files accordingly
