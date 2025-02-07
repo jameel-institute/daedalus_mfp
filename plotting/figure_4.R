@@ -39,7 +39,6 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                 mutate(proportion = n / sum(n)) %>%
                 mutate(strategy = case_when(strategy %in% c("No Closures", "School Closures", "Economic Closures", "Elimination") ~ strategy,
                                             strategy == "No Closures, School Closures, Economic Closures" ~ "Untriggered Closures",
-                                            strategy == "No Closures, School Closures, Economic Closures, Elimination" ~ "Untriggered Closures",
                                             TRUE ~ "Other")) %>%
                 group_by(location, disease, mean_vly_range, strategy) %>%
                 summarise(proportion = sum(proportion), 
@@ -49,7 +48,7 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
 
 gg <- ggplot(output_data, aes(x = mean_vly_range, y = proportion, fill = strategy, pattern_density = strategy)) +
       facet_grid2(disease ~ location, switch = "y", scales = "fixed") +
-      geom_area_pattern(pattern = "stripe", pattern_color = "navy", pattern_fill = "darkgreen") +
+      geom_area_pattern(pattern = "stripe", pattern_size = 0.25, pattern_color = "navy", pattern_fill = "darkgreen") +
       geom_vline(aes(xintercept = mean_vly), linetype = "dashed", color = "white") +
       scale_fill_manual(values = c("Untriggered Closures" = "magenta4", "No Closures" = "magenta4", "School Closures" = "navy",
                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod",  "Other" = "grey"))+  
@@ -61,7 +60,10 @@ gg <- ggplot(output_data, aes(x = mean_vly_range, y = proportion, fill = strateg
       scale_y_continuous(expand = c(0,0), position = "right") +
       theme(panel.spacing = unit(1.00, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(title = "", x = "Average VLY ($, nominal)", y = "Proportion Loss-Minimising") +
-      guides(fill = "none", pattern_density = guide_legend(title = NULL, override.aes = list(fill = c("magenta4","magenta4","navy","darkgreen","goldenrod")))) +
+      guides(fill = "none", 
+             pattern_density = guide_legend(title = NULL, 
+                                            override.aes = list(pattern_size = 0.75, 
+                                                                fill = c("magenta4","magenta4","navy","darkgreen","goldenrod")))) +
       theme(legend.position = "top", legend.box.just = "right", legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
-ggsave("figure_4.png", plot = gg, height = 14, width = 10)
+ggsave("figure_4.pdf", plot = gg, height = 14, width = 10)
