@@ -98,7 +98,7 @@ p2 = struct;
 Tres     = data.Tres;%response time (in terms of doubling times)
 p2.sda   = data.sda; %distancing multiplier intercept
 p2.sdb   = data.sdb; %distancing death sensitivity
-p2.sdc   = data.sdc; %distancing time relaxation
+p2.sdc   = data.sdc; %distancing time decay
 r        = dd_calc_r(dis,dis.h,dis.g2,dis.mu,dis.g3,data.NNs, ...
                      zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1),zeros(ln,1), ...
                      data.NNs,Dout,1,dis.siga,dis.sigs,0,0,1,1);

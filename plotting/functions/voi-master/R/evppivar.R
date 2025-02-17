@@ -64,10 +64,11 @@ evppivar <- function(outputs,
       if (length(pars) == 1) {
         grid   <- expand.grid(x = x_seq)
         colnames(grid) <- pars
-        pred   <- predict(model, newdata = grid, type = "response", se.fit = TRUE)
-        grid$y <- pred$fit
-        grid$l <- pred$fit - pred$se.fit*qnorm(1-0.05/2)
-        grid$u <- pred$fit + pred$se.fit*qnorm(1-0.05/2)
+        pred   <- predict(model, newdata = grid, type = "link", se.fit = TRUE)
+        lnkinv <- model$family$linkinv
+        grid$y <- lnkinv(pred$fit)
+        grid$l <- lnkinv(pred$fit - pred$se.fit*qnorm(1-0.05/2))
+        grid$u <- lnkinv(pred$fit + pred$se.fit*qnorm(1-0.05/2))
         #grid$l <- pred$fit - qt(1-0.05/2, df = model$df.residual)*sqrt(pred$se.fit^2 + sigma(model)^2)
         #grid$u <- pred$fit + qt(1-0.05/2, df = model$df.residual)*sqrt(pred$se.fit^2 + sigma(model)^2)
         colnames(grid) <- c("x", "y", "l", "u")} 

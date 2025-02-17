@@ -6,6 +6,7 @@ library(stringr)
 library(fitdistrplus)
 library(forecast)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
+library(scam)
 library(ggplot2)
 library(ggh4x)
 library(cowplot)
@@ -61,19 +62,19 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
       geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_SLpc),
                 vjust = -1.6, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
       theme_bw() + 
-      scale_y_continuous(expand=c(0,0), position="right") + 
-      # facetted_pos_scales(y = list(
-      #   scale_y_continuous(limits=c(0,240),  breaks=seq(0,240,80),    expand=c(0,0), position="right"),
-      #   scale_y_continuous(limits=c(0,270),  breaks=seq(0,270,90),    expand=c(0,0), position="right"),
-      #   scale_y_continuous(limits=c(0,1800), breaks=seq(0,1800,600),  expand=c(0,0), position="right"),
-      #   scale_y_continuous(limits=c(0,360),  breaks=seq(0,360,120),   expand=c(0,0), position="right"),
-      #   scale_y_continuous(limits=c(0,1500), breaks=seq(0,1500,500),  expand=c(0,0), position="right"),
-      #   scale_y_continuous(limits=c(0,690),  breaks=seq(0,690,230),   expand=c(0,0), position="right"),
-      #   scale_y_continuous(limits=c(0,3000), breaks=seq(0,3000,1000), expand=c(0,0), position="right"))) +
-      theme(panel.spacing = unit(1, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
+      facetted_pos_scales(y = list(
+        scale_y_continuous(limits=c(0,200),  breaks=seq(0,200,50),    expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,280),  breaks=seq(0,280,70),    expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,2400), breaks=seq(0,2400,600),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,400),  breaks=seq(0,400,100),   expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,1600), breaks=seq(0,1600,400),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,800),  breaks=seq(0,800,200),   expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,2800), breaks=seq(0,2800,700),  expand=c(0,0), position="right"))) +
+      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "", y = "Societal Loss (% of GDP)") +
       guides(width = "none", linewidth = "none", color = "none", fill = guide_legend(title = NULL), alpha = "none") +
-      theme(legend.position = c(0.077, 0.999), legend.justification = c(1, 1), legend.box.just = "right", 
-            legend.key.size = unit(0.5, "cm"), legend.text = element_text(size = 7))
+      theme(legend.position = "bottom", legend.box.just = "right", 
+            legend.key.size = unit(0.8, "cm"), legend.text = element_text(size = 9), 
+            legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_1.png", plot = gg, height = 14, width = 10)

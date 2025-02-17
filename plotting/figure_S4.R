@@ -6,6 +6,7 @@ library(stringr)
 library(fitdistrplus)
 library(forecast)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
+library(scam)
 library(ggplot2)
 library(ggh4x)
 library(cowplot)
@@ -32,16 +33,16 @@ mmp1_data <- ctry_data %>% dplyr::select(igroup,Tres,sda,sdb,sdc,t_tit) %>%
              mutate(variable = case_when(variable == "Tres" ~ "Distancing: Response Time",
                                          variable == "sda" ~ "Distancing: Multiplier Intercept",
                                          variable == "sdb" ~ "Distancing: Death-Sensitivity",
-                                         variable == "sdc" ~ "Distancing: Time-Relaxation",
+                                         variable == "sdc" ~ "Distancing: Time-Decay",
                                          variable == "t_tit" ~ "Surveillance: Testing Start-Time")) %>%
              mutate(variable = factor(variable, levels = c("Distancing: Response Time", "Distancing: Multiplier Intercept", 
-                                                           "Distancing: Death-Sensitivity", "Distancing: Time-Relaxation", 
+                                                           "Distancing: Death-Sensitivity", "Distancing: Time-Decay", 
                                                            "Surveillance: Testing Start-Time")))
 mmp1_dist <- mmp1_data %>% filter(!is.na(value)) %>%
              mutate(candidate = case_when(variable == "Distancing: Response Time"        ~ list(c("lnorm", "gamma", "weibull")),
                                           variable == "Distancing: Multiplier Intercept" ~ list(c("norm")), 
                                           variable == "Distancing: Death-Sensitivity"    ~ list(c("lnorm", "gamma", "weibull")),
-                                          variable == "Distancing: Time-Relaxation"      ~ list(c("lnorm", "gamma", "weibull")),
+                                          variable == "Distancing: Time-Decay"      ~ list(c("lnorm", "gamma", "weibull")),
                                           variable == "Surveillance: Testing Start-Time" ~ list(c("lnorm", "gamma", "weibull")))) %>%
              unnest_longer(candidate) %>%
              group_by(igroup, variable, candidate) %>%
@@ -72,7 +73,7 @@ mmp1_dist <- mmp1_data %>% filter(!is.na(value)) %>%
              filter(alpha == 1)
 ### for plot legibility 
 mmp1_dist <- mmp1_dist %>% mutate(yvalue = ifelse(variable == "Distancing: Death-Sensitivity" & xvalue < 0.02 |
-                                                  igroup == "HIC" & variable == "Distancing: Time-Relaxation" & xvalue < 0.0001, 
+                                                  igroup == "HIC" & variable == "Distancing: Time-Decay" & xvalue < 0.0001, 
                                                   NA, yvalue))
 ###
 mmp1_labs <- data.frame(x      = rep(0.49, 5), 
@@ -80,7 +81,7 @@ mmp1_labs <- data.frame(x      = rep(0.49, 5),
                         xlabel = c("Seeding-to-Reponse Delay (doubling times)",
                                    "Transmission Multiplier Intercept Coefficient",
                                    "Transmission Multiplier Death-Sensitivity Coefficient",
-                                   "Transmission Multiplier Time-Relaxation Coefficient",
+                                   "Transmission Multiplier Time-Decay Coefficient",
                                    "Seeding-to-Testing-Start Delay (doubling times)"))
 mmp1_leg  <- mmp1_dist %>% 
              group_by(variable, igroup) %>%
@@ -94,7 +95,7 @@ mmp1_leg  <- mmp1_dist %>%
                                              candidate == "lnorm"   ~ "Lognormal",
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
-                                             candidate == "beta"    ~ "Beta")) %>%
+                                             candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
              mutate(x      = rep(c(0.26, 0.58, 0.90), 5), 
                     y      = rep(seq(0.94, 0.10, by = -0.195), each = 3),
                     legend = paste(candidate, "\n μ =", round(mu,3)))
@@ -160,7 +161,7 @@ mmp2_leg  <- mmp2_dist %>%
                                              candidate == "lnorm"   ~ "Lognormal",
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
-                                             candidate == "beta"    ~ "Beta")) %>%
+                                             candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
              mutate(mu     = ifelse(variable == "Vaccination: Coverage", 100*mu, mu),
                     x      = rep(c(0.25, 0.57, 0.89), 5), 
                     y      = rep(seq(0.94, 0.10, by = -0.195), each = 3),
@@ -171,7 +172,7 @@ p1 <- ggplot(mmp1_data, aes(x = value, fill = variable)) +
       geom_histogram(aes(y = ..density..), color = "black") + 
       geom_line(data = mmp1_dist, aes(x = xvalue, y = yvalue), linewidth = 1, color = "black") +
       scale_fill_manual(values = c("Distancing: Response Time" = "slategray2", "Distancing: Multiplier Intercept" = "slategray2", 
-                                   "Distancing: Death-Sensitivity" = "slategray2", "Distancing: Time-Relaxation" = "slategray2", 
+                                   "Distancing: Death-Sensitivity" = "slategray2", "Distancing: Time-Decay" = "slategray2", 
                                    "Surveillance: Testing Start-Time"  = "palegreen")) + 
       theme_bw() +
       scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right") +

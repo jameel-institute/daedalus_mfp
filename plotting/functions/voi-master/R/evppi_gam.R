@@ -1,19 +1,37 @@
 fitted_gam <- function(y, inputs, pars, verbose=FALSE, ...){
-  
+    
     #new
     is_negative <- all(y <= 0)
     if (is_negative) 
       {y <- -y} 
     else {y}
-
+    
     opts <- list(...)
     gam_formula <- opts$gam_formula
     pars <- clean_pars(pars)
     colnames(inputs) <- clean_pars(colnames(inputs))
-    if (is.null(gam_formula))
-        gam_formula <- default_gam_formula(pars)
-    gam_formula <- formula(sprintf("y ~ %s", gam_formula))
-    model <- mgcv::gam(gam_formula,  family = Gamma(link = "log"), data = inputs)
+    
+    # if (is.null(gam_formula))
+    #     gam_formula <- default_gam_formula(pars)
+    # gam_formula <- formula(sprintf("y ~ %s", gam_formula))
+    # model <- mgcv::gam(gam_formula,  family = Gamma(link = "log"), data = inputs)
+    
+    # if (pars %in% c("mean_age", "pr_le", "epop", "pr_workf", "pr_gvapw", "AL_wavg", "AHT_wavg", "AS_wavg", "workp", 
+    #                 "Tres", "sdc", "t_tit", "t_vax")) {
+    #   mdir <- 'mpi'
+    # } else if (pars %in% c("pr_wfh", "sda", "sdb", "trate", "Hmax", "arate", "puptake")) {
+    #   mdir <- 'mpd'
+    # }
+    # scam_formula <- formula(sprintf("y ~ s(%s, bs = '%s')", paste(pars, collapse=", "), mdir))
+    # model        <- scam(scam_formula, family = Gamma(link = "log"), data = inputs)
+    
+    scam_formula <- formula(sprintf("y ~ s(%s, bs = 'mpi')", paste(pars, collapse=", ")))
+    model1       <- scam(scam_formula, family = Gamma(link = "log"), data = inputs)
+    scam_formula <- formula(sprintf("y ~ s(%s, bs = 'mpd')", paste(pars, collapse=", ")))
+    model2       <- scam(scam_formula, family = Gamma(link = "log"), data = inputs)
+    models       <- list(model1, model2)
+    model        <- models[[which.min(c(AIC(model1), AIC(model2)))]]
+    
     res <- (model$fitted) * ifelse(is_negative, -1, 1)
     attr(res, "model") <- model
     res

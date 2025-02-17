@@ -6,6 +6,7 @@ library(stringr)
 library(fitdistrplus)
 library(forecast)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
+library(scam)
 library(ggplot2)
 library(ggh4x)
 library(cowplot)
@@ -54,19 +55,19 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = gdpl, alpha = min_
                                    "Retail, Hospitality", "Transport", "IT, Telecommunications", "Finance, Professional, Technical", "Public Administration, Other Services")) + 
       scale_alpha_manual(values = c("FALSE" = 0.25, "TRUE" = 1)) +
       theme_bw() + 
-      #scale_y_continuous(expand=c(0,0), position="right") + 
       facetted_pos_scales(y = list(
-        scale_y_continuous(limits=c(0,10), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,12), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,18), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,12), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,15), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,15), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,12), expand=c(0,0), position="right"))) +
-      theme(panel.spacing = unit(1, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
-      labs(title = "", x = "", y = "GDPL (% of GDP)") +
+        scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,24), breaks=seq(0,24,6), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,16), breaks=seq(0,16,4), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"))) +
+      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
+      labs(title = "", x = "", y = "GDP Loss (% of GDP)") +
       guides(fill = guide_legend(title = NULL, byrow = TRUE), alpha = "none") +
-      theme(legend.position = "top", legend.box.just = "right", 
-            legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
+      theme(legend.position = "bottom", legend.box.just = "right", 
+            legend.key.size = unit(0.8, "cm"), legend.text = element_text(size = 9), 
+            legend.margin = margin(0, 0, 0, 0))
 
-ggsave("figure_5n.png", plot = gg, height = 14, width = 10)
+ggsave("figure_5.png", plot = gg, height = 14, width = 10)

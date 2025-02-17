@@ -6,6 +6,7 @@ library(stringr)
 library(fitdistrplus)
 library(forecast)
 sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
+library(scam)
 library(ggplot2)
 library(ggh4x)
 library(cowplot)
@@ -13,8 +14,8 @@ library(ggpattern)
 library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
-source("functions/parse_inputs.R")
 #source("functions/calc_loss_pc.R")
+source("functions/parse_inputs.R")
 #source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
 #source("functions/table_formatting.R")
@@ -28,7 +29,7 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                 mutate(x = rowSums(across(starts_with("vlyl_"))), 
                        y = rowSums(across(starts_with("gdpl_"))) + vsyl) %>%
                 dplyr::select(-tdur, -starts_with("vlyl"), -vsyl, -starts_with("gdpl")) %>%
-                crossing(mean_vly_range = 10^seq(-3, log10(0.3), length.out = 100)) %>%
+                crossing(mean_vly_range = seq(0, 10, length.out = 100)) %>%
                 mutate(x = x*(mean_vly_range / mean_vly)) %>%
                 mutate(SLpc = 100*(x + y)/gdp) %>%
                 group_by(location, disease, mean_vly_range, country) %>% 
@@ -39,6 +40,7 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                 mutate(proportion = n / sum(n)) %>%
                 mutate(strategy = case_when(strategy %in% c("No Closures", "School Closures", "Economic Closures", "Elimination") ~ strategy,
                                             strategy == "No Closures, School Closures, Economic Closures" ~ "Untriggered Closures",
+                                            strategy == "School Closures, Economic Closures" ~ "Untriggered Closures",
                                             TRUE ~ "Other")) %>%
                 group_by(location, disease, mean_vly_range, strategy) %>%
                 summarise(proportion = sum(proportion), 
@@ -56,14 +58,16 @@ gg <- ggplot(output_data, aes(x = mean_vly_range, y = proportion, fill = strateg
                                               "Economic Closures" = 0, "Elimination" = 0, "Other" = 0),
                                    breaks = c("Untriggered Closures", "No Closures", "School Closures", "Economic Closures", "Elimination")) +
       theme_bw() +
-      scale_x_log10(breaks = c(0.001,0.003,0.01,0.03,0.1,0.3), expand = c(0,0), position = "bottom", labels = scales::label_number(scale = 1000000, suffix = "")) +
-      scale_y_continuous(expand = c(0,0), position = "right") +
-      theme(panel.spacing = unit(1.00, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) +
-      labs(title = "", x = "Average VLY ($, nominal)", y = "Proportion Loss-Minimising") +
+      scale_x_continuous(breaks=seq(0,10,by=2),   expand=c(0,0), position="bottom") + 
+      scale_y_continuous(breaks=seq(0,1,by=0.25), expand=c(0,0), position="right") + 
+      theme(panel.spacing = unit(0.75, "lines")) +
+      labs(title = "", x = "Average VLY / GDP per capita", y = "Proportion Societal Loss-Minimising") +
       guides(fill = "none", 
              pattern_density = guide_legend(title = NULL, 
                                             override.aes = list(pattern_size = 0.75, 
                                                                 fill = c("magenta4","magenta4","navy","darkgreen","goldenrod")))) +
-      theme(legend.position = "top", legend.box.just = "right", legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
+      theme(legend.position = "bottom", legend.box.just = "right", 
+            legend.key.size = unit(0.8, "cm"), legend.text = element_text(size = 9), 
+            legend.margin = margin(0, 0, 0, 0))
 
-ggsave("figure_4.pdf", plot = gg, height = 14, width = 10)
+ggsave("figure_4.png", plot = gg, height = 14, width = 10)

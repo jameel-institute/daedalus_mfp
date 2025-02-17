@@ -17,6 +17,16 @@ parse_inputs <- function(df_inps) {
                AS_wavg  = sum(matAS[2,]),#only contacts of school-age population 
                #economy
                epop     = sum(across(NNs_1:NNs_45)) / sum(across(Npop_5:Npop_13)),
+               #disease
+               ifr_1918 = sum(0.669*c(0.02284,0.00398,0.00478,0.00983,0.01700,0.02922,0.02470,0.02205,0.01647,0.01195,
+                                      0.01647,0.01169,0.03081,0.04144,0.04941,0.04941,0.04941,0.04941,0.04941,0.04941,0.04941)
+                              * across(Npop_1:Npop_21)) / sum(across(Npop_1:Npop_21)),
+               ifr_dlta = sum(1.85*c(0.000016,0.000016,0.000070,0.000070,0.000309,0.000309,0.000844,0.000844,0.001610,0.001610,
+                                     0.005950,0.005950,0.019300,0.019300,0.042800,0.042800,0.078000,0.078000,0.078000,0.078000,0.078000)
+                              * across(Npop_1:Npop_21)) / sum(across(Npop_1:Npop_21)),
+               ifr_sars = sum(0.867*c(0.017,0.017,0.017,0.017,0.024,0.024,0.024,0.024,0.089,0.089,
+                                      0.089,0.089,0.255,0.255,0.255,0.255,0.177,0.177,0.177,0.177,0.177)
+                              * across(Npop_1:Npop_21)) / sum(across(Npop_1:Npop_21)),
                #valuation
                na       = list(c(c_across(starts_with("Npop_"))[1:17], sum(across(starts_with("Npop_"))[18:21]))),
                la       = list(c_across(starts_with("la_"))),
@@ -28,7 +38,8 @@ parse_inputs <- function(df_inps) {
                                       10.9 * ((gdppc / 0.060362)^0.85),
                                     TRUE ~ 
                                       NA),
-               vly      = vsl/(sum(la * na)/sum(na))) %>%
+               vly      = vsl/(sum(la * na)/sum(na)),
+               vly_gdpc = vly/gdppc) %>%
         group_by(location) %>%
         mutate(#demography
                pr_le    = {la_cols    <- pick(starts_with("la_"))
@@ -42,8 +53,12 @@ parse_inputs <- function(df_inps) {
                            365*gvapw_cols[[names(which.max(colSums(noNA_power)))]]},
                pr_wfh   = {wfh_cols   <- pick(starts_with("wfh_")) %>% dplyr::select(., -wfh_41) 
                            wfh_cols[[names(which.max(colSums(abs(cor(wfh_cols)))))]]},
+               #disease
+               ifr_1918 = mean(ifr_1918),
+               ifr_dlta = mean(ifr_dlta),
+               ifr_sars = mean(ifr_sars),
                #valuation
-               mean_vly = mean(vly)) %>% 
+               mean_vly = mean(vly_gdpc)) %>% 
         ungroup()
   return(df)
   

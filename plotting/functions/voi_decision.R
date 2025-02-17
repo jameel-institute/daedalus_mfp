@@ -10,9 +10,10 @@ voi_decision <- function(df, p_list) {
                summarise(parameter = sapply(p_list, function(x) paste(x, collapse = ",")),
                          res       = evppi(outputs = cur_data() %>% dplyr::select(t1, t2, t3, t4) %>% as.data.frame(),
                                            inputs  = pick(unlist(p_list)),
-                                           pars    = p_list)$evppi / 
-                                     pmin(mean(-t1), mean(-t2), mean(-t3), mean(-t4))) %>%
-               arrange(-res) %>% mutate(rank = letters[row_number(-res)]) %>%
+                                           pars    = p_list)$evppi) %>%  
+                                     #/ pmin(mean(-t1), mean(-t2), mean(-t3), mean(-t4))) %>%
+               arrange(-res) %>% 
+               mutate(rank = letters[row_number(-res)]) %>%
                ungroup()
   return(df)
   
