@@ -160,7 +160,7 @@ NN        = data.NNs;
 NN(NN==0) = 1;
 foi       = dis.beta*betamod*(D*(I./NN));
 
-seedvec = 1e-9*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth of the population
+seedvec = 1e-8*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth of the population
 seed    = dis.beta*betamod*(D*(seedvec./NN));
 
 %% EQUATIONS
