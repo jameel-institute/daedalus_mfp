@@ -64,9 +64,9 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
       theme_bw() + 
       facetted_pos_scales(y = list(
         scale_y_continuous(limits=c(0,200),  breaks=seq(0,200,50),    expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,280),  breaks=seq(0,280,70),    expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,320),  breaks=seq(0,320,80),    expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,2400), breaks=seq(0,2400,600),  expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,400),  breaks=seq(0,400,100),   expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,480),  breaks=seq(0,480,120),   expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,1600), breaks=seq(0,1600,400),  expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,800),  breaks=seq(0,800,200),   expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,2800), breaks=seq(0,2800,700),  expand=c(0,0), position="right"))) +

@@ -61,7 +61,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = gdpl, alpha = min_
         scale_y_continuous(limits=c(0,24), breaks=seq(0,24,6), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,16), breaks=seq(0,16,4), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"))) +
       theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "", y = "GDP Loss (% of GDP)") +
