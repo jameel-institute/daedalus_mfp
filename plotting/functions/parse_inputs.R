@@ -39,7 +39,13 @@ parse_inputs <- function(df_inps) {
                                     TRUE ~ 
                                       NA),
                vly      = vsl/(sum(la * na)/sum(na)),
-               vly_gdpc = vly/gdppc) %>%
+               vly_gdpc = vly/gdppc,
+               nstud    = sum(across(starts_with("Npop_"))[2:4]),
+               llpc     = case_when(location == "LLMIC" ~ sum(c(0.62, 0.22) * c(27, 55)) / sum(c(27, 55)) / 0.33,
+                                    location == "UMIC"  ~ 0.22 / 0.33,
+                                    location == "HIC"   ~ 0.09 / 0.33),   
+               vsy      = llpc*gdp/nstud,
+               vsy_gdpc = vsy/gdppc) %>%
         group_by(location) %>%
         mutate(#demography
                pr_le    = {la_cols    <- pick(starts_with("la_"))
@@ -58,7 +64,8 @@ parse_inputs <- function(df_inps) {
                ifr_dlta = mean(ifr_dlta),
                ifr_sars = mean(ifr_sars),
                #valuation
-               mean_vly = mean(vly_gdpc)) %>% 
+               mean_vly = mean(vly_gdpc),
+               mean_vsy = mean(vsy_gdpc)) %>% 
         ungroup()
   return(df)
   
