@@ -73,7 +73,7 @@ p1 <- ggplot(npop_data, aes(x = Npop, y = value, group = country, color = igroup
                          labels = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", 
                                     "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85-89", "90-94", "95-99", "100+")) + 
       scale_y_continuous(limits = c(0,0.20), expand = c(0,0), position = "left", labels = scales::label_number(scale = 100, suffix = "")) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+      theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Age Group", y = "Percentage of Population (%)") +
       guides(color = guide_legend(title = NULL)) +
       theme(legend.position = c(0.999, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
@@ -88,7 +88,7 @@ p2 <- ggplot(lfex_data, aes(x = la, y = value, group = country, color = igroup))
                          labels = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", 
                                     "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", "85+")) + 
       scale_y_continuous(limits = c(0,90), breaks = seq(0,90,30), expand = c(0,0), position = "left") +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
+      theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Age Group", y = "Remaining Life Expectancy (years)") +
       guides(color = guide_legend(title = NULL)) +
       theme(legend.position = c(0.999, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
@@ -100,7 +100,7 @@ p3 <- ggplot(ctry_data, aes(x = AL_wavg, fill = igroup)) +
       scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
-      scale_y_continuous(limits = c(0,3), breaks = seq(0,3,1), expand = c(0,0), position = "left") +
+      scale_y_continuous(limits = c(0,3), breaks = seq(0,3,1), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Population-Average Household Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
@@ -113,7 +113,7 @@ p4 <- ggplot(ctry_data, aes(x = AHT_wavg, fill = igroup)) +
       scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
-      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left") +
+      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Population-Average Other-Location Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
@@ -126,7 +126,7 @@ p5 <- ggplot(ctry_data, aes(x = AS_wavg, fill = igroup)) +
       scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,15), breaks = seq(0,15,3), expand = c(0,0), position = "bottom") +
-      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left") +
+      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "School-Age School Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
@@ -139,7 +139,7 @@ p6 <- ggplot(ctry_data, aes(x = workp, fill = igroup)) +
       scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
-      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left") +
+      scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Working-Age Workplace Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
@@ -167,7 +167,7 @@ p7 <- ggplot(nns_data, aes(x = NNs, y = value, group = country, color = igroup))
                                     "39: Admin & Support Services", "40: Public Admin & Social Sec", "41: Education", "42: Health & Social Work",
                                     "43: Arts & Recreation", "44: Other Services", "45: Households as Employers", "Not Working")) + 
       scale_y_log10(limits = c(0.0001,1), expand = c(0,0), position = "left", labels = scales::label_number(scale = 100, suffix = "")) + 
-      theme(axis.text.x = element_text(angle = 55, hjust = 1)) + 
+      theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "Economic Sector", y = "Percentage of Adult Population (%)") +
       guides(color = guide_legend(title = NULL, ncol = 3)) +
       theme(legend.position = c(0.263, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
@@ -194,7 +194,7 @@ p8 <- ggplot(gvaw_data, aes(x = obj, y = value, group = country, color = igroup)
                                     "39: Admin & Support Services", "40: Public Admin & Social Sec", "41: Education", "42: Health & Social Work",
                                     "43: Arts & Recreation", "44: Other Services", "45: Households as Employers")) + 
       scale_y_log10(limits = c(10,10^7), expand = c(0,0), position = "left", labels = scales::trans_format("log10", scales::math_format(10^.x))) + 
-      theme(axis.text.x = element_text(angle = 55, hjust = 1)) + 
+      theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "Economic Sector", y = "Annual GVA per Worker ($)") +
       guides(color = guide_legend(title = NULL, ncol = 3)) +
       theme(legend.position = c(0.263, 0.217), legend.justification = c(1, 1), legend.box.just = "right", 
@@ -222,7 +222,7 @@ p9 <- ggplot(wfh_data, aes(x = wfh, y = value, group = country, color = igroup))
                                     "43: Arts & Recreation", "44: Other Services", "45: Households as Employers")) + 
       #scale_y_continuous(limits = c(0,0.50), expand = c(0,0), position = "left", labels = scales::label_number(scale = 100, suffix = "")) + 
       scale_y_log10(limits = c(0.0001,1), expand = c(0,0), position = "left", labels = scales::label_number(scale = 100, suffix = "")) + 
-      theme(axis.text.x = element_text(angle = 55, hjust = 1)) + 
+      theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "Economic Sector", y = "Percentage of Workers Capable of Home-Working (%)") +
       guides(color = guide_legend(title = NULL, ncol = 3)) +
       theme(legend.position = c(0.263, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 

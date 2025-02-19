@@ -176,6 +176,7 @@ p1 <- ggplot(mmp1_data, aes(x = value, fill = variable)) +
                                    "Distancing: Death-Sensitivity" = "slategray2", "Distancing: Time-Decay" = "slategray2", 
                                    "Surveillance: Testing Start-Time"  = "palegreen")) + 
       theme_bw() +
+      scale_x_continuous(expand = c(0,0), position = "bottom", labels = scales::label_parse()) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right") +
       theme(panel.spacing.y = unit(2.25, "lines"), legend.position = "none") + 
       labs(title = "", x = "", y = "Relative Frequency")
@@ -190,6 +191,7 @@ p2 <- ggplot(mmp2_data, aes(x = value, fill = variable)) +
                                    "Vaccination: Administration Start-Time" = "lightsalmon", "Vaccination: Administration Rate" = "lightsalmon", 
                                    "Vaccination: Coverage" = "lightsalmon")) +
       theme_bw() +
+      scale_x_continuous(expand = c(0,0), position = "bottom", labels = scales::label_parse()) +
       facetted_pos_scales(x = list(variable == "Vaccination: Coverage" ~ scale_x_continuous(labels = scales::label_number(scale = 100, suffix = "")))) +   
       scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right") +
       theme(panel.spacing.y = unit(2.25, "lines"), legend.position = "none") + 
