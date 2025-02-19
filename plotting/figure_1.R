@@ -9,6 +9,7 @@ sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.name
 library(scam)
 library(ggplot2)
 library(ggh4x)
+library(ggdensity)
 library(cowplot)
 library(ggpattern)
 library(patchwork)
