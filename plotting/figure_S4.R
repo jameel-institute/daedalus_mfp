@@ -19,7 +19,7 @@ library(patchwork)
 #source("functions/parse_inputs.R")
 #source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
-#source("functions/table_formatting.R")
+#source("functions/format_table.R")
 
 #extract fitted parameters from mmpx_dist dataframes
 # print(rbind(mmp1_dist %>% group_by(igroup,variable) %>% slice_min(xvalue,n=1), 

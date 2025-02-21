@@ -19,7 +19,7 @@ source("functions/calc_loss_pc.R")
 #source("functions/parse_inputs.R")
 #source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
-#source("functions/table_formatting.R")
+#source("functions/format_table.R")
 
 list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
 input_files  <- list_files[grepl("_data\\.csv$", list_files)]

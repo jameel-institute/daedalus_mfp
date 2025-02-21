@@ -19,7 +19,7 @@ library(patchwork)
 #source("functions/parse_inputs.R")
 #source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
-#source("functions/table_formatting.R")
+#source("functions/format_table.R")
 
 ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(igroup   = factor(igroup, levels = c("LLMIC","UMIC","HIC"))) %>%

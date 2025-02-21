@@ -19,7 +19,7 @@ source("functions/calc_loss_pc.R")
 #source("functions/parse_inputs.R")
 #source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
-#source("functions/table_formatting.R")
+source("functions/format_table.R")
 
 list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
 input_files  <- list_files[grepl("_data\\.csv$", list_files)]
@@ -28,9 +28,9 @@ output_files <- list_files[!grepl("_data\\.csv$", list_files)]
 output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
                 (function(x) calc_loss_pc(input_data,x)) %>% 
                 group_by(location, disease, strategy) %>%
-                mutate(med_SLpc   = quantile(SLpc, 0.50),
-                       mean_SLpc  = mean(SLpc),
-                       q3_SLpc    = quantile(SLpc, 0.75),
+                mutate(med_SLpc   = quantile(VLYLpc, 0.50),
+                       mean_SLpc  = mean(VLYLpc),
+                       q3_SLpc    = quantile(VLYLpc, 0.75),
                        max_VLYLpc = max(VLYLpc)) %>%
                 group_by(location, disease) %>%
                 mutate(min_med   = (med_SLpc  == min(med_SLpc)),
@@ -70,17 +70,14 @@ ggsave("figure_S6.png", plot = gg, height = 14, width = 10)
 
 output_table <- output_data %>% 
                 group_by(location, disease, strategy) %>% 
-                summarise(mean    = sprintf("%.1f", mean(VLYLpc)),
+                summarise(mean    = sprintf("%.1f", unique(mean_SLpc)),
                           sd      = sprintf("%.1f", sd(VLYLpc)),
                           q1      = sprintf("%.1f", quantile(VLYLpc, 0.25)),
-                          q2      = sprintf("%.1f", quantile(VLYLpc, 0.50)),
-                          q3      = sprintf("%.1f", quantile(VLYLpc, 0.75)),
+                          q2      = sprintf("%.1f", unique(med_SLpc)),
+                          q3      = sprintf("%.1f", unique(q3_SLpc)),
                           min_any = unique(min_any),
                           min_med = unique(min_med),
                           min_q3  = unique(min_q3)) %>% 
-                # mutate(mean = if_else(min_any, paste0("\\bfseries{",mean,"}"),             mean),
-                #        q2   = if_else(min_med, paste0(q2,"$^*$"),                          paste0(q2,"\\phantom{1}")),
-                #        q3   = if_else(min_q3,  paste0(q3,"\\textsuperscript\\textdagger"), paste0(q3,"\\phantom{1}"))) %>%
                 mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
                 mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
                 mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
