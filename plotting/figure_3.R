@@ -33,13 +33,17 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                        y = y - y[strategy == "No Closures"]) %>%
                 ungroup() %>%
                 group_by(location, disease, strategy) %>%
-                mutate(mean_SLpc = mean(SLpc)) %>%
+                mutate(med_SLpc  = quantile(SLpc, 0.50),
+                       mean_SLpc = mean(SLpc),
+                       q3_SLpc   = quantile(SLpc, 0.75)) %>%
                 group_by(location, disease) %>%
-                mutate(min_mean  = (mean_SLpc == min(mean_SLpc)),
+                mutate(min_med   = (med_SLpc  == min(med_SLpc)),
+                       min_mean  = (mean_SLpc == min(mean_SLpc)),
                        min_mean2 = {
                          strategy_means <- mean_SLpc[!duplicated(strategy)]
                          sorted_means   <- sort(strategy_means)
-                         (mean_SLpc == sorted_means[2])}) %>%
+                         (mean_SLpc == sorted_means[2])},
+                       min_q3    = (q3_SLpc   == min(q3_SLpc))) %>%
                 group_by(location, disease, strategy) %>%
                 mutate(min_any   = any(min_mean, min_mean2)) %>%
                 ungroup() %>%
@@ -52,7 +56,9 @@ output_stats <- output_data %>% #for quicker plotting
                           mean_y  = mean(y), 
                           q1_y    = quantile(y, 0.25), 
                           q3_y    = quantile(y, 0.75),
-                          min_any = unique(min_any)) %>%
+                          min_any = unique(min_any),
+                          min_med = unique(min_med),
+                          min_q3  = unique(min_q3)) %>%
                 mutate(alpha = ifelse(min_any, 1, 0.25))
                 
 gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, alpha = alpha)) +
@@ -125,3 +131,25 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_3.png", plot = gg, height = 14, width = 10)
+
+output_table <- output_stats %>% 
+                mutate(mean_x = sprintf("%.1f", mean_x),
+                       q1_x   = sprintf("%.1f", q1_x),
+                       q3_x   = sprintf("%.1f", q3_x),
+                       mean_y = sprintf("%.1f", mean_y),
+                       q1_y   = sprintf("%.1f", q1_y),
+                       q3_y   = sprintf("%.1f", q3_y)) %>%
+                mutate(mean_x = paste0(mean_x," (",q1_x,"; ",q3_x,")"),
+                       mean_y = paste0(mean_y," (",q1_y,"; ",q3_y,")")) %>%
+                # mutate(mean_x = if_else(min_any, paste0("\\bfseries{",mean_x,"}"), mean_x),
+                #        mean_y = if_else(min_any, paste0("\\bfseries{",mean_y,"}"), mean_y)) %>%
+                mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(mean_y   = if_else(str_detect(strategy, "Elimination"),  paste0(mean_y,"\\phantom{.}"), mean_y)) %>%
+                mutate(mean_y   = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(mean_y,"\\phantom{.}"), mean_y)) %>%
+                dplyr::select(-starts_with("q"),-starts_with("min"),-alpha) %>%
+                mutate(across(everything(), as.character)) %>%            
+                format_table("location")
+
+write.table(output_table, file = "table_S10.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)

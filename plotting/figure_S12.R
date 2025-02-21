@@ -30,8 +30,7 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                 group_by(location, disease, strategy) %>%
                 mutate(med_SLpc  = quantile(SLpc, 0.50),
                        mean_SLpc = mean(SLpc),
-                       q3_SLpc   = quantile(SLpc, 0.75),
-                       max_SLpc  = max(SLpc)) %>%
+                       q3_SLpc   = quantile(SLpc, 0.75)) %>%
                 group_by(location, disease) %>%
                 mutate(min_med   = (med_SLpc  == min(med_SLpc)),
                        min_mean  = (mean_SLpc == min(mean_SLpc)),
@@ -69,3 +68,40 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = vlyl, alpha = min_
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S12.png", plot = gg, height = 14, width = 10)
+
+output_table <- output_data %>%
+                pivot_wider(names_from = vlyl, values_from = value) %>%
+                group_by(location, disease, strategy) %>% 
+                summarise(median_1 = sprintf("%.1f", quantile(vlyl_1, 0.50)),
+                          q1_1     = sprintf("%.1f", quantile(vlyl_1, 0.25)),
+                          q3_1     = sprintf("%.1f", quantile(vlyl_1, 0.75)),
+                          median_2 = sprintf("%.1f", quantile(vlyl_2, 0.50)),
+                          q1_2     = sprintf("%.1f", quantile(vlyl_2, 0.25)),
+                          q3_2     = sprintf("%.1f", quantile(vlyl_2, 0.75)),
+                          median_3 = sprintf("%.1f", quantile(vlyl_3, 0.50)),
+                          q1_3     = sprintf("%.1f", quantile(vlyl_3, 0.25)),
+                          q3_3     = sprintf("%.1f", quantile(vlyl_3, 0.75)),
+                          median_4 = sprintf("%.1f", quantile(vlyl_4, 0.50)),
+                          q1_4     = sprintf("%.1f", quantile(vlyl_4, 0.25)),
+                          q3_4     = sprintf("%.1f", quantile(vlyl_4, 0.75)),
+                          min_any  = unique(min_any),
+                          min_med  = unique(min_med),
+                          min_q3   = unique(min_q3)) %>%
+                mutate(median_1 = paste0(median_1," (",q1_1,"; ",q3_1,")"),
+                       median_2 = paste0(median_2," (",q1_2,"; ",q3_2,")"),
+                       median_3 = paste0(median_3," (",q1_3,"; ",q3_3,")"),
+                       median_4 = paste0(median_4," (",q1_4,"; ",q3_4,")")) %>%
+                # mutate(median_1 = if_else(min_any, paste0("\\bfseries{",median_1,"}"), median_1),
+                #        median_2 = if_else(min_any, paste0("\\bfseries{",median_2,"}"), median_2),
+                #        median_3 = if_else(min_any, paste0("\\bfseries{",median_3,"}"), median_3),
+                #        median_4 = if_else(min_any, paste0("\\bfseries{",median_4,"}"), median_4)) %>%
+                mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(median_4 = if_else(str_detect(strategy, "Elimination"),  paste0(median_4,"\\phantom{.}"), median_4)) %>%
+                mutate(median_4 = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(median_4,"\\phantom{.}"), median_4)) %>%
+                dplyr::select(-starts_with("q"),-starts_with("min")) %>%
+                mutate(across(everything(), as.character)) %>%            
+                format_table("location")
+
+write.table(output_table, file = "table_S11.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)

@@ -28,10 +28,10 @@ output_files <- list_files[!grepl("_data\\.csv$", list_files)]
 output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
                 (function(x) calc_loss_pc(input_data,x)) %>% 
                 group_by(location, disease, strategy) %>%
-                mutate(med_SLpc  = quantile(VSYLpc, 0.50),
-                       mean_SLpc = mean(VSYLpc),
-                       q3_SLpc   = quantile(VSYLpc, 0.75),
-                       max_SLpc  = max(VSYLpc)) %>%
+                mutate(med_SLpc   = quantile(SLpc, 0.50),
+                       mean_SLpc  = mean(SLpc),
+                       q3_SLpc    = quantile(SLpc, 0.75),
+                       max_VSYLpc = max(VSYLpc)) %>%
                 group_by(location, disease) %>%
                 mutate(min_med   = (med_SLpc  == min(med_SLpc)),
                        min_mean  = (mean_SLpc == min(mean_SLpc)),
@@ -49,9 +49,9 @@ gg <- ggplot(output_data, aes(x = strategy, y = VSYLpc, linewidth = min_any, alp
       geom_violin(fill = "blue") + 
       scale_linewidth_manual(values = c("FALSE" = 0.1, "TRUE" = 0.5)) +
       scale_alpha_manual(values = c("FALSE" = 0.25, "TRUE" = 1)) +
-      geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_SLpc),
+      geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_VSYLpc),
                 vjust = 0.4, label = "*", size = 6, color = "black", inherit.aes = FALSE) +
-      geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_SLpc),
+      geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_VSYLpc),
                 vjust = -1.6, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
       theme_bw() + 
       facetted_pos_scales(y = list(
@@ -67,3 +67,27 @@ gg <- ggplot(output_data, aes(x = strategy, y = VSYLpc, linewidth = min_any, alp
       guides(linewidth = "none", alpha = "none")
 
 ggsave("figure_S8.png", plot = gg, height = 14, width = 10)
+
+output_table <- output_data %>% 
+                group_by(location, disease, strategy) %>% 
+                summarise(mean    = sprintf("%.1f", mean(VSYLpc)),
+                          sd      = sprintf("%.1f", sd(VSYLpc)),
+                          q1      = sprintf("%.1f", quantile(VSYLpc, 0.25)),
+                          q2      = sprintf("%.1f", quantile(VSYLpc, 0.50)),
+                          q3      = sprintf("%.1f", quantile(VSYLpc, 0.75)),
+                          min_any = unique(min_any),
+                          min_med = unique(min_med),
+                          min_q3  = unique(min_q3)) %>% 
+                # mutate(mean = if_else(min_any, paste0("\\bfseries{",mean,"}"),             mean),
+                #        q2   = if_else(min_med, paste0(q2,"$^*$"),                          paste0(q2,"\\phantom{1}")),
+                #        q3   = if_else(min_q3,  paste0(q3,"\\textsuperscript\\textdagger"), paste0(q3,"\\phantom{1}"))) %>%
+                mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(q3       = if_else(str_detect(strategy, "Elimination"),  paste0(q3,"\\phantom{.}"), q3)) %>%
+                mutate(q3       = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(q3,"\\phantom{.}"), q3)) %>%
+                dplyr::select(-starts_with("min")) %>%
+                mutate(across(everything(), as.character)) %>%            
+                format_table("location")
+
+write.table(output_table, file = "table_S9.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)

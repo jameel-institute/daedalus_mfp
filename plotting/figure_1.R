@@ -79,3 +79,24 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_1.png", plot = gg, height = 14, width = 10)
+
+output_table <- output_data %>% 
+                group_by(location, disease, strategy) %>% 
+                summarise(mean    = sprintf("%.1f", unique(mean_SLpc)),
+                          sd      = sprintf("%.1f", sd(SLpc)),
+                          q1      = sprintf("%.1f", quantile(SLpc, 0.25)),
+                          q2      = sprintf("%.1f", unique(med_SLpc)),
+                          q3      = sprintf("%.1f", unique(q3_SLpc)),
+                          min_any = unique(min_any),
+                          min_med = unique(min_med),
+                          min_q3  = unique(min_q3)) %>% 
+                mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(q3       = if_else(str_detect(strategy, "Elimination"),  paste0(q3,"\\phantom{.}"), q3)) %>%
+                mutate(q3       = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(q3,"\\phantom{.}"), q3)) %>%
+                dplyr::select(-starts_with("min")) %>%
+                mutate(across(everything(), as.character)) %>%            
+                format_table("location")
+
+write.table(output_table, file = "table_S6.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
