@@ -16,181 +16,87 @@ library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
-source("functions/parse_inputs.R")
-source("functions/voi_decision.R")
-source("functions/voi_fit.R")
-#source("functions/format_table.R")
+#source("functions/parse_inputs.R")
+#source("functions/voi_dec.R")
+#source("functions/voi_fit.R")
+source("functions/format_table.R")
 
 list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
 input_files  <- list_files[grepl("_data\\.csv$", list_files)]
-input_data   <- lapply(input_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>% parse_inputs() #slightly slow
+input_data   <- lapply(input_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols()
 output_files <- list_files[!grepl("_data\\.csv$", list_files)]
-output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>% 
-                left_join(input_data %>% dplyr::select(location, country, mean_age, pr_le, AL_wavg, AHT_wavg, AS_wavg, workp,
-                                                       epop, pr_workf, pr_gvapw, pr_wfh, Tres, sda, sdb, sdc, t_tit, trate, 
-                                                       Hmax, t_vax, arate, puptake), by = c("location", "country")) %>%
+output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
                 (function(x) calc_loss_pc(input_data,x)) %>% 
-                dplyr::select(-gdp, -tdur, -starts_with("vlyl"), -starts_with("gdpl"), -vsyl, -VLYLpc, -GDPLpc, -VSYLpc)
-evppi_values <- voi_decision(output_data, as.list(setdiff(names(output_data), c("location", "country", "disease", "strategy", "SLpc")))) %>%
-                filter(!parameter %in% c("sda","sdb","sdc")) %>% #slow              
-                group_by(location, disease) %>% 
-                slice_max(order_by = res, n = 1) %>% 
-                ungroup()
-output_data  <- output_data %>% left_join(evppi_values, by = c("location", "disease")) %>%
-                rowwise() %>% 
-                mutate(xaxis = get(parameter)) %>% 
-                ungroup()
-evppi_fits   <- voi_fit(output_data) %>% rename(xaxis = x, SLpc = y, lower = l, upper = u) %>% 
-                left_join(evppi_values, by = c("location", "disease", "parameter"))
-#prettification: vaccine coverage rescaling, gva per worker rescaling, alpha, filtering, xlabels
-output_data  <- output_data %>% left_join(input_data %>% filter(country == 1) %>% 
-                                          dplyr::select(location, ifr_1918, ifr_dlta, ifr_sars), by = c("location")) %>%
-                mutate(xaxis = case_when(disease == "Influenza-1918-X" & parameter == "puptake" ~ xaxis*4^log10(100*ifr_1918),
-                                         disease == "Covid-Delta-X" & parameter == "puptake" ~ xaxis*4^log10(100*ifr_dlta),
-                                         disease == "SARS-X" & parameter == "puptake" ~ xaxis*4^log10(100*ifr_sars),
-                                         TRUE ~ xaxis)) %>%
-                mutate(xaxis = ifelse(parameter == "puptake", 100*xaxis, xaxis)) %>%
-                mutate(xaxis = ifelse(parameter == "pr_gvapw", 10^6*xaxis, xaxis))
-evppi_fits   <- evppi_fits %>% left_join(input_data %>% filter(country == 1) %>%
-                                         dplyr::select(location, ifr_1918, ifr_dlta, ifr_sars), by = c("location")) %>%
-                mutate(xaxis = case_when(disease == "Influenza-1918-X" & parameter == "puptake" ~ xaxis*4^log10(100*ifr_1918),
-                                         disease == "Covid-Delta-X" & parameter == "puptake" ~ xaxis*4^log10(100*ifr_dlta),
-                                         disease == "SARS-X" & parameter == "puptake" ~ xaxis*4^log10(100*ifr_sars),
-                                         TRUE ~ xaxis)) %>%
-                mutate(xaxis = ifelse(parameter == "puptake", 100*xaxis, xaxis)) %>%
-                mutate(xaxis = ifelse(parameter == "pr_gvapw", 10^6*xaxis, xaxis))
-evppi_fits   <- evppi_fits %>%
-                group_by(location, disease, xaxis) %>% 
-                mutate(alpha = ifelse(SLpc == min(SLpc), 1, 0.99)) %>% 
-                ungroup() %>%
                 group_by(location, disease, strategy) %>%
-                mutate(alpha = ifelse(!any(alpha == 1) & alpha == 0.99, 0, alpha)) %>%
-                ungroup() %>%
+                mutate(med_SLpc  = quantile(SLpc, 0.50),
+                       mean_SLpc = mean(SLpc),
+                       q3_SLpc   = quantile(SLpc, 0.75),
+                       max_SLpc  = max(SLpc)) %>%
                 group_by(location, disease) %>%
-                mutate(alpha = ifelse(alpha > 0 & res < 0.25, 0.25, alpha)) %>% #threshold features in geom_ribbon below
+                mutate(min_med   = (med_SLpc  == min(med_SLpc)),
+                       min_mean  = (mean_SLpc == min(mean_SLpc)),
+                       min_mean2 = {
+                          strategy_means <- mean_SLpc[!duplicated(strategy)]
+                          sorted_means   <- sort(strategy_means)
+                          (mean_SLpc == sorted_means[2])},
+                       min_q3    = (q3_SLpc   == min(q3_SLpc))) %>%
+                group_by(location, disease, strategy) %>%
+                mutate(min_any   = any(min_mean, min_mean2)) %>%
+                mutate(pLYL  = mean(VLYLpc/SLpc),#mean of proportions
+                       pGDPL = mean(GDPLpc/SLpc),
+                       pSYL  = mean(VSYLpc/SLpc)) %>% 
                 ungroup()
-evppi_fitsX  <- evppi_fits %>%
-                group_by(location, disease) %>% 
-                summarise(nxaxis = unique(xaxis), .groups = "drop")
-output_dataX <- output_data %>% 
-                group_by(location, disease) %>% 
-                summarise(xaxis = unique(xaxis), .groups = "drop") %>%
-                left_join(evppi_fitsX, by = c("location", "disease")) %>%
-                group_by(location, disease, xaxis) %>% 
-                slice(which.min(abs(xaxis - nxaxis)))
-output_data  <- output_data %>%
-                left_join(output_dataX, by = c("location", "disease", "xaxis")) %>%
-                left_join(evppi_fits %>% rename(nxaxis = xaxis) %>% dplyr::select(location, disease, strategy, nxaxis, alpha),
-                          by = c("location", "disease", "strategy", "nxaxis")) %>%
-                mutate(alpha = floor(alpha))
-output_data  <- output_data %>%
-                filter(!(location == "LLMIC" & disease == "Influenza-2009-X" & strategy == "Economic Closures") &
-                       !(location == "UMIC" & disease == "Influenza-2009-X" & strategy == "Economic Closures") &
-                       !(location == "UMIC" & disease == "Influenza-1957-X" & strategy == "School Closures") &
-                       !(location == "UMIC" & disease == "Influenza-1918-X" & strategy == "Elimination") &  
-                       !(location == "UMIC" & disease == "SARS-X" & strategy == "School Closures") &
-                       !(location == "UMIC" & disease == "SARS-X" & strategy == "Elimination") &
-                       !(location == "HIC" & disease == "Influenza-2009-X" & strategy == "Economic Closures") &
-                       !(location == "HIC" & disease == "Covid-Wildtype-X" & strategy == "No Closures"))
-evppi_fits   <- evppi_fits %>%
-                filter(!(location == "LLMIC" & disease == "Influenza-2009-X" & strategy == "Economic Closures") &
-                       !(location == "UMIC" & disease == "Influenza-2009-X" & strategy == "Economic Closures") &
-                       !(location == "UMIC" & disease == "Influenza-1957-X" & strategy == "School Closures") &
-                       !(location == "UMIC" & disease == "Influenza-1918-X" & strategy == "Elimination") &
-                       !(location == "UMIC" & disease == "SARS-X" & strategy == "School Closures") &
-                       !(location == "UMIC" & disease == "SARS-X" & strategy == "Elimination") &
-                       !(location == "HIC" & disease == "Influenza-2009-X" & strategy == "Economic Closures") &
-                       !(location == "HIC" & disease == "Covid-Wildtype-X" & strategy == "No Closures"))
-evppi_labs   <- evppi_fits %>% 
-                group_by(disease, location) %>%
-                summarize(xlabel = unique(parameter), .groups = "drop") %>% #may vary by income group(@)
-                mutate(xlabel = case_when(xlabel == "mean_age" ~ "Average Age (years)",
-                                          #xlabel == "pr_le" ~ "@ Life Expectancy (years)",
-                                          #xlabel == "AL_wavg" ~ "Household Contacts (#/person/day)",
-                                          #xlabel == "AHT_wavg" ~ "Other-Location Contacts (#/person/day)",
-                                          xlabel == "AS_wavg" ~ "School Contacts (#/child/day)",
-                                          #xlabel == "workp" ~ "Workplace Contacts (#/adult/day)",
-                                          #xlabel == "epop" ~ "Employment-Population Ratio (%)",
-                                          #xlabel == "pr_workf" ~ "@ Sector Workforce (%)",
-                                          xlabel == "pr_gvapw" ~ "GVA per Worker ($)",
-                                          #xlabel == "pr_wfh" ~ "@ Home-Working Ratio (%)",
-                                          xlabel == "Tres" ~ "Response Time (doubling times)",
-                                          xlabel == "sda" ~ "Distancing Multiplier Intercept",
-                                          xlabel == "sdb" ~ "Distancing Death-Sensitivity",
-                                          xlabel == "sdc" ~ "Distancing Time-Decay",
-                                          xlabel == "t_tit" ~ "Testing Start-Time (doubling times)",
-                                          xlabel == "trate" ~ "Testing Rate (per 100k/day)",
-                                          xlabel == "Hmax" ~ "Spare Hospital Beds (per 100k)",
-                                          xlabel == "t_vax" ~ "Vaccination Start-Time (days)",
-                                          #xlabel == "arate" ~ "Vaccination Rate (per 100k/day)",
-                                          xlabel == "puptake" ~ "Vaccination Coverage (% of HIT)"),
-                       xx = rep(c(0.17, 0.49, 0.81), 7),
-                       xy = rep(seq(0.836, 0.01, by = -0.1315), each = 3))
 
-gg <- ggplot(output_data, aes(x = xaxis, y = SLpc, color = strategy, alpha = alpha)) +
-      facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
-      geom_ribbon(data = evppi_fits, 
-                  aes(ymin = lower, ymax = upper, fill = strategy, alpha = ceiling(alpha)*(0.05+0.45*(res > 0.25))), 
-                  color = NA) +
-      geom_point(shape = 19, size = 0.02, stroke = 0.2) +
-      geom_line(data = evppi_fits, linewidth = 0.5) +
-      scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
-                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
-      scale_fill_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy",
-                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
-      scale_alpha(range = c(0, 1)) +
-      theme_bw() +
-      facetted_pos_scales(
-      x = list(
-      location == "LLMIC" & disease == "Influenza-2009-X" ~ scale_x_log10(limits=c(1,300),breaks=c(1,3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "UMIC" & disease == "Influenza-2009-X" ~ scale_x_log10(limits=c(3,300),breaks=c(3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Influenza-2009-X" ~ scale_x_log10(limits=c(10,1000),breaks=c(10,30,100,300,1000),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "Influenza-1957-X" ~ scale_x_log10(limits=c(1,300),breaks=c(1,3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "UMIC" & disease == "Influenza-1957-X" ~ scale_x_log10(limits=c(6,30),breaks=c(6,9,14,21,30),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Influenza-1957-X" ~ scale_x_log10(limits=c(10,1000),breaks=c(10,30,100,300,1000),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "Influenza-1918-X" ~ scale_x_log10(limits=c(1,300),breaks=c(1,3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "UMIC" & disease == "Influenza-1918-X" ~ scale_x_log10(limits=c(3,300),breaks=c(3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Influenza-1918-X" ~ scale_x_continuous(limits=c(50,200),breaks=seq(50,200,by=50),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "Covid-Omicron-X" ~ scale_x_log10(limits=c(0.3,3000),breaks=c(0.3,3,30,300,3000),expand=c(0,0),position="bottom",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Covid-Omicron-X" ~ scale_x_continuous(limits=c(25,45),breaks=seq(25,45,by=5),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Covid-Omicron-X" ~ scale_x_continuous(limits=c(50000,250000),breaks=seq(50000,250000,by=50000),labels=scales::label_number(scale = 1e-3, suffix = "k"),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "Covid-Delta-X" ~ scale_x_log10(limits=c(1,300),breaks=c(1,3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "UMIC" & disease == "Covid-Delta-X" ~ scale_x_continuous(limits=c(25,45),breaks=seq(25,45,by=5),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Covid-Delta-X" ~ scale_x_continuous(limits=c(30,50),breaks=seq(30,50,by=5),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "Covid-Wildtype-X" ~ scale_x_log10(limits=c(0.3,3000),breaks=c(0.3,3,30,300,3000),expand=c(0,0),position="bottom",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Covid-Wildtype-X" ~ scale_x_log10(limits=c(3,300),breaks=c(3,10,30,100,300),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_x_continuous(limits=c(30,50),breaks=seq(30,50,by=5),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(0,250),breaks=seq(0,250,by=50),expand=c(0,0),position="bottom"),
-      location == "UMIC" & disease == "SARS-X" ~ scale_x_log10(limits=c(1,100),breaks=c(1,3,10,30,100),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(4,14),breaks=seq(4,14,by=2),expand=c(0,0),position="bottom")),
-      y = list(
-      location == "LLMIC" & disease == "Influenza-2009-X" ~ scale_y_log10(limits=c(0.3,300),breaks=3*10^seq(-1,2),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Influenza-2009-X" ~ scale_y_log10(limits=c(0.3,300),breaks=3*10^seq(-1,2),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "Influenza-2009-X" ~ scale_y_log10(limits=c(0.3,300),breaks=3*10^seq(-1,2),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "LLMIC" & disease == "Influenza-1957-X" ~ scale_y_log10(limits=c(0.3,300),breaks=3*10^seq(-1,2),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Influenza-1957-X" ~ scale_y_log10(limits=c(0.3,300),breaks=3*10^seq(-1,2),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "Influenza-1957-X" ~ scale_y_log10(limits=c(0.3,300),breaks=3*10^seq(-1,2),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "LLMIC" & disease == "Influenza-1918-X" ~ scale_y_log10(limits=c(100,3000),breaks=c(100,300,1000,3000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Influenza-1918-X" ~ scale_y_log10(limits=c(100,3000),breaks=c(100,300,1000,3000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "Influenza-1918-X" ~ scale_y_log10(limits=c(30,1000),breaks=c(30,100,300,1000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "LLMIC" & disease == "Covid-Omicron-X" ~ scale_y_log10(limits=c(10,300),breaks=c(10,30,100,300),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Covid-Omicron-X" ~ scale_y_log10(limits=c(10,300),breaks=c(10,30,100,300),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "Covid-Omicron-X" ~ scale_y_log10(limits=c(10,300),breaks=c(10,30,100,300),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "LLMIC" & disease == "Covid-Delta-X" ~ scale_y_log10(limits=c(30,1000),breaks=c(30,100,300,1000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Covid-Delta-X" ~ scale_y_log10(limits=c(30,1000),breaks=c(30,100,300,1000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "Covid-Delta-X" ~ scale_y_log10(limits=c(30,1000),breaks=c(30,100,300,1000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "LLMIC" & disease == "Covid-Wildtype-X" ~ scale_y_log10(limits=c(10,300),breaks=c(10,30,100,300),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "Covid-Wildtype-X" ~ scale_y_log10(limits=c(10,300),breaks=c(10,30,100,300),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_y_log10(limits=c(10,300),breaks=c(10,30,100,300),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "LLMIC" & disease == "SARS-X" ~ scale_y_log10(limits=c(100,3000),breaks=c(100,300,1000,3000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "UMIC" & disease == "SARS-X" ~ scale_y_log10(limits=c(30,1000),breaks=c(30,100,300,1000),expand=c(0,0),position="right",labels=scales::label_parse()),
-      location == "HIC" & disease == "SARS-X" ~ scale_y_log10(limits=c(30,1000),breaks=c(30,100,300,1000),expand=c(0,0),position="right",labels=scales::label_parse()))) + 
-      theme(panel.spacing = unit(0.75, "lines")) +
+gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), alpha = min_any), color = "black") + 
+      facet_grid2(disease ~ location, switch = "y", scales = "free_y") +
+      geom_violin(aes(width = pLYL+pGDPL+pSYL, linewidth = min_any, fill = "red")) + 
+      geom_violin(aes(width = pGDPL+pSYL, fill = "white"), linewidth = 0, alpha = 1) +
+      geom_violin(aes(width = pGDPL+pSYL, fill = "yellow"), linewidth = 0.1) +
+      geom_violin(aes(width = pSYL, fill = "white"), linewidth = 0, alpha = 1) +
+      geom_violin(aes(width = pSYL, fill = "blue"), linewidth = 0.1) +
+      scale_linewidth_manual(values = c("FALSE" = 0.1, "TRUE" = 0.5)) +
+      scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"), 
+                        breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
+      scale_alpha_manual(values = c("FALSE" = 0.25, "TRUE" = 1)) +
+      geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_SLpc),
+                vjust = 0.4, label = "*", size = 6, color = "black", inherit.aes = FALSE) +
+      geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_SLpc),
+                vjust = -1.6, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
+      theme_bw() + 
+      facetted_pos_scales(y = list(
+        scale_y_continuous(limits=c(0,200),  breaks=seq(0,200,50),    expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,320),  breaks=seq(0,320,80),    expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,2400), breaks=seq(0,2400,600),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,480),  breaks=seq(0,480,120),   expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,1600), breaks=seq(0,1600,400),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,800),  breaks=seq(0,800,200),   expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,2800), breaks=seq(0,2800,700),  expand=c(0,0), position="right"))) +
+      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "", y = "Societal Loss (% of GDP)") +
-      guides(color = guide_legend(title = NULL, override.aes = list(linewidth = 1.5)), fill = "none", alpha = "none") +
+      guides(width = "none", linewidth = "none", color = "none", fill = guide_legend(title = NULL), alpha = "none") +
       theme(legend.position = "bottom", legend.box.just = "right", 
             legend.key.size = unit(0.8, "cm"), legend.text = element_text(size = 9), 
             legend.margin = margin(0, 0, 0, 0))
-gg <- ggdraw(gg) + draw_text(evppi_labs$xlabel, x = evppi_labs$xx, y = evppi_labs$xy, hjust = 0.5, vjust = 0.5, size = 9)
 
 ggsave("figure_2.png", plot = gg, height = 14, width = 10)
+
+output_table <- output_data %>% 
+                group_by(location, disease, strategy) %>% 
+                summarise(mean    = sprintf("%.1f", unique(mean_SLpc)),
+                          sd      = sprintf("%.1f", sd(SLpc)),
+                          q1      = sprintf("%.1f", quantile(SLpc, 0.25)),
+                          q2      = sprintf("%.1f", unique(med_SLpc)),
+                          q3      = sprintf("%.1f", unique(q3_SLpc)),
+                          min_any = unique(min_any),
+                          min_med = unique(min_med),
+                          min_q3  = unique(min_q3)) %>% 
+                mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(q3       = if_else(str_detect(strategy, "Elimination"),  paste0(q3,"\\phantom{.}"), q3)) %>%
+                mutate(q3       = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(q3,"\\phantom{.}"), q3)) %>%
+                dplyr::select(-starts_with("min")) %>%
+                mutate(across(everything(), as.character)) %>%            
+                format_table("location")
+
+write.table(output_table, file = "table_S6.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)

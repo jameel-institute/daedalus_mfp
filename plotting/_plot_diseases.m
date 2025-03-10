@@ -29,6 +29,7 @@ ifr    = dis.ps*[0.000276 0.00011 0.00011 0.00012 ...
                  0.00065 0.00980 0.00980 0.00980 0.00980];
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+f09 = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color','green');
@@ -52,6 +53,7 @@ ifr    = dis.ps*[0.0001 0.0001 0.0001 0.0001 ...
                  0.0025 0.0200 0.0200 0.0200 0.0200];   
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+f57 = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color',[0.93 0.69 0.13]);
@@ -75,6 +77,7 @@ ifr    = dis.ps*[0.02284 0.00398 0.00478 0.00983 ...
                  0.03081 0.04144 0.04941 0.04941 0.04941];
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+f18 = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color',[1 0.5 0]);
@@ -106,6 +109,7 @@ ifr    = 1.85*[0.000016 0.000016 0.000070 0.000070 ...
           0.14 0.14 0.20 0.20 0.33];
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+com = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color','red');
@@ -129,6 +133,7 @@ ifr    = [0.000016 0.000016 0.000070 0.000070 ...
           0.019300 0.019300 0.042800 0.042800 0.078000];
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+cwt = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color','magenta');
@@ -152,6 +157,7 @@ ifr    = 1.85*[0.000016 0.000016 0.000070 0.000070 ...
           0.019300 0.019300 0.042800 0.042800 0.078000];
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+cde = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color','blue');
@@ -175,6 +181,7 @@ ifr    = dis.ps*[0.017 0.017 0.017 0.017 ...
                  0.255 0.255 0.255 0.255 0.177];
 phgs   = ihr./dis.ps;
 pdgh   = ifr./ihr;
+srs = mean(ifr);
 
 subplot(1,2,1);
 plot(100*ihr,'-','linewidth',1.5,'color','black');
@@ -255,3 +262,117 @@ legend('Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid
 % set(gca,'FontSize',fs);
 % legend('Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Wildtype','Covid Delta','SARS',...
 %        'location','northwest');
+
+%% R0 PLOT
+
+R0_values = fliplr([1.5800,1.8000,2.5000,5.9436,5.0800,2.8700,1.50]);
+
+color_map = flipud([ ...
+    0, 0, 1; 
+    0, 1, 0;      
+    1, 1, 0;      
+    1, 0.5, 0;      
+    1, 0, 0;      
+    1, 0, 1;      
+        
+    0, 0, 0
+]);
+
+color_map = flipud([ ...
+    0, 1, 0;
+    0, 1, 0;      
+    0, 1, 0;      
+    0, 1, 0;     
+    0, 1, 0;      
+    0, 1, 0;    
+    0, 1, 0
+]);
+
+y = 1:7;
+
+f  = figure('Units','centimeters','Position',[0 0 12 8]);
+set(f,'DefaultAxesFontSize',10);
+set(f,'defaulttextInterpreter','latex');
+set(f,'defaultAxesTickLabelInterpreter','latex');
+set(f,'defaultLegendInterpreter','latex');
+fs = 18;
+hold on;
+for i = 1:7
+    %plot([CI_lower(i), CI_upper(i)], [y(i), y(i)], 'k-', 'LineWidth', 1.5);
+ %   plot(R0_values(i), y(i), 'ko', 'MarkerFaceColor', 'k');
+
+plot(R0_values(i), y(i), 'o', 'MarkerFaceColor', color_map(i, :), 'MarkerEdgeColor', 'k','MarkerSize',10);
+
+end
+xlim([1, 10]);
+xticks([1,10]);
+xticklabels({'1','10'});
+xscale log;
+ax = gca;
+%ax.XMinorGrid = 'off';
+ax.YMinorGrid = 'off';
+%ax.XMinorTick = 'off';  % Disable minor ticks
+ylim([0.5, 7.5]);
+box on;
+xlabel('$\bar{R_0}$');
+yticks(y);
+yticklabels(fliplr({'Influenza-2009-X','Influenza-1957-X','Influenza-1918-X','Covid-Omicron-X','Covid-Delta-X','Covid-Wildtype-X','SARS-X'}));
+grid on;
+set(gca,'FontSize',fs);
+
+%% IFR PLOT
+
+IFR_values = 100*fliplr([f09,f57,f18,com,cde,cwt,srs]);
+
+color_map = flipud([ ...
+    0, 0, 1; 
+    0, 1, 0;      
+    1, 1, 0;      
+    1, 0.5, 0;      
+    1, 0, 0;      
+    1, 0, 1;      
+        
+    0, 0, 0
+]);
+
+color_map = flipud([ ...
+    0, 1, 0;
+    0, 1, 0;      
+    0, 1, 0;      
+    0, 1, 0;     
+    0, 1, 0;      
+    0, 1, 0;    
+    0, 1, 0
+]);
+
+y = 1:7;
+
+f  = figure('Units','centimeters','Position',[0 0 12 8]);
+set(f,'DefaultAxesFontSize',10);
+set(f,'defaulttextInterpreter','latex');
+set(f,'defaultAxesTickLabelInterpreter','latex');
+set(f,'defaultLegendInterpreter','latex');
+fs = 18;
+hold on;
+for i = 1:7
+    %plot([CI_lower(i), CI_upper(i)], [y(i), y(i)], 'k-', 'LineWidth', 1.5);
+ %   plot(R0_values(i), y(i), 'ko', 'MarkerFaceColor', 'k');
+
+plot(IFR_values(i), y(i), 'o', 'MarkerFaceColor', color_map(i, :), 'MarkerEdgeColor', 'k','MarkerSize',10);
+
+end
+xlim([0.1, 10]);
+xticks([0.1,1,10]);
+xticklabels({'0.1','1','10'});
+xscale log;
+ax = gca;
+%ax.XMinorGrid = 'off';
+ax.YMinorGrid = 'off';
+%ax.XMinorTick = 'off';  % Disable minor ticks
+ylim([0.5, 7.5]);
+box on;
+xlabel('$\overline{IFR}$ $(\%)$');
+yticks(y);
+yticklabels(fliplr({'Influenza-2009-X','Influenza-1957-X','Influenza-1918-X','Covid-Omicron-X','Covid-Delta-X','Covid-Wildtype-X','SARS-X'}));
+grid on;
+set(gca,'FontSize',fs);
