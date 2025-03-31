@@ -17,7 +17,6 @@ source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
 #source("functions/parse_inputs.R")
-#source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
 source("functions/format_table.R")
 

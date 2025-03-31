@@ -119,7 +119,7 @@ p2.pcta  = 2.159;%ascertainment method coefficients
 p2.pctb  = 1.697;
 p2.opsa  = 11.3224;%symptom-driven onset-PCR delay coefficients  
 p2.opsb  = -2.6260;
-p2.opc   = -5.6304;%traced onset-PCR delay coefficient
+p2.opc   = dot(-0.7190*(dis.Tlat+((1-dis.ps)*(dis.Tay)+dis.ps*(dis.Ts))), data.NNs) / sum(data.NNs);%traced onset-PCR delay coefficient
 
 %Healthcare
 p2.Hmax = data.Hmax*sum(nn/10^5);%spare hospital capacity

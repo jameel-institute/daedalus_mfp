@@ -71,15 +71,7 @@ evppivar <- function(outputs,
         grid$u <- lnkinv(pred$fit + pred$se.fit*qnorm(1-0.05/2))
         #grid$l <- pred$fit - qt(1-0.05/2, df = model$df.residual)*sqrt(pred$se.fit^2 + sigma(model)^2)
         #grid$u <- pred$fit + qt(1-0.05/2, df = model$df.residual)*sqrt(pred$se.fit^2 + sigma(model)^2)
-        colnames(grid) <- c("x", "y", "l", "u")} 
-      else if (length(pars) == 2) {
-        y_var  <- inputs[[pars[2]]]
-        y_seq  <- seq(min(y_var), max(y_var), length.out = 100)
-        #y_seq  <- sort(unique(y_var)) 
-        grid   <- expand.grid(x = x_seq, y = y_seq)
-        colnames(grid) <- pars  
-        grid$z <- predict(model, newdata = grid)
-        colnames(grid) <- c("x", "y", "z")} 
+        colnames(grid) <- c("xval", "yval", "l", "u")} 
       else {
         stop("pars too long!")}
       

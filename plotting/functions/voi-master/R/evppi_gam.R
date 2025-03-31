@@ -11,11 +11,25 @@ fitted_gam <- function(y, inputs, pars, verbose=FALSE, ...){
     pars <- clean_pars(pars)
     colnames(inputs) <- clean_pars(colnames(inputs))
     
+    #gam: default
     # if (is.null(gam_formula))
     #     gam_formula <- default_gam_formula(pars)
     # gam_formula <- formula(sprintf("y ~ %s", gam_formula))
-    # model <- mgcv::gam(gam_formula,  family = Gamma(link = "log"), data = inputs)
+    # model <- mgcv::gam(gam_formula, family = gaussian(link = "identity"), data = inputs)
+ 
+    #gam: smoothed
+    gam_formula <- formula(sprintf("y ~ %s", sprintf("s(%s, bs='cr'%s)", paste(pars, collapse=", "), "")))
+    model       <- mgcv::gam(gam_formula, family = gaussian(link = "identity"), data = inputs, method = "REML")
     
+    #scam: try both
+    # scam_formula <- formula(sprintf("y ~ s(%s, bs = 'mpi')", paste(pars, collapse=", ")))
+    # model1       <- scam(scam_formula, family = gaussian(link = "identity"), data = inputs)
+    # scam_formula <- formula(sprintf("y ~ s(%s, bs = 'mpd')", paste(pars, collapse=", ")))
+    # model2       <- scam(scam_formula, family = gaussian(link = "identity"), data = inputs)
+    # models       <- list(model1, model2)
+    # model        <- models[[which.min(c(AIC(model1), AIC(model2)))]]
+    
+    #scam: specify increasing/decreasing by parameter
     # if (pars %in% c("mean_age", "pr_le", "epop", "pr_workf", "pr_gvapw", "AL_wavg", "AHT_wavg", "AS_wavg", "workp", 
     #                 "Tres", "sdc", "t_tit", "t_vax")) {
     #   mdir <- 'mpi'
@@ -24,13 +38,6 @@ fitted_gam <- function(y, inputs, pars, verbose=FALSE, ...){
     # }
     # scam_formula <- formula(sprintf("y ~ s(%s, bs = '%s')", paste(pars, collapse=", "), mdir))
     # model        <- scam(scam_formula, family = Gamma(link = "log"), data = inputs)
-    
-    scam_formula <- formula(sprintf("y ~ s(%s, bs = 'mpi')", paste(pars, collapse=", ")))
-    model1       <- scam(scam_formula, family = Gamma(link = "log"), data = inputs)
-    scam_formula <- formula(sprintf("y ~ s(%s, bs = 'mpd')", paste(pars, collapse=", ")))
-    model2       <- scam(scam_formula, family = Gamma(link = "log"), data = inputs)
-    models       <- list(model1, model2)
-    model        <- models[[which.min(c(AIC(model1), AIC(model2)))]]
     
     res <- (model$fitted) * ifelse(is_negative, -1, 1)
     attr(res, "model") <- model

@@ -1,87 +1,87 @@
 \textit{LLMIC},,,,,,
-Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.7,2.6,1.8,2.1,2.7
-,School Closures,41.1,49.1,2.0,2.9,89.3
-,\bfseries{Economic Closures},8.9,9.7,2.0,2.9,14.4
-,Elimination,91.5,58.4,32.8,108.6,131.9\phantom{.}
-Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,6.7,9.5,2.5,3.3,5.9
-,School Closures,70.3,54.2,3.4,88.1,110.3
-,\bfseries{Economic Closures},19.3,20.8,3.4,15.1,23.6
-,Elimination,122.3,57.9,98.9,130.6,156.5\phantom{.}
-Influenza-1918-X,\bfseries{No Closures},886.9,403.5,617.3,933.1,1182.5
-,School Closures,894.2,360.5,627.3,929.6,1164.8
-,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,736.9,356.7,421.4,765.3,1005.7
-,Elimination,1176.2,368.7,940.8,1227.0,1458.1\phantom{.}
-Covid-Omicron-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,47.8,40.6,16.0,32.8,71.6
-,School Closures,94.9,56.4,47.9,92.4,132.7
-,\bfseries{Economic Closures},65.9,44.2,33.9,54.1,89.2
-,Elimination,145.9,73.9,85.9,148.4,197.0\phantom{.}
-Covid-Delta-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,303.2,179.6,159.3,297.9,412.7
-,School Closures,361.3,159.1,241.1,348.6,454.2
-,\bfseries{Economic Closures},330.9,165.7,206.3,316.3,430.1
-,Elimination,422.2,156.6,310.2,404.6,516.5\phantom{.}
-Covid-Wildtype-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,104.4,79.3,35.1,90.0,155.5
-,School Closures,177.0,75.0,125.1,171.1,220.7
-,\bfseries{Economic Closures},149.0,83.6,84.8,135.8,201.1
-,Elimination,253.1,86.8,189.3,247.5,309.8\phantom{.}
-SARS-X,No Closures,870.2,337.4,628.5,882.9,1107.4
-,\bfseries{School Closures},790.9,294.9,575.1,781.9,994.1
-,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,740.5,312.2,508.1,725.7,953.9
-,Elimination,833.4,301.8,623.3,828.4,1036.5\phantom{.}\phantom{.}
+Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.7,2.3,1.8,2.1,2.7
+,School Closures,41.2,48.8,2.0,3.0,89.5
+,\bfseries{Economic Closures},9.0,9.9,2.0,3.0,14.5
+,Elimination,106.4,55.9,96.4,118.2,138.1\phantom{.}
+Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,6.5,8.8,2.5,3.3,6.1
+,School Closures,70.6,53.7,3.5,88.9,109.4
+,\bfseries{Economic Closures},19.3,20.9,3.5,15.2,23.7
+,Elimination,139.9,47.6,119.1,138.3,163.2\phantom{.}
+Influenza-1918-X,No Closures,885.9,400.1,610.0,935.8,1173.7
+,\bfseries{School Closures},879.7,351.2,615.3,921.8,1148.7
+,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,731.9,355.0,419.0,757.7,1006.5
+,Elimination,1189.1,369.8,948.5,1240.8,1476.4\phantom{.}
+Covid-Omicron-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,48.1,40.3,16.5,34.1,71.3
+,School Closures,94.3,55.5,48.4,91.2,131.1
+,\bfseries{Economic Closures},66.0,43.3,34.7,55.1,89.7
+,Elimination,149.4,74.1,89.3,152.1,201.4\phantom{.}
+Covid-Delta-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,306.5,178.7,166.0,304.8,413.4
+,School Closures,361.8,157.6,243.6,349.8,456.0
+,\bfseries{Economic Closures},331.7,164.3,210.0,317.6,432.2
+,Elimination,426.8,154.5,314.1,411.2,522.0\phantom{.}
+Covid-Wildtype-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,105.9,79.0,36.6,93.7,157.9
+,School Closures,176.3,74.5,125.0,170.5,221.0
+,\bfseries{Economic Closures},149.4,82.7,85.1,138.0,200.9
+,Elimination,252.9,86.1,189.4,247.8,308.6\phantom{.}
+SARS-X,No Closures,872.0,340.6,629.3,886.6,1116.4
+,\bfseries{School Closures},792.7,299.5,576.8,783.1,1005.6
+,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,740.6,316.5,504.5,725.5,962.1
+,Elimination,820.9,306.3,603.2,819.1,1034.3\phantom{.}\phantom{.}
 \textit{UMIC},,,,,,
-Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.4,0.8,1.9,2.3,2.8
-,School Closures,6.3,13.5,1.9,2.3,3.0
-,\bfseries{Economic Closures},3.2,2.9,1.9,2.3,3.0
-,Elimination,24.3,23.4,6.5,16.5,34.4\phantom{.}
-Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,7.8,11.1,3.4,4.5,6.9
-,School Closures,32.3,31.4,3.7,9.3,60.1
-,\bfseries{Economic Closures},11.8,11.2,3.7,9.2,16.2
-,Elimination,39.1,31.1,16.4,27.9,53.5\phantom{.}
-Influenza-1918-X,No Closures,630.5,475.9,175.4,526.4,1003.8
-,\bfseries{School Closures},537.9,356.4,234.9,428.7,792.9
-,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,363.7,269.8,163.2,250.5,516.5
-,Elimination,594.7,345.4,279.0,578.0,847.1\phantom{.}
-Covid-Omicron-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,45.3,46.5,13.2,25.0,59.2
-,School Closures,71.0,49.0,24.5,71.3,99.7
-,\bfseries{Economic Closures},47.0,38.4,20.6,34.9,62.2
-,Elimination,83.1,46.5,46.2,75.8,110.2\phantom{.}
-Covid-Delta-X,No Closures,381.2,293.4,111.4,333.7,595.7
-,School Closures,386.6,263.6,168.5,311.2,559.3
-,\bfseries{Economic Closures}$^*$,325.5,246.1,129.9,248.8,482.4
-,\bfseries{Elimination}\textsuperscript\textdagger,348.6,213.8,186.8,294.7,468.4\phantom{.}
-Covid-Wildtype-X,\bfseries{No Closures}$^*$,120.2,114.3,28.8,75.1,189.9
-,School Closures,142.0,90.1,83.3,118.6,183.4
-,\bfseries{Economic Closures}\textsuperscript\textdagger,100.5,72.2,46.1,82.3,135.4
-,Elimination,166.6,84.3,107.6,150.6,214.0\phantom{.}
-SARS-X,No Closures,609.4,413.4,262.0,515.4,893.2
-,\bfseries{School Closures},453.7,248.1,283.9,390.9,598.3
-,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,402.9,243.6,226.9,329.8,543.4
-,Elimination,485.8,257.0,291.3,423.8,648.5\phantom{.}\phantom{.}
+Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.4,0.8,1.9,2.2,2.8
+,School Closures,6.6,14.0,1.9,2.3,3.0
+,\bfseries{Economic Closures},3.2,3.0,1.9,2.3,3.0
+,Elimination,55.5,32.8,7.4,68.0,77.7\phantom{.}
+Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,7.4,10.5,3.3,4.4,6.6
+,School Closures,32.7,30.7,3.7,12.0,60.4
+,\bfseries{Economic Closures},11.4,10.3,3.7,9.7,15.9
+,Elimination,85.6,27.0,75.0,84.9,96.7\phantom{.}
+Influenza-1918-X,No Closures,618.3,470.7,167.9,507.6,995.9
+,\bfseries{School Closures},503.6,340.9,225.5,385.7,737.6
+,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,317.5,236.7,153.5,223.3,402.3
+,Elimination,650.5,340.1,333.7,626.7,907.1\phantom{.}
+Covid-Omicron-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,45.1,46.3,13.4,25.4,58.7
+,School Closures,71.0,49.1,24.0,71.0,99.4
+,\bfseries{Economic Closures},47.0,38.6,20.7,35.3,60.8
+,Elimination,89.5,48.2,50.3,85.4,117.7\phantom{.}
+Covid-Delta-X,No Closures,382.0,292.1,115.2,331.6,596.3
+,School Closures,386.4,263.4,169.6,311.7,565.0
+,\bfseries{Economic Closures}$^*$,325.0,245.2,130.8,247.4,483.1
+,\bfseries{Elimination}\textsuperscript\textdagger,359.3,212.3,198.1,303.8,479.9\phantom{.}
+Covid-Wildtype-X,\bfseries{No Closures}$^*$,119.0,113.6,29.0,74.5,184.8
+,School Closures,141.6,90.4,83.8,117.9,181.0
+,\bfseries{Economic Closures}\textsuperscript\textdagger,100.6,72.6,46.4,82.1,133.8
+,Elimination,165.7,84.5,107.1,148.0,215.3\phantom{.}
+SARS-X,No Closures,609.0,410.5,263.4,520.9,891.4
+,\bfseries{School Closures},453.1,247.3,283.9,390.5,597.0
+,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,402.2,244.3,225.3,330.0,542.7
+,Elimination,483.2,256.0,291.2,419.9,644.9\phantom{.}\phantom{.}
 \textit{HIC},,,,,,
 Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.0,0.9,1.5,2.0,2.5
 ,School Closures,2.5,3.2,1.5,2.0,2.6
-,\bfseries{Economic Closures},2.2,1.6,1.5,2.0,2.6
-,Elimination,11.4,8.4,6.1,9.1,14.6\phantom{.}
-Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,5.2,5.7,3.0,4.4,5.9
-,School Closures,12.6,12.5,3.4,5.3,25.0
-,\bfseries{Economic Closures},8.1,6.9,3.4,5.3,12.4
-,Elimination,16.5,10.6,10.2,13.6,19.2\phantom{.}
-Influenza-1918-X,No Closures,252.0,303.1,65.8,113.6,298.9
-,School Closures,156.5,151.1,78.3,114.6,169.6
-,\bfseries{Economic Closures},118.1,89.5,67.2,105.8,141.6
-,\bfseries{Elimination}$^*$\textsuperscript\textdagger,120.3,109.1,54.5,85.0,139.9\phantom{.}
-Covid-Omicron-X,\bfseries{No Closures}$^*$,43.7,41.9,15.8,25.8,57.6
-,School Closures,52.0,36.5,22.6,48.0,66.4
-,\bfseries{Economic Closures}\textsuperscript\textdagger,39.5,29.1,19.9,32.5,50.1
-,Elimination,56.0,26.4,37.0,52.8,70.7\phantom{.}
-Covid-Delta-X,No Closures,360.7,299.2,91.5,268.0,604.1
-,School Closures,291.6,257.0,99.2,176.0,456.5
-,\bfseries{Economic Closures},235.7,212.0,88.6,147.4,323.2
-,\bfseries{Elimination}$^*$\textsuperscript\textdagger,210.7,191.6,90.6,139.1,250.3\phantom{.}
-Covid-Wildtype-X,No Closures$^*$,81.0,93.7,20.4,39.3,104.3
-,School Closures,68.3,55.0,39.1,56.7,78.9
-,\bfseries{Economic Closures}\textsuperscript\textdagger,54.2,39.2,28.4,46.4,70.8
-,\bfseries{Elimination},61.9,37.5,33.9,55.5,79.8\phantom{.}
-SARS-X,No Closures,183.6,244.8,44.0,111.7,220.2
-,\bfseries{School Closures},137.1,108.5,48.4,112.0,213.5
-,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,131.6,105.7,46.1,107.5,204.4
-,Elimination,152.3,108.5,64.8,127.1,225.9\phantom{.}\phantom{.}
+,\bfseries{Economic Closures},2.2,1.7,1.5,2.0,2.6
+,Elimination,29.1,17.7,9.3,35.6,43.3\phantom{.}
+Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,5.2,5.5,3.0,4.4,6.0
+,School Closures,12.7,12.3,3.4,5.4,25.2
+,\bfseries{Economic Closures},8.0,6.5,3.4,5.4,12.6
+,Elimination,43.6,17.3,38.4,46.9,53.7\phantom{.}
+Influenza-1918-X,No Closures,268.2,311.8,69.9,119.6,357.4
+,School Closures,163.9,160.3,80.8,117.0,172.6
+,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,116.1,81.9,70.9,107.1,140.9
+,\bfseries{Elimination},163.8,105.3,105.6,129.7,179.8\phantom{.}
+Covid-Omicron-X,\bfseries{No Closures}$^*$,43.5,42.0,15.7,25.8,56.5
+,School Closures,51.9,36.4,22.7,48.0,66.4
+,\bfseries{Economic Closures}\textsuperscript\textdagger,39.4,28.9,19.9,32.3,50.1
+,Elimination,56.8,26.4,37.5,54.1,71.9\phantom{.}
+Covid-Delta-X,No Closures,357.6,297.7,91.9,262.9,597.2
+,School Closures,289.5,255.2,99.9,174.3,456.9
+,\bfseries{Economic Closures},233.8,209.5,89.5,146.3,321.1
+,\bfseries{Elimination}$^*$\textsuperscript\textdagger,210.3,186.4,93.9,141.5,248.8\phantom{.}
+Covid-Wildtype-X,No Closures$^*$,80.4,93.6,20.3,39.0,101.6
+,School Closures,68.2,55.2,38.6,56.7,79.3
+,\bfseries{Economic Closures}\textsuperscript\textdagger,54.2,38.7,27.9,46.9,71.4
+,\bfseries{Elimination},62.0,37.0,34.4,56.6,80.2\phantom{.}
+SARS-X,No Closures,182.2,239.4,45.1,113.9,221.2
+,\bfseries{School Closures},138.1,108.4,49.7,114.8,215.4
+,\bfseries{Economic Closures}$^*$\textsuperscript\textdagger,132.4,105.6,47.5,110.6,206.2
+,Elimination,152.7,108.4,64.9,128.1,225.2\phantom{.}\phantom{.}

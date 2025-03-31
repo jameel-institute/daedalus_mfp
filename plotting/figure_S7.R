@@ -17,7 +17,6 @@ source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
 #source("functions/parse_inputs.R")
-#source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
 source("functions/format_table.R")
 
@@ -59,7 +58,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = GDPLpc, linewidth = min_any, alp
         scale_y_continuous(limits=c(0,80),  breaks=seq(0,80,20),  expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,120), breaks=seq(0,120,30), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,160), breaks=seq(0,160,40), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,120), breaks=seq(0,120,30), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,240), breaks=seq(0,240,60), expand=c(0,0), position="right"))) +
       theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 

@@ -17,7 +17,6 @@ source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
 #source("functions/parse_inputs.R")
-#source("functions/voi_dec.R")
 #source("functions/voi_fit.R")
 source("functions/format_table.R")
 
@@ -57,8 +56,8 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = gdpl, alpha = min_
       theme_bw() + 
       facetted_pos_scales(y = list(
         scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,24), breaks=seq(0,24,6), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,16), breaks=seq(0,16,4), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,28), breaks=seq(0,28,7), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
