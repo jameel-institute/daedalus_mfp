@@ -17,7 +17,7 @@ matC   = zeros(ln,ln);%consumer-worker
 
 %% matAL: household
 
-%read in 16x16 matrix
+%read in 4x4 matrix
 AL = data.matAL;
 
 %expand AL into matAL, broadcast contacts from adults (columns) proportional to adult population
@@ -30,7 +30,7 @@ matAL(:,[1:lx,lx+adInd]) = repmat(matAL(:,lx+adInd),1,lx+1).*repmat(NNad,ln,1);
 
 %% matAHT: other
 
-%read in 16x16 matrix
+%read in 4x4 matrix
 AHT = data.matAHT;
 
 %expand AHT into matAHT, broadcast contacts from adults (columns) proportional to adult population
@@ -46,7 +46,7 @@ matAHT = 0.55*matAHT + 0.45*matAHT*psub^2;
 
 %% matAS: school
 
-%read in 16x16 matrix
+%read in 4x4 matrix
 AS = data.matAS;
 
 %expand AS into matAS, broadcast contacts from adults (columns) proportional to adult population
