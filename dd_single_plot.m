@@ -2,9 +2,9 @@ function f=dd_single_plot(data,g1,p2,f1,cost,inp1,inp2,inp3)
 
 %for schematic figure s4
 % add + max(0,(3*365)-t); to last event tflag
-% manually specify income group of country in legend 1
 % add legend 2 to top subfigure only
-% remove dashes in losses barchart for fig 2
+% remove dashes in losses barchart for subfig 2 and fix ylmt
+% manually specify income group of country in legend 1
 % dd_single('Rwanda','Influenza 1957','No Closures');
 % dd_single('Argentina', 'Influenza 1918', 'School Closures');
 % dd_single('Thailand', 'Covid Omicron', 'Economic Closures');
