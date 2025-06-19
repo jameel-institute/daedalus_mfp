@@ -1,5 +1,15 @@
 function f=dd_single_plot(data,g1,p2,f1,cost,inp1,inp2,inp3)
 
+%for schematic figure s4
+% add + max(0,(3*365)-t); to last event tflag
+% manually specify income group of country in legend 1
+% add legend 2 to top subfigure only
+% remove dashes in losses barchart for fig 2
+% dd_single('Rwanda','Influenza 1957','No Closures');
+% dd_single('Argentina', 'Influenza 1918', 'School Closures');
+% dd_single('Thailand', 'Covid Omicron', 'Economic Closures');
+% dd_single('United Kingdom', 'Covid Wildtype', 'Elimination');
+
 ln        = length(data.NNs);
 lx        = length(data.obj);
 tvec      = data.tvec;
@@ -33,12 +43,13 @@ scal7 = sum(data.Npop)/(10^7);
 scal8 = sum(data.Npop)/(10^8);
 scal9 = sum(data.Npop)/(10^9);
 %maxY  = max([100000,(5/4)*d1'/scal5,(5/4)*thresh/scal4,(5/4)*h1'/scal4,(5/4)*I1'/scal3]);
-maxY  = 100000;%ceil(max([d1'/scal5,thresh/scal4,h1'/scal4,I1'/scal3])/10000)*10000;
+maxY  = 200000;%ceil(max([d1'/scal5,thresh/scal4,h1'/scal4,I1'/scal3])/10000)*10000;
 
 T               = repmat(t1',lx+1,1);
 S               = 0.5:1:lx+0.5;
 x               = f1(:,1+[1:lx])';
 X               = [x;ones(1,length(t1))];
+notEd           = [1:(data.EdInd-1),(data.EdInd+1):lx];
 
 %% EPIDEMIC TRAJECTORY
 
@@ -59,25 +70,50 @@ for i = 1:length(tvec)-1;
     a     = [tvec(i) tvec(i) tvec(i+1) tvec(i+1)];
     b     = [0 maxY maxY 0];
     pind  = tvec(i)<t1 & t1<tvec(i+1);
-    px    = x(:,pind);
+    px    = x(notEd,pind);%this is all sectors excl education
+    ps    = x(data.EdInd,pind);
     alpha = 1-mean(px.^3,'all');
     if alpha == 0;
         continue;
     end
     fill(a,b,'yellow','facealpha',alpha,'linewidth',0.01,'EdgeColor','k');
+
+    if mean(ps) < 1;
+    
+    x_width = 500;                        
+    slope   = maxY / x_width;           
+    spacing = 50;            
+    x_start = tvec(i);
+    x_end   = tvec(i+1);
+    y_bot   = 0;
+    y_top   = maxY;
+    for x0 = x_start - y_top / slope : spacing : x_end
+        x1 = x0 + y_top / slope;
+        x_vals = [x0, x1];
+        y_vals = [y_bot, y_top];
+        if x_vals(2) < x_start || x_vals(1) > x_end
+            continue;
+        end
+        x_vals = max(min(x_vals, x_end), x_start);
+        y_vals = y_bot + (x_vals - x0) * slope;
+        plot(x_vals, y_vals, 'b', 'LineWidth', 0.5);
+    end
+    end
+
 end
+%plot([p2.Tres,p2.Tres],[0,maxY],'-','linewidth',0.01,'color',0.5*[1,1,1]);
 
 yyaxis left;
-hh3 = plot([0,tvec(end)],[thresh,thresh]/scal8,'--','linewidth',lw,'color',0.5*[1,1,1]);
-hh4 = plot(t1,d1/scal9,'-','linewidth',lw,'color','black');
-hh2 = plot(t1,h1/scal8,'-','linewidth',lw,'color','magenta');
+hh3 = plot([0,tvec(end)],[thresh,thresh]/scal8,'--','linewidth',lw,'color',[0.7, 0, 0.9]);
+hh4 = plot(t1,d1/scal9,'-','linewidth',lw,'color','red');
+hh2 = plot(t1,h1/scal8,'-','linewidth',lw,'color',[0.7, 0, 0.9]);
 %hh1 = plot(t1,Q/scal7,'-','linewidth',lw,'color','green');
-hh1 = plot(t1,(I1)/scal7,'-','linewidth',lw,'color','red');
-hh0 = plot(t1,beta*maxY,'-','linewidth',lw,'color','blue');
+hh1 = plot(t1,(I1)/scal7,':','linewidth',lw,'color','black');
+%hh0 = plot(t1,beta*maxY,'-','linewidth',lw,'color','blue');
 %hh0 = plot(t1,asc_s/scal8,'-','linewidth',lw,'color','green');
 yyaxis right;
-hh5 = plot(t1,100*(v1+v2+v3+v4)/sum(data.Npop),'-','linewidth',lw,'color','cyan');
-xlim([1 tvec(end)]);
+hh5 = plot(t1,100*(v1+v2+v3+v4)/sum(data.Npop),'-','linewidth',lw,'color',[1, 0.6, 0.4]);
+xlim([1 3*365]);
 set(gca,'xtick',[[1,91,182,274],...
              365+[1,91,182,274],...
            2*365+[1,91,182,274],...
@@ -103,11 +139,11 @@ ax.YColor = 'k';
 
 grid on;
 box on;
-% legend([hh2,hh3,hh4,hh5],'Hospital Occupancy (per 100m)','Hospital Capacity (per 100m)',... %%%%%
-%                          'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','north');
-% t = text(-22.3,86.6,strvcat(inp1,inp2,inp3),'FontSize',fs);
-% t.BackgroundColor = [1 1 1];
-% t.EdgeColor       = [0 0 0];
+% legend([hh1,hh2,hh3,hh4,hh5],'Prevalence (per 10m)','Hospital Occupancy (per 100m)','Hospital Capacity (per 100m)',... %%%%%
+%                          'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','northeast');
+t = text(8,86.6,strvcat(inp1,strrep([inp2 ' X'], ' ', '-'),inp3),'FontSize',fs);
+t.BackgroundColor = [1 1 1];
+t.EdgeColor       = [0 0 0];
 set(gca,'FontSize',fs);
 yyaxis left;
 
@@ -158,7 +194,7 @@ set(f,'defaultColorbarTickLabelInterpreter','latex');
 set(f,'DefaultAxesFontSize',12);
 
 ax          = gca;
-ax.Position = [0.25 0.20 0.65 0.70];
+ax.Position = [0.05 0.20 0.65 0.70];
 
 labs = categorical(["VLYL","GDPL","VSYL"]);
 labs = reordercats(labs,[2 1 3]);
@@ -166,36 +202,42 @@ y    = 100*[cost(3,lx+1)   cost(3,lx+2)   sum(cost(3,[1:lx,lx+3])) cost(3,ln);..
             sum(cost(4,:)) sum(cost(5,:)) 0                        0;...
             cost(8,lx+1:ln)]/sum(365*data.obj);
 b    = bar(labs,y,'stacked','FaceColor','flat');
+for i = 1:length(b)
+    b(i).EdgeColor = 'none';
+end
 
 xtickangle(45);
 ymax = 100*max([sum(cost(3,:)),sum(cost(4:5,:),'all'),sum(cost(8,:))])/sum(365*data.obj);
 ylmt = ceil(ymax/10)*10;
 ylmt = ylmt + 10*((ylmt-ceil(ymax))<(0.25*ylmt));%%%%%
 ylim([0 ylmt]);
-ylabel('Societal Costs');
-vec_pos = get(get(gca,'ylabel'),'Position');
-set(get(gca,'ylabel'),'Position',vec_pos + [-0.3 0 0]);
-text(0.6,ylmt*1.05,'\%','FontSize',fs);
+ylh = ylabel('Societal Loss (\% of GDP)');
+ax = gca;
+ax.YAxisLocation = 'right';
+ylh.Rotation = 270;
+pos = get(ylh, 'Position');
+set(ylh, 'Position', pos + [0.85 0 0]);  
+%text(0.6,ylmt*1.05,'\%','FontSize',fs);
 
 grid on;
 grid minor;
 box on;
-b(1).CData = [0.00 0.00 0.00;...
-              1.00 0.00 1.00;...
-              1.00 0.00 1.00];
-b(2).CData = [0.00 0.00 0.00;...
+b(1).CData = [1.00 0.00 0.00;...   
+              1.00 1.00 0.00;...   
+              0.00 0.00 1.00];     
+b(2).CData = [1.00 0.00 0.00;...
               1.00 1.00 0.00;...
-              1.00 1.00 0.00];
-b(3).CData = [0.00 0.00 0.00;...
-              0.00 0.00 0.00;...
-              0.00 0.00 0.00];
-b(4).CData = [0.00 0.00 0.00;...
-              0.00 0.00 0.00;...
-              0.00 0.00 0.00];
+              0.00 0.00 1.00];
+b(3).CData = [1.00 0.00 0.00;...
+              1.00 0.84 0.00;...
+              0.00 0.00 1.00];
+b(4).CData = [1.00 0.00 0.00;...
+              1.00 1.00 0.00;...
+              0.00 0.00 1.00];
 set(gca,'FontSize',fs);
 
 ax.YTick(end) = [];%%%%%
-axes('Position',[.22 .81 .05 .05]);
+axes('Position',[.665 .81 .05 .05]);
 px     = [1 5];
 py1    = [1 2];
 height = 1;
