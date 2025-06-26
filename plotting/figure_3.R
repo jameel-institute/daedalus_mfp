@@ -144,7 +144,7 @@ output_table <- output_stats %>%
                        q3_y   = sprintf("%.1f", q3_y)) %>%
                 mutate(mean_x = paste0(mean_x," (",q1_x,"; ",q3_x,")"),
                        mean_y = paste0(mean_y," (",q1_y,"; ",q3_y,")")) %>%
-                # mutate(mean_x = if_else(min_any, paste0("\\bfseries{",mean_x,"}"), mean_x),
+                # mutate(mean_x = if_else(min_any, paste0("\\bfseries{",mean_x,"}"), mean_x),#
                 #        mean_y = if_else(min_any, paste0("\\bfseries{",mean_y,"}"), mean_y)) %>%
                 mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive/Sustained-School Closures",
                                             strategy == "Economic Closures" ~ "Reactive/Reactive-School Closures",
