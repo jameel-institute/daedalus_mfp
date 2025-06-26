@@ -15,76 +15,67 @@ library(ggpattern)
 library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
-source("functions/calc_loss_pc.R")
-#source("functions/parse_inputs.R")
-source("functions/voi_fit.R")
+#source("functions/calc_loss_pc.R")
+source("functions/parse_inputs.R")
+#source("functions/voi_fit.R")
 #source("functions/format_table.R")
 
 list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
 input_files  <- list_files[grepl("_data\\.csv$", list_files)]
-input_data   <- lapply(input_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols()
+input_data   <- lapply(input_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>% parse_inputs() #slightly slow
 output_files <- list_files[!grepl("_data\\.csv$", list_files)]
 output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
-                left_join(input_data %>% dplyr::select(location, country, Hmax), by = c("location", "country")) %>%
-                (function(x) calc_loss_pc(input_data,x)) %>% 
-                mutate(x = VLYLpc, y = GDPLpc + VSYLpc) %>%
-                group_by(location, country, disease) %>%
-                mutate(x = x[strategy == "No Closures"] - x,
-                       y = y - y[strategy == "No Closures"]) %>%
-                ungroup() %>%
-                filter(strategy == "School Closures") %>%
-                mutate(parameter = "Hmax", xaxis = Hmax)
-output_fitX  <- voi_fit(output_data, x) %>% rename(xaxis = xval, yaxis = yval, lower = l, upper = u) %>% mutate(cost_eff = "x")
-output_fitY  <- voi_fit(output_data, y) %>% rename(xaxis = xval, yaxis = yval, lower = l, upper = u) %>% mutate(cost_eff = "y")
-output_data  <- output_data %>% pivot_longer(cols = c("x","y"), names_to = "cost_eff", values_to = "yaxis")
+                left_join(input_data %>% dplyr::select(location, country, gdp, mean_vsy), by = c("location", "country")) %>%
+                mutate(x = rowSums(across(starts_with("vlyl_"))) + rowSums(across(starts_with("gdpl_"))), 
+                       y = vsyl) %>%
+                dplyr::select(-tdur, -starts_with("vlyl"), -vsyl, -starts_with("gdpl")) %>%
+                crossing(mean_vsy_range = seq(0, 10, length.out = 100)) %>%
+                mutate(y = y*(mean_vsy_range / mean_vsy)) %>%
+                mutate(SLpc = 100*(x + y)/gdp) %>%
+                group_by(location, disease, mean_vsy_range, country) %>% 
+                summarise(strategy = paste(strategy[SLpc == min(SLpc)], collapse = ", "), 
+                          mean_vsy = unique(mean_vsy)) %>% #slightly slow
+                group_by(location, disease, mean_vsy_range, mean_vsy) %>% #mean_vsy added as a group for preservation
+                count(strategy) %>% 
+                mutate(proportion = n / sum(n)) %>%
+                mutate(strategy = case_when(strategy %in% c("No Closures", "School Closures", "Economic Closures", "Elimination") ~ strategy,
+                                            strategy == "No Closures, School Closures, Economic Closures" ~ "Untriggered Closures",
+                                            strategy == "School Closures, Economic Closures" ~ "Untriggered Closures",
+                                            TRUE ~ "Other")) %>%
+                group_by(location, disease, mean_vsy_range, strategy) %>%
+                summarise(proportion = sum(proportion), 
+                          mean_vsy   = unique(mean_vsy)) %>%
+                mutate(strategy = factor(strategy, levels = c("Untriggered Closures", "No Closures", "School Closures", 
+                                                              "Economic Closures", "Elimination", "Other")))
 
-gg <- ggplot(output_data, aes(x = xaxis, y = yaxis, color = cost_eff, fill = cost_eff)) +
-      facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
-      geom_ribbon(data = output_fitX, 
-                  aes(ymin = lower, ymax = upper), color = NA, alpha = 0.25) +
-      geom_ribbon(data = output_fitY, 
-                  aes(ymin = lower, ymax = upper), color = NA, alpha = 1) +
-      geom_point(shape = 19, size = 0.02, stroke = 0.2) +
-      geom_line(data = output_fitX, linewidth = 0.5) +
-      geom_line(data = output_fitY, linewidth = 0.5) +
-      scale_color_manual(values = c("x" = "red", "y" = "blue"), 
-                         labels = c("Decremental VLYL (% of GDP)", "Incremental GDPL + VSYL (% of GDP)")) +
-      scale_fill_manual(values = c("x" = "red", "y" = "yellow"),
-                        labels = c("Decremental VLYL (% of GDP)", "Incremental GDPL + VSYL (% of GDP)")) +
+gg <- ggplot(output_data, aes(x = mean_vsy_range, y = proportion, fill = strategy, pattern_density = strategy)) +
+      facet_grid2(disease ~ location, switch = "y", scales = "fixed") +
+      geom_area_pattern(pattern = "stripe", pattern_size = 0.25, pattern_color = "navy", pattern_fill = "darkgreen") +
+      geom_vline(aes(xintercept = mean_vsy), linetype = "dashed", color = "white") +
+      scale_fill_manual(values = c("Untriggered Closures" = "magenta4", "No Closures" = "magenta4", "School Closures" = "navy",
+                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod",  "Other" = "grey"),
+                        labels = c("Untriggered Closures" = "Untriggered Closures", "No Closures" = "No Closures", 
+                                   "School Closures"   = "Reactive/Sustained-School Closures",
+                                   "Economic Closures" = "Reactive/Reactive-School Closures", 
+                                   "Elimination" = "Elimination"))+  
+      scale_pattern_density_manual(values = c("Untriggered Closures" = 0.2, "No Closures" = 0, "School Closures" = 0,
+                                              "Economic Closures" = 0, "Elimination" = 0, "Other" = 0),
+                                   breaks = c("Untriggered Closures", "No Closures", "School Closures", "Economic Closures", "Elimination"),
+                                   labels = c("Untriggered Closures" = "Untriggered Closures", "No Closures" = "No Closures", 
+                                              "School Closures"   = "Reactive/Sustained-School Closures",
+                                              "Economic Closures" = "Reactive/Reactive-School Closures", 
+                                              "Elimination" = "Elimination")) +
       theme_bw() +
-      facetted_pos_scales(
-        x = list(
-        location == "LLMIC" ~ scale_x_log10(limits=c(1,300),breaks=c(1,3,10,30,100,300),expand=c(0,0),position="bottom"),
-        location == "UMIC" ~ scale_x_log10(limits=c(3,300),breaks=c(3,10,30,100,300),expand=c(0,0),position="bottom"),
-        location == "HIC" ~ scale_x_log10(limits=c(10,1000),breaks=c(10,30,100,300,1000),expand=c(0,0),position="bottom")),
-        y = list (
-        location == "LLMIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-20,60),breaks=seq(-20,60,20),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-10,30),breaks=seq(-10,30,10),expand=c(0,0),position="right"),
-        location == "LLMIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-15,45),breaks=seq(-15,45,15),expand=c(0,0),position="right"),
-        location == "LLMIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-200,600),breaks=seq(-200,600,200),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-200,600),breaks=seq(-200,600,200),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-200,600),breaks=seq(-200,600,200),expand=c(0,0),position="right"),
-        location == "LLMIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-60,180),breaks=seq(-60,180,60),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-40,120),breaks=seq(-30,120,40),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-20,60),breaks=seq(-20,60,20),expand=c(0,0),position="right"),
-        location == "LLMIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="right"),
-        location == "LLMIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
-        location == "LLMIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-400,1200),breaks=seq(-400,1200,400),expand=c(0,0),position="right"),
-        location == "UMIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-400,1200),breaks=seq(-400,1200,400),expand=c(0,0),position="right"),
-        location == "HIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-200,600),breaks=seq(-200,600,200),expand=c(0,0),position="right"))) +
+      scale_x_continuous(breaks=seq(0,10,by=2),   expand=c(0,0), position="bottom") + 
+      scale_y_continuous(breaks=seq(0,1,by=0.25), expand=c(0,0), position="right") + 
       theme(panel.spacing = unit(0.75, "lines")) +
-      labs(title = "", x = "Spare Hospital Beds (per 100k)", y = "") +
-      guides(color = guide_legend(title = NULL),
-             fill  = guide_legend(title = NULL)) +
-      theme(legend.position = "bottom", legend.box.just = "right",
-            legend.key.size = unit(0.8, "cm"), legend.text = element_text(size = 9),
+      labs(title = "", x = "Average VSY / GDP per capita", y = "Proportion Socioeconomic-Loss-Minimising") +
+      guides(fill = "none", 
+             pattern_density = guide_legend(title = NULL, 
+                                            override.aes = list(pattern_size = 0.75, 
+                                                                fill = c("magenta4","magenta4","navy","darkgreen","goldenrod")))) +
+      theme(legend.position = "bottom", legend.box.just = "right", 
+            legend.key.size = unit(0.8, "cm"), legend.text = element_text(size = 9), 
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S10.png", plot = gg, height = 14, width = 10)

@@ -53,15 +53,23 @@ gg <- ggplot(output_data, aes(x = mean_vly_range, y = proportion, fill = strateg
       geom_area_pattern(pattern = "stripe", pattern_size = 0.25, pattern_color = "navy", pattern_fill = "darkgreen") +
       geom_vline(aes(xintercept = mean_vly), linetype = "dashed", color = "white") +
       scale_fill_manual(values = c("Untriggered Closures" = "magenta4", "No Closures" = "magenta4", "School Closures" = "navy",
-                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod",  "Other" = "grey"))+  
+                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod",  "Other" = "grey"),
+                        labels = c("Untriggered Closures" = "Untriggered Closures", "No Closures" = "No Closures", 
+                                   "School Closures"   = "Reactive/Sustained-School Closures",
+                                   "Economic Closures" = "Reactive/Reactive-School Closures", 
+                                   "Elimination" = "Elimination"))+  
       scale_pattern_density_manual(values = c("Untriggered Closures" = 0.2, "No Closures" = 0, "School Closures" = 0,
                                               "Economic Closures" = 0, "Elimination" = 0, "Other" = 0),
-                                   breaks = c("Untriggered Closures", "No Closures", "School Closures", "Economic Closures", "Elimination")) +
+                                   breaks = c("Untriggered Closures", "No Closures", "School Closures", "Economic Closures", "Elimination"),
+                                   labels = c("Untriggered Closures" = "Untriggered Closures", "No Closures" = "No Closures", 
+                                              "School Closures"   = "Reactive/Sustained-School Closures",
+                                              "Economic Closures" = "Reactive/Reactive-School Closures", 
+                                              "Elimination" = "Elimination")) +
       theme_bw() +
       scale_x_continuous(breaks=seq(0,10,by=2),   expand=c(0,0), position="bottom") + 
       scale_y_continuous(breaks=seq(0,1,by=0.25), expand=c(0,0), position="right") + 
       theme(panel.spacing = unit(0.75, "lines")) +
-      labs(title = "", x = "Average VLY / GDP per capita", y = "Proportion Societal Loss-Minimising") +
+      labs(title = "", x = "Average VLY / GDP per capita", y = "Proportion Socioeconomic-Loss-Minimising") +
       guides(fill = "none", 
              pattern_density = guide_legend(title = NULL, 
                                             override.aes = list(pattern_size = 0.75, 

@@ -1,7 +1,13 @@
 function f=dd_single_plot(data,g1,p2,f1,cost,inp1,inp2,inp3)
 
+if strcmp(inp3, 'School Closures')
+    inp3 = 'Reactive/Sustained-School Closures';
+elseif strcmp(inp3, 'Economic Closures')
+    inp3 = 'Reactive/Reactive-School Closures';
+end
+
 %for schematic figure s4
-% add + max(0,(3*365)-t); to last event tflag
+% add to last no closure event tflag: + max(0,(3*365)-t);
 % add legend 2 to top subfigure only
 % remove dashes in losses barchart for subfig 2 and fix ylmt
 % manually specify income group of country in legend 1
@@ -211,7 +217,7 @@ ymax = 100*max([sum(cost(3,:)),sum(cost(4:5,:),'all'),sum(cost(8,:))])/sum(365*d
 ylmt = ceil(ymax/10)*10;
 ylmt = ylmt + 10*((ylmt-ceil(ymax))<(0.25*ylmt));%%%%%
 ylim([0 ylmt]);
-ylh = ylabel('Societal Loss (\% of GDP)');
+ylh = ylabel('Socioeconomic Loss (\% of GDP)');
 ax = gca;
 ax.YAxisLocation = 'right';
 ylh.Rotation = 270;

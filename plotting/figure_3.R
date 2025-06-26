@@ -70,9 +70,13 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
       geom_linerange(data = output_stats, aes(x = mean_x, y = mean_y, ymin = q1_y, ymax = q3_y), linewidth = 0.25, color = "black") +
       geom_point(data = output_stats, aes(x = mean_x, y = mean_y), shape = 21, size = 2, stroke = 0.2, color = "black") +
       scale_color_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy", 
-                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
+                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod"),
+                         labels = c("School Closures"   = "Reactive/Sustained-School Closures",
+                                    "Economic Closures" = "Reactive/Reactive-School Closures")) +
       scale_fill_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy", 
-                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod")) +
+                                   "Economic Closures" = "darkgreen", "Elimination" = "goldenrod"),
+                        labels = c("School Closures"   = "Reactive/Sustained-School Closures",
+                                   "Economic Closures" = "Reactive/Reactive-School Closures")) +
       scale_alpha_continuous(range = c(0.05, 1)) +
       theme_bw() +
       facetted_pos_scales(
@@ -142,6 +146,9 @@ output_table <- output_stats %>%
                        mean_y = paste0(mean_y," (",q1_y,"; ",q3_y,")")) %>%
                 # mutate(mean_x = if_else(min_any, paste0("\\bfseries{",mean_x,"}"), mean_x),
                 #        mean_y = if_else(min_any, paste0("\\bfseries{",mean_y,"}"), mean_y)) %>%
+                mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive/Sustained-School Closures",
+                                            strategy == "Economic Closures" ~ "Reactive/Reactive-School Closures",
+                                            TRUE ~ strategy)) %>%
                 mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
                 mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
                 mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
@@ -151,4 +158,4 @@ output_table <- output_stats %>%
                 mutate(across(everything(), as.character)) %>%            
                 format_table("location")
 
-write.table(output_table, file = "table_S10.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(output_table, file = "table_S8.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)

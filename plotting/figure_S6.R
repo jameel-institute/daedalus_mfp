@@ -27,10 +27,10 @@ output_files <- list_files[!grepl("_data\\.csv$", list_files)]
 output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
                 (function(x) calc_loss_pc(input_data,x)) %>% 
                 group_by(location, disease, strategy) %>%
-                mutate(med_SLpc   = quantile(VLYLpc, 0.50),
-                       mean_SLpc  = mean(VLYLpc),
-                       q3_SLpc    = quantile(VLYLpc, 0.75),
-                       max_VLYLpc = max(VLYLpc)) %>%
+                mutate(med_SLpc   = quantile(GDPLpc, 0.50),
+                       mean_SLpc  = mean(GDPLpc),
+                       q3_SLpc    = quantile(GDPLpc, 0.75),
+                       max_GDPLpc = max(GDPLpc)) %>%
                 group_by(location, disease) %>%
                 mutate(min_med   = (med_SLpc  == min(med_SLpc)),
                        min_mean  = (mean_SLpc == min(mean_SLpc)),
@@ -43,26 +43,28 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                 mutate(min_any   = any(min_mean, min_mean2)) %>%
                 ungroup()
 
-gg <- ggplot(output_data, aes(x = strategy, y = VLYLpc, linewidth = min_any, alpha = min_any)) + 
+gg <- ggplot(output_data, aes(x = strategy, y = GDPLpc, linewidth = min_any, alpha = min_any)) + 
       facet_grid2(disease ~ location, switch = "y", scales = "free_y") +
-      geom_violin(fill = "red") + 
+      geom_violin(fill = "yellow") + 
       scale_linewidth_manual(values = c("FALSE" = 0.1, "TRUE" = 0.5)) +
       scale_alpha_manual(values = c("FALSE" = 0.25, "TRUE" = 1)) +
-      geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_VLYLpc),
+      geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_GDPLpc),
                 vjust = 0.4, label = "*", size = 6, color = "black", inherit.aes = FALSE) +
-      geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_VLYLpc),
+      geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_GDPLpc),
                 vjust = -1.6, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
       theme_bw() + 
+      scale_x_discrete(labels = c("School Closures" = "Reactive/Sustained-School Closures",
+                                  "Economic Closures" = "Reactive/Reactive-School Closures")) +
       facetted_pos_scales(y = list(
-        scale_y_continuous(limits=c(0,40),   breaks=seq(0,40,10),    expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,160),  breaks=seq(0,160,40),   expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,2000), breaks=seq(0,2000,500), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,360),  breaks=seq(0,360,90),   expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,1600), breaks=seq(0,1600,400), expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,560),  breaks=seq(0,560,140),  expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,2400), breaks=seq(0,2400,600), expand=c(0,0), position="right"))) +
+        scale_y_continuous(limits=c(0,80),  breaks=seq(0,80,20),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,80),  breaks=seq(0,80,20),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,120), breaks=seq(0,120,30), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,120), breaks=seq(0,120,30), expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,240), breaks=seq(0,240,60), expand=c(0,0), position="right"))) +
       theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
-      labs(title = "", x = "", y = "VLYL (% of GDP)") +
+      labs(title = "", x = "", y = "GDPL (% of GDP)") +
       guides(linewidth = "none", alpha = "none")
 
 ggsave("figure_S6.png", plot = gg, height = 14, width = 10)
@@ -70,13 +72,16 @@ ggsave("figure_S6.png", plot = gg, height = 14, width = 10)
 output_table <- output_data %>% 
                 group_by(location, disease, strategy) %>% 
                 summarise(mean    = sprintf("%.1f", unique(mean_SLpc)),
-                          sd      = sprintf("%.1f", sd(VLYLpc)),
-                          q1      = sprintf("%.1f", quantile(VLYLpc, 0.25)),
+                          sd      = sprintf("%.1f", sd(GDPLpc)),
+                          q1      = sprintf("%.1f", quantile(GDPLpc, 0.25)),
                           q2      = sprintf("%.1f", unique(med_SLpc)),
                           q3      = sprintf("%.1f", unique(q3_SLpc)),
                           min_any = unique(min_any),
                           min_med = unique(min_med),
                           min_q3  = unique(min_q3)) %>% 
+                mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive/Sustained-School Closures",
+                                            strategy == "Economic Closures" ~ "Reactive/Reactive-School Closures",
+                                            TRUE ~ strategy)) %>%
                 mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
                 mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
                 mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
@@ -86,4 +91,4 @@ output_table <- output_data %>%
                 mutate(across(everything(), as.character)) %>%            
                 format_table("location")
 
-write.table(output_table, file = "table_S7.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(output_table, file = "table_S6.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
