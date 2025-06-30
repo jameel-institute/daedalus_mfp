@@ -55,15 +55,15 @@ gg <- ggplot(output_data, aes(x = mean_vsy_range, y = proportion, fill = strateg
       scale_fill_manual(values = c("Untriggered Closures" = "magenta4", "No Closures" = "magenta4", "School Closures" = "navy",
                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod",  "Other" = "grey"),
                         labels = c("Untriggered Closures" = "Untriggered Closures", "No Closures" = "No Closures", 
-                                   "School Closures"   = "Reactive/Sustained-School Closures",
-                                   "Economic Closures" = "Reactive/Reactive-School Closures", 
+                                   "School Closures"   = "Reactive-Business/Sustained-School Closures",
+                                   "Economic Closures" = "Reactive-Business/Reactive-School Closures", 
                                    "Elimination" = "Elimination"))+  
       scale_pattern_density_manual(values = c("Untriggered Closures" = 0.2, "No Closures" = 0, "School Closures" = 0,
                                               "Economic Closures" = 0, "Elimination" = 0, "Other" = 0),
                                    breaks = c("Untriggered Closures", "No Closures", "School Closures", "Economic Closures", "Elimination"),
                                    labels = c("Untriggered Closures" = "Untriggered Closures", "No Closures" = "No Closures", 
-                                              "School Closures"   = "Reactive/Sustained-School Closures",
-                                              "Economic Closures" = "Reactive/Reactive-School Closures", 
+                                              "School Closures"   = "Reactive-Business/Sustained-School Closures",
+                                              "Economic Closures" = "Reactive-Business/Reactive-School Closures", 
                                               "Elimination" = "Elimination")) +
       theme_bw() +
       scale_x_continuous(breaks=seq(0,10,by=2),   expand=c(0,0), position="bottom") + 

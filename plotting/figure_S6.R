@@ -53,8 +53,8 @@ gg <- ggplot(output_data, aes(x = strategy, y = GDPLpc, linewidth = min_any, alp
       geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_GDPLpc),
                 vjust = -1.6, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
       theme_bw() + 
-      scale_x_discrete(labels = c("School Closures" = "Reactive/Sustained-School Closures",
-                                  "Economic Closures" = "Reactive/Reactive-School Closures")) +
+      scale_x_discrete(labels = c("School Closures" = "Reactive-Business/Sustained-School Closures",
+                                  "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
       facetted_pos_scales(y = list(
         scale_y_continuous(limits=c(0,80),  breaks=seq(0,80,20),  expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,80),  breaks=seq(0,80,20),  expand=c(0,0), position="right"),
@@ -63,7 +63,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = GDPLpc, linewidth = min_any, alp
         scale_y_continuous(limits=c(0,200), breaks=seq(0,200,50), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,120), breaks=seq(0,120,30), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,240), breaks=seq(0,240,60), expand=c(0,0), position="right"))) +
-      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
+      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "", y = "GDPL (% of GDP)") +
       guides(linewidth = "none", alpha = "none")
 
@@ -79,8 +79,8 @@ output_table <- output_data %>%
                           min_any = unique(min_any),
                           min_med = unique(min_med),
                           min_q3  = unique(min_q3)) %>% 
-                mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive/Sustained-School Closures",
-                                            strategy == "Economic Closures" ~ "Reactive/Reactive-School Closures",
+                mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive-Business/Sustained-School Closures",
+                                            strategy == "Economic Closures" ~ "Reactive-Business/Reactive-School Closures",
                                             TRUE ~ strategy)) %>%
                 mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
                 mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       

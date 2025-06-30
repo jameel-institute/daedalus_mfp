@@ -1,9 +1,9 @@
 function f=dd_single_plot(data,g1,p2,f1,cost,inp1,inp2,inp3)
 
 if strcmp(inp3, 'School Closures')
-    inp3 = 'Reactive/Sustained-School Closures';
+    inp3 = 'Reactive-Business/Sustained-School Closures';
 elseif strcmp(inp3, 'Economic Closures')
-    inp3 = 'Reactive/Reactive-School Closures';
+    inp3 = 'Reactive-Business/Reactive-School Closures';
 end
 
 %for schematic figure s4

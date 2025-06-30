@@ -63,8 +63,8 @@ gg <- ggplot(output_data, aes(x = x, y = y, fill = strategy)) +
       geom_point(data = output_stats, aes(x = mean_x, y = mean_y), shape = 21, size = 2, stroke = 0.2, color = "black") +
       scale_fill_manual(values = c("No Closures" = "magenta4", "School Closures" = "navy", 
                                    "Economic Closures" = "darkgreen", "Elimination" = "goldenrod"),
-                        labels = c("School Closures"   = "Reactive/Sustained-School Closures",
-                                   "Economic Closures" = "Reactive/Reactive-School Closures")) +
+                        labels = c("School Closures"   = "Reactive-Business/Sustained-School Closures",
+                                   "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
       theme_bw() +
       facetted_pos_scales(
       x = list(

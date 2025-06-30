@@ -54,8 +54,8 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = gdpl, alpha = min_
                                    "Retail, Hospitality", "Transport", "IT, Telecommunications", "Finance, Professional, Technical", "Public Administration, Other Services")) + 
       scale_alpha_manual(values = c("FALSE" = 0.25, "TRUE" = 1)) +
       theme_bw() + 
-      scale_x_discrete(labels = c("School Closures" = "Reactive/Sustained-School Closures",
-                                  "Economic Closures" = "Reactive/Reactive-School Closures")) +
+      scale_x_discrete(labels = c("School Closures" = "Reactive-Business/Sustained-School Closures",
+                                  "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
       facetted_pos_scales(y = list(
         scale_y_continuous(limits=c(0,12), breaks=seq(0,12,3), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,16), breaks=seq(0,16,4), expand=c(0,0), position="right"),
@@ -64,7 +64,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = gdpl, alpha = min_
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,20), breaks=seq(0,20,5), expand=c(0,0), position="right"))) +
-      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 45, hjust = 1)) + 
+      theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "", y = "GDPL (% of GDP)") +
       guides(fill = guide_legend(title = NULL, byrow = TRUE), alpha = "none") +
       theme(legend.position = "bottom", legend.box.just = "right", 
@@ -129,8 +129,8 @@ output_table <- output_data %>%
                 #        median_8  = if_else(min_any, paste0("\\bfseries{",median_8 ,"}"), median_8),
                 #        median_9  = if_else(min_any, paste0("\\bfseries{",median_9 ,"}"), median_9),
                 #        median_10 = if_else(min_any, paste0("\\bfseries{",median_10,"}"), median_10)) %>%
-                mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive/Sustained-School Closures",
-                                            strategy == "Economic Closures" ~ "Reactive/Reactive-School Closures",
+                mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive-Business/Sustained-School Closures",
+                                            strategy == "Economic Closures" ~ "Reactive-Business/Reactive-School Closures",
                                             TRUE ~ strategy)) %>%
                 mutate(strategy  = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
                 mutate(strategy  = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
