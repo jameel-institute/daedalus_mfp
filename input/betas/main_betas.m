@@ -6,7 +6,7 @@ function main_betas
     mkdir(taskdir);
     
     locations  = {'LLMIC','UMIC','HIC'};
-    diseases   = {'Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Delta','Covid Wildtype','SARS'};
+    diseases   = {'Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Delta','Covid Wildtype'};
     strategies = {'No Closures','School Closures','Economic Closures','Elimination'};
     
     lloc       = length(locations);

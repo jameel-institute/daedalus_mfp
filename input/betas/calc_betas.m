@@ -1,6 +1,6 @@
 addpath('../');
 
-diseases   = {'Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Delta','Covid Wildtype','SARS'};
+diseases   = {'Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Delta','Covid Wildtype'};
 beta_fixed = zeros(size(diseases));
 
 for j = 1:length(diseases);    
@@ -19,8 +19,8 @@ for j = 1:length(diseases);
         dis = param_covid_delta;
     elseif strcmp(inp2,'Covid Wildtype');
         dis = param_covid_wildtype;    
-    elseif strcmp(inp2,'SARS');
-        dis = param_sars;
+    % elseif strcmp(inp2,'SARS');
+    %     dis = param_sars;
     else
         error('Unknown Disease!');
     end  

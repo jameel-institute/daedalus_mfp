@@ -130,19 +130,17 @@ t_vax   = data.t_vax;             %vaccine administration start time
 arate   = data.arate*sum(nn/10^5);%vaccine administration rate
 puptake = data.puptake;           %vaccine uptake
 %Uptake
-av_ifr  = dot(dis.ifr,nn)/sum(nn);
-puptake = puptake*(1-(1/r0))*(4^log10(100*av_ifr));
 puptake = min(puptake,0.95*(1-(nnc(1)/sum(nnc))));%population uptake cannot be greater than 95% coverage in non-pre-school age groups
-upfun   = @(up) puptake*sum(nnc) - min(0.5*up,0.95)*nnc(2) - min(up,0.95)*nnc(3) - min(1.5*up,0.95)*nnc(4);
+upfun   = @(up) puptake*sum(nnc) - min(up,0.95)*(nnc(2) + nnc(3) + nnc(4));
 try
     up  = fzero(upfun,[0 2]);
 catch
     up  = fminbnd(upfun,0,2);
 end
 u1      = 0;
-u2      = min(0.5*up,0.95);
+u2      = min(up,0.95);
 u3      = min(up,0.95);
-u4      = min(1.5*up,0.95);
+u4      = min(up,0.95);
 uptake  = [u1,u2,u3,u4];
 %Administration Rate
 t_ages      = min((uptake.*nnc)/arate,Inf);%prevent NaN if numerator and denominator both zero

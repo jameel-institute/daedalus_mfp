@@ -25,7 +25,7 @@ dis.Ti    = Inf;
 
 %Transmission
 dis.red  = 0.58;
-%dis.R0  = 2.5000;
-dis.beta = 0.067416533519967;
+%dis.R0  = 1.8000;
+dis.beta = 0.048539904134376;
 
 end

@@ -337,7 +337,7 @@ if any(kr);
     t_vax   = poptim(1);
     arate   = poptim(3)/(poptim(2)-poptim(1));
     puptake = max(T(kr,:).people_fully_vaccinated_per_hundred)/100;%uptake based on second dose only
-    puptake = puptake/(1-(1/2.87))/(4^log10(100*0.01));%normalise by HIT using R0 from Billah et al. (2020) and by assumed log10-scaling using IFR from Verity et al. (2020) 
+    %puptake = puptake/(1-(1/2.87))/(4^log10(100*0.01));%normalise by HIT using R0 from Billah et al. (2020) and by assumed log10-scaling using IFR from Verity et al. (2020) 
     source  = 'Our World in Data, 2022';
 
     % figure;
@@ -479,6 +479,18 @@ end
 %disp(['Mass testing begins on day ',num2str(t_tit),...
 %      ' with an administration rate of ',num2str(trate),' tests per 100k per day','% (',source,')']);
 
+filename = '../../../Data/Preparedness/10.under_ascertainment_estimates.csv';
+T        = readtable(filename);
+
+kr = strcmp(T.country,country);
+if any(kr);
+    masc   = mean(T(kr,:).estimate);
+    source = 'Russell et al., 2020';
+else
+    masc   = [];
+    source = 'Estimated, 0';
+end
+
 %% response time & social distancing
 
 filename = '../../../Data/Preparedness/11.response.csv';
@@ -493,7 +505,7 @@ if any(kc);
 
     Bts    = table2array(T(:,kc));
     i_r    = find(Bts>=20,1);%if strategy is no closures, this makes no difference, and if this threshold isn't met we assume Covid closures weren't imposed 
-    Tres   = dvec(i_r)/3.48;%normalise by doubling time from https://pmc.ncbi.nlm.nih.gov/articles/PMC7575205/pdf/nihms-1636611.pdf
+    Tres   = dvec(i_r)/3.48;%normalise by doubling time from https://pmc.ncbi.nlm.nih.gov/articles/PMC7575205/pdf/nihms-1636611.pdf, note this has to be undone below
     source = 'Blavatnik, 2022';
 else
     Tres   = [];
@@ -538,7 +550,7 @@ if any(kr) & ~isempty(Tres);
     [t,i1,i2] = intersect(t1,t2);
     Dts       = Dts(i1);
     Mts       = Mts(i2);
-    t         = t - Tres;%days since response time
+    t         = t - Tres*3.48;%days since response time for Covid
     
     lb      = [-10, 0,  0];
     x0      = [0,   1,  0.1];
@@ -686,7 +698,8 @@ data(i).trate   = trate;
 data(i).Hmax    = Hmax;
 data(i).t_vax   = t_vax;   
 data(i).arate   = arate;   
-data(i).puptake = puptake; 
+data(i).puptake = puptake;
+data(i).masc    = masc;
 
 if mod(i,10) == 0;
     display(i);
