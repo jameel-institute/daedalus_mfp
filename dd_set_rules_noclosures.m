@@ -1,4 +1,4 @@
-function [value,isterminal,direction] = dd_set_rules_noclosures(t,y,data,dis,i,p2)
+function [value,isterminal,direction] = dd_set_rules_noclosures(t,y,data,dis,i,~,p2)
     
 ln   = length(data.NNs);
 

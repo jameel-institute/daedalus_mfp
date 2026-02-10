@@ -10,7 +10,7 @@ while i < 6;
     D = data.Dvec(:,:,i);
     
     fun                = @(t,y) ODEs(t,y,data,dis,i,D,p2);
-    options            = odeset('Events', @(t,y) data.ev_fn(t,y,data,dis,i,p2));%,'MaxStep',0.1);   
+    options            = odeset('Events', @(t,y) data.ev_fn(t,y,data,dis,i,D,p2));%,'MaxStep',0.1);   
     [tout,yout,~,~,ie] = ode45(fun,[t0 tend],y0,options);
     
     if ~isempty(ie);
@@ -107,44 +107,17 @@ mu  = pd./Th;
 
 %% CASE ISOLATION AND TRACING
 
-if t>=p2.t_tit && i~=5;
-    incid  = max(0,10^5*((dis.siga+dis.sigs)*sum(E+Ev1))/sum(data.Npop));
-    asc_s  = 1/(1+exp(p2.asca + p2.ascb*log10(incid) + p2.ascc*log10(p2.trate)));
-    propCT = 1/(1+exp(p2.pcta + p2.pctb*log10(incid)));
-    asc_a  = propCT*asc_s + (1-propCT)*0;
-    
-    asc_a = min(asc_a,(p2.trate/incid)*(0*(1-propCT) + (1-dis.ps)*propCT));
-    asc_s = min(asc_s,(p2.trate/incid)*(1*(1-propCT) + dis.ps*propCT));
-    asc_a = max(p2.trate/10^5*(0*(1-propCT) + (1-dis.ps)*propCT),asc_a);
-    asc_s = max(p2.trate/10^5*(1*(1-propCT) + dis.ps*propCT),asc_s);
-    
-    onsPCR_s = p2.opsa + p2.opsb*log10(p2.trate);
-    onsPCR_c = onsPCR_s + p2.opc;
-    Teff_c   = max(0,dis.Tinc+onsPCR_c-dis.Tlat);
-    Teff_s   = max(0,dis.Tinc+onsPCR_s-dis.Tlat);
-    mult_ac  = min(Teff_c,dis.Tay)./dis.Tay;
-    mult_sc  = min(Teff_c,Ts)./Ts;
-    mult_ss  = min(Teff_s,Ts)./Ts;
-    
-    tm_a = mult_ac;
-    tm_s = mult_sc*propCT + mult_ss*(1-propCT);
-else
-    asc_a = 0;
-    asc_s = 0;
-    tm_a  = 1;
-    tm_s  = 1;   
-end
+cit_sw  = double((t >= p2.t_tit) & (i~=5));
+prev_sw = double(sum(E + Ev1 + Ina + Isa + Ins + Iss + Inav1 + Isav1 + Insv1 + Issv1 + H + Hv1) < 10^-7*sum(data.Npop));
 
-sig1 = dis.siga*(1-asc_a);
-sig2 = dis.sigs*(1-asc_s);
-sig3 = dis.siga*asc_a;
-sig4 = dis.sigs*asc_s;
+Tss_eff = max(0,p2.iisym-dis.Tlat);
+Tsa_eff = max(0,p2.iitra-dis.Tlat);
+tm_a    = 1*(1-cit_sw*prev_sw) + (min(Tsa_eff,dis.Tay)./dis.Tay)*(cit_sw*prev_sw);
+tm_s    = 1*(1-cit_sw) + (min(Tss_eff,Ts)./Ts)*(cit_sw*(1-prev_sw)) + (min(Tsa_eff,Ts)./Ts)*(cit_sw*prev_sw);
 
-%% DISTANCING
-
+% DISTANCING
 ddk    = max(0,10^5*sum(mu.*(H+Hv1))/sum(data.Npop));
 sd_fun = @(a,b,c,t,d) 1/(1 + exp(a + b*log10(d) - c*t));%here, t is time since response time
-
 if i==1;%strcmp(data.inp3,'No Closures')||
     betamod = 1;
 elseif any(i==data.imand);
@@ -152,16 +125,22 @@ elseif any(i==data.imand);
 else
     betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk);
 end
-
-%% FOI
-
 I         = (dis.red*Ina+Ins) + (1-dis.trv1)*(dis.red*Inav1+Insv1) + tm_a*dis.red*(Isa+(1-dis.trv1)*Isav1) + tm_s.*(Iss+(1-dis.trv1)*Issv1);
 NN        = data.NNs;
 NN(NN==0) = 1;
 foi       = dis.beta*betamod*(D*(I./NN));
+seedvec   = 1e-8*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth of the population
+seed      = dis.beta*betamod*(D*(seedvec./NN));
 
-seedvec = 1e-8*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth of the population
-seed    = dis.beta*betamod*(D*(seedvec./NN));
+inc   = sum(S.*(foi+seed) + Shv1.*(foi+seed) + Sv1.*(1-dis.scv1).*(foi+seed));
+sinc  = dis.ps*inc;
+hadm  = sum(h.*Ins + h.*Iss + dis.h_v1.*Insv1 + dis.h_v1.*Issv1);
+asc_a = 0*(1-cit_sw*prev_sw) + min(p2.masc, max(0, p2.trate - hadm)/inc)*(cit_sw*prev_sw);
+asc_s = 0*(1-cit_sw) + min(p2.masc, max(0, p2.trate - hadm)/sinc)*(cit_sw*(1-prev_sw)) + min(p2.masc, max(0, p2.trate - hadm)/inc)*(cit_sw*prev_sw);
+sig1  = dis.siga*(1-asc_a);
+sig2  = dis.sigs*(1-asc_s);
+sig3  = dis.siga*asc_a;
+sig4  = dis.sigs*asc_s; 
 
 %% EQUATIONS
 

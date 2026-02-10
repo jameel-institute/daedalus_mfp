@@ -109,17 +109,11 @@ p2.tmand = NaN;
 p2.dmand = NaN;
 
 %Surveillance
-t_tit    = data.t_tit;%case-isolation-tracing start time (in terms of doubling times)
-p2.trate = data.trate;%case-isolation-tracing testing rate
-p2.t_tit = t_tit*Td;
-p2.asca  = 0.7623;%ascertainment proportion coefficients
-p2.ascb  = 1.605;
-p2.ascc  = -1.416;
-p2.pcta  = 2.159;%ascertainment method coefficients
-p2.pctb  = 1.697;
-p2.opsa  = 11.3224;%symptom-driven onset-PCR delay coefficients  
-p2.opsb  = -2.6260;
-p2.opc   = dot(-0.7190*(dis.Tlat+((1-dis.ps)*(dis.Tay)+dis.ps*(dis.Ts))), data.NNs) / sum(data.NNs);%traced onset-PCR delay coefficient
+p2.t_tit = data.t_tit*Td;          %case-isolation-tracing start-time (in terms of doubling times)
+p2.trate = data.trate*sum(nn/10^5);%case-isolation-tracing testing rate
+p2.masc  = data.masc;              %symptomatic case ascertainment ratio
+p2.iisym = 5.8 + 2.4;              %infection-isolation delay for symptom-driven testing, sum of Covid incubation period and the onset-isolation delay in 10.1093/cid/ciab491
+p2.iitra = 5.8 - 0.8;              %infection-isolation delay for tracing-driven testing, sum of Covid incubation period and the onset-isolation delay in 10.1038/s41598-022-27227-2
 
 %Healthcare
 p2.Hmax = data.Hmax*sum(nn/10^5);%spare hospital capacity

@@ -1,57 +1,73 @@
-function [value,isterminal,direction] = dd_set_rules_elimination(t,y,data,dis,i,p2)
+function [value,isterminal,direction] = dd_set_rules_elimination(t,y,data,dis,i,D,p2)
     
-ln    = length(data.NNs);
+ln        = length(data.NNs);
 
-S     = y(0*ln+1:1*ln);
-E     = y(1*ln+1:2*ln);
-H     = y(6*ln+1:7*ln);
-R     = y(7*ln+1:8*ln);
-Shv1  = y(8*ln+1:9*ln);
-Sv1   = y(9*ln+1:10*ln);
-Ev1   = y(10*ln+1:11*ln);
-Hv1   = y(15*ln+1:16*ln);
-Sn    = y(19*ln+1:20*ln);
-Rv1   = y(16*ln+1:17*ln);
-DE    = y(17*ln+1:18*ln);
+S         = y(0*ln+1:1*ln);
+E         = y(1*ln+1:2*ln);
+Ina       = y(2*ln+1:3*ln);
+Isa       = y(3*ln+1:4*ln);
+Ins       = y(4*ln+1:5*ln);
+Iss       = y(5*ln+1:6*ln);
+H         = y(6*ln+1:7*ln);
+R         = y(7*ln+1:8*ln);
+Shv1      = y(8*ln+1:9*ln);
+Sv1       = y(9*ln+1:10*ln);
+Ev1       = y(10*ln+1:11*ln);
+Inav1     = y(11*ln+1:12*ln);
+Isav1     = y(12*ln+1:13*ln);
+Insv1     = y(13*ln+1:14*ln);
+Issv1     = y(14*ln+1:15*ln);
+Hv1       = y(15*ln+1:16*ln);
+Rv1       = y(16*ln+1:17*ln);
+DE        = y(17*ln+1:18*ln);
+Sn        = y(19*ln+1:20*ln);
 
-amp   = min((Sn + (S-Sn).*(1-dis.heff))./S, 1);
-ph    = amp.*dis.ph;
-Ts    = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
-g2    = (1-ph)./Ts;
-h     = ph./Ts;
-occ   = sum(H+Hv1);
-if t>=p2.t_tit && i~=5;
-    incid  = max(0,10^5*((dis.siga+dis.sigs)*sum(E+Ev1))/sum(data.Npop));
-    asc_s  = 1/(1+exp(p2.asca + p2.ascb*log10(incid) + p2.ascc*log10(p2.trate)));
-    propCT = 1/(1+exp(p2.pcta + p2.pctb*log10(incid)));
-    asc_a  = propCT*asc_s + (1-propCT)*0;
-    
-    asc_a = min(asc_a,(p2.trate/incid)*(0*(1-propCT) + (1-dis.ps)*propCT));
-    asc_s = min(asc_s,(p2.trate/incid)*(1*(1-propCT) + dis.ps*propCT));
-    asc_a = max(p2.trate/10^5*(0*(1-propCT) + (1-dis.ps)*propCT),asc_a);
-    asc_s = max(p2.trate/10^5*(1*(1-propCT) + dis.ps*propCT),asc_s);
-    
-    onsPCR_s = p2.opsa + p2.opsb*log10(p2.trate);
-    onsPCR_c = onsPCR_s + p2.opc;
-    Teff_c   = max(0,dis.Tinc+onsPCR_c-dis.Tlat);
-    Teff_s   = max(0,dis.Tinc+onsPCR_s-dis.Tlat);
-    mult_ac  = min(Teff_c,dis.Tay)./dis.Tay;
-    mult_sc  = min(Teff_c,Ts)./Ts;
-    mult_ss  = min(Teff_s,Ts)./Ts;
-    
-    tm_a = mult_ac;
-    tm_s = mult_sc*propCT + mult_ss*(1-propCT);
+amp       = min((Sn + (S-Sn).*(1-dis.heff))./S, 1);
+ph        = amp.*dis.ph;
+Ts        = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
+g2        = (1-ph)./Ts;
+h         = ph./Ts;
+
+occ       = sum(H+Hv1);
+th0       = max(1, 1+p2.th*((occ-p2.Hmax)/p2.Hmax));%overcapacity hospitals increases pd
+pd        = min(th0*dis.pd,1);
+Th        = ((1-pd).*dis.Threc)+(pd.*dis.Thd);
+mu        = pd./Th;
+
+cit_sw    = double((t >= p2.t_tit) & (i~=5));
+prev_sw   = double(sum(E + Ev1 + Ina + Isa + Ins + Iss + Inav1 + Isav1 + Insv1 + Issv1 + H + Hv1) < 10^-7*sum(data.Npop));
+
+Tss_eff   = max(0,p2.iisym-dis.Tlat);
+Tsa_eff   = max(0,p2.iitra-dis.Tlat);
+tm_a      = 1*(1-cit_sw*prev_sw) + (min(Tsa_eff,dis.Tay)./dis.Tay)*(cit_sw*prev_sw);
+tm_s      = 1*(1-cit_sw) + (min(Tss_eff,Ts)./Ts)*(cit_sw*(1-prev_sw)) + (min(Tsa_eff,Ts)./Ts)*(cit_sw*prev_sw);
+
+% DISTANCING
+ddk       = max(0,10^5*sum(mu.*(H+Hv1))/sum(data.Npop));
+sd_fun    = @(a,b,c,t,d) 1/(1 + exp(a + b*log10(d) - c*t));%here, t is time since response time
+if i==1;%strcmp(data.inp3,'No Closures')||
+    betamod = 1;
+elseif any(i==data.imand);
+    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,p2.tmand,max(p2.dmand,ddk));
 else
-    asc_a = 0;
-    asc_s = 0;
-    tm_a  = 1;
-    tm_s  = 1;   
+    betamod = sd_fun(p2.sda,p2.sdb,p2.sdc,t-p2.Tres,ddk);
 end
+I         = (dis.red*Ina+Ins) + (1-dis.trv1)*(dis.red*Inav1+Insv1) + tm_a*dis.red*(Isa+(1-dis.trv1)*Isav1) + tm_s.*(Iss+(1-dis.trv1)*Issv1);
+NN        = data.NNs;
+NN(NN==0) = 1;
+foi       = dis.beta*betamod*(D*(I./NN));
+seedvec   = 1e-8*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth of the population
+seed      = dis.beta*betamod*(D*(seedvec./NN));
 
-sig1 = dis.siga*(1-asc_a);
-sig2 = dis.sigs*(1-asc_s);
-sig3 = dis.siga*asc_a;
-sig4 = dis.sigs*asc_s;
+inc       = sum(S.*(foi+seed) + Shv1.*(foi+seed) + Sv1.*(1-dis.scv1).*(foi+seed));
+sinc      = dis.ps*inc;
+hadm      = sum(h.*Ins + h.*Iss + dis.h_v1.*Insv1 + dis.h_v1.*Issv1);
+asc_a     = 0*(1-cit_sw*prev_sw) + min(p2.masc, max(0, p2.trate - hadm)/inc)*(cit_sw*prev_sw);
+asc_s     = 0*(1-cit_sw) + min(p2.masc, max(0, p2.trate - hadm)/sinc)*(cit_sw*(1-prev_sw)) + min(p2.masc, max(0, p2.trate - hadm)/inc)*(cit_sw*prev_sw);
+sig1      = dis.siga*(1-asc_a);
+sig2      = dis.sigs*(1-asc_s);
+sig3      = dis.siga*asc_a;
+sig4      = dis.sigs*asc_s; 
 
 %% event 1: first lockdown
 %lockdown at first occurence of: response time, 95% of hospital capacity
