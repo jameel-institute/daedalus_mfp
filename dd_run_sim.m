@@ -168,7 +168,7 @@ Rv1dot   = dis.g1.*Inav1 + dis.g2_v1.*Insv1 + dis.g1*Isav1 + dis.g2_v1.*Issv1 + 
 
 DEdot    = mu.*H + mu.*Hv1;     
 
-Sndot    = -Sn.*(foi+seed) - vrate_s;
+Sndot    = -Sn.*(foi+seed) - vrate_s.*(Sn./S);
 
 %% OUTPUT
 
