@@ -18,6 +18,8 @@ if isempty(fieldnames(output));
     output.Issvout    = zeros(1,ln);
     output.Insout     = zeros(1,ln);
     output.Hout       = zeros(1,ln);
+    output.Hadout     = zeros(1,ln);
+    output.Rout       = zeros(1,ln);
     output.Dout       = zeros(1,ln);
     output.dDout      = zeros(1,ln);
     output.Xout       = [];
@@ -58,6 +60,7 @@ Issclass = yout(:, 5*ln+1: 6*ln);
 Issvlass = yout(:,14*ln+1:15*ln);
 Insclass = yout(:, 4*ln+1: 5*ln) + yout(:,13*ln+1:14*ln);
 Hclass   = yout(:, 6*ln+1: 7*ln) + yout(:,15*ln+1:16*ln);
+Rclass   = yout(:, 7*ln+1: 8*ln) + yout(:,16*ln+1:17*ln);
 Dclass   = yout(:,17*ln+1:18*ln);
 Vclass   = yout(:,18*ln+1:19*ln);
 
@@ -84,6 +87,7 @@ amp       = min((Sn+(1-dis.heff).*(S-Sn))./S,1);
 ph        = amp.*dis.ph';
 Ts        = ((1-ph).*dis.Tsr) + (ph.*dis.Tsh);
 h         = ph./Ts;
+Hadclass  = h.*Ins + h.*Iss + dis.h_v1'.*Insv1 + dis.h_v1'.*Issv1;
 cit_sw    = double((tout >= p2.t_tit) & (i~=5));
 prev_sw   = double(sum(E + Ev1 + Ina + Isa + Ins + Iss + Inav1 + Isav1 + Insv1 + Issv1 + H + Hv1, 2) < 10^-7*sum(data.Npop));
 Tss_eff   = max(0,p2.iisym-dis.Tlat);
@@ -98,7 +102,7 @@ seedvec   = 1e-8*sum(data.Npop)*dis.Ev*data.xconf(i,data.IntlInd);%one billionth
 seed      = dis.beta*betamod.*(D*(seedvec./NN))';
 inc       = sum(S.*(foi+seed) + Shv1.*(foi+seed) + Sv1.*(1-dis.scv1).*(foi+seed), 2);
 sinc      = dis.ps*inc;
-hadm      = sum(h.*Ins + h.*Iss + dis.h_v1'.*Insv1 + dis.h_v1'.*Issv1, 2);
+hadm      = sum(Hadclass, 2);
 asc_a     = 0*(1-cit_sw.*prev_sw) + min(p2.masc, max(0, p2.trate - hadm)./inc).*(cit_sw.*prev_sw);
 asc_s     = 0*(1-cit_sw) + min(p2.masc, max(0, p2.trate - hadm)./sinc).*(cit_sw.*(1-prev_sw)) + min(p2.masc, max(0, p2.trate - hadm)./inc).*(cit_sw.*prev_sw);
 
@@ -120,6 +124,8 @@ output.Issout     = [output.Issout;Issclass(2:end,:)];
 output.Issvout    = [output.Issvout;Issvlass(2:end,:)];
 output.Insout     = [output.Insout;Insclass(2:end,:)];
 output.Hout       = [output.Hout;Hclass(2:end,:)];
+output.Hadout     = [output.Hadout;Hadclass(2:end,:)];
+output.Rout       = [output.Rout;Rclass(2:end,:)];
 output.Dout       = [output.Dout;Dclass(2:end,:)];
 output.dDout      = [output.dDout;dDclass(2:end,:)]; 
 output.Xout       = [output.Xout;X(1:end-1,:)];      
@@ -136,7 +142,19 @@ if inext==6;
     output.hwout = [output.hwout;output.hwout(end,:)];
     output.f     = [output.Tout,output.Xout,output.hwout,...
                     output.Isaout,output.Isavout,output.Issout,output.Issvout,output.Insout,output.Hout,output.Dout,output.Vout,...
-                    output.betamodout,output.Tsout,output.Thout,output.phout];
+                    output.betamodout,output.Tsout,output.Thout,output.phout,...
+                    10^5*(output.Rout(:,lx+1) + output.Dout(:,lx+1))/data.NNs(lx+1),...
+                    10^5*(output.Rout(:,lx+2) + output.Dout(:,lx+2))/data.NNs(lx+2),...
+                    10^5*(sum(output.Rout(:,[1:lx,lx+adInd]),2) + sum(output.Dout(:,[1:lx,lx+adInd]),2))/sum(data.NNs([1:lx,lx+adInd])),...
+                    10^5*(output.Rout(:,lx+4) + output.Dout(:,lx+4))/data.NNs(lx+4),...
+                    10^5*output.Hadout(:,lx+1)/data.NNs(lx+1),...
+                    10^5*output.Hadout(:,lx+2)/data.NNs(lx+2),...
+                    10^5*sum(output.Hadout(:,[1:lx,lx+adInd]),2)/sum(data.NNs([1:lx,lx+adInd])),...
+                    10^5*output.Hadout(:,lx+4)/data.NNs(lx+4),...
+                    10^5*output.Dout(:,lx+1)/data.NNs(lx+1),...
+                    10^5*output.Dout(:,lx+2)/data.NNs(lx+2),...
+                    10^5*sum(output.Dout(:,[1:lx,lx+adInd]),2)/sum(data.NNs([1:lx,lx+adInd])),...
+                    10^5*output.Dout(:,lx+4)/data.NNs(lx+4)];
     output.g     = [output.Tout,sum(output.Iout,2),sum(output.Hout,2),sum(output.Dout,2),...
                     output.aaout,output.asout,output.betamodout,...  
                     sum(output.Vout(:,lx+1),2),sum(output.Vout(:,lx+2),2),sum(output.Vout(:,[1:lx,lx+adInd]),2),sum(output.Vout(:,lx+4),2),...

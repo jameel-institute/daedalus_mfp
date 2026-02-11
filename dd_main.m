@@ -56,9 +56,12 @@ for k = 1:lstrat;
     try
         [~,f,~] = dd_run_sim(data,dis,p2);
         [~,c]   = dd_calc_loss(data,dis,f);
-        sec     = [i,f(end,1)-f(1,1),c];
+        sec     = [i,f(end,1)-f(1,1),c,...
+                   f(end,632:635),...
+                   trapz(f(:,1),f(:,636:639)),...
+                   f(end,640:643)];
     catch
-        sec     = [i,nan(1,16)];
+        sec     = [i,nan(1,28)];
     end
     output = [output;sec];
     end
