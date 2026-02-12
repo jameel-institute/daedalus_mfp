@@ -11,7 +11,7 @@ data       = dd_set_strategy(data,inp3);
 
 [data,f,g] = dd_run_sim(data,dis,p2);
 
-[cost,~]   = dd_calc_loss(data,dis,f);
+[cost,~]   = dd_calc_loss(data,dis,p2,f);
 sec        = sum(cost([3,4:5,8],:),'all');
 %sec(1)    = sum(cost(3,:),'all');
 %sec(2)    = sum(cost(4:5,:),'all');

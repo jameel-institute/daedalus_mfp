@@ -55,13 +55,10 @@ for k = 1:lstrat;
     p2   = p2_array{h,i,j};
     try
         [~,f,~] = dd_run_sim(data,dis,p2);
-        [~,c]   = dd_calc_loss(data,dis,f);
-        sec     = [i,f(end,1)-f(1,1),c,...
-                   f(end,632:635),...
-                   trapz(f(:,1),f(:,636:639)),...
-                   f(end,640:643)];
+        [~,c]   = dd_calc_loss(data,dis,p2,f);
+        sec     = [i,f(end,1)-f(1,1),c];                   
     catch
-        sec     = [i,nan(1,28)];
+        sec     = [i,nan(1,35)];
     end
     output = [output;sec];
     end

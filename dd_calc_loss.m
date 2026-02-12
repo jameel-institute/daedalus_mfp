@@ -1,8 +1,9 @@
-function [cost,c] = dd_calc_loss(data,dis,f)
+function [cost,c] = dd_calc_loss(data,dis,p2,f)
 
-ln = length(data.NNs);
-lx = length(data.obj);
-t  = f(:,1);
+ln    = length(data.NNs);
+lx    = length(data.obj);
+adInd = 3;
+t     = f(:,1);
 
 %% VLYL
 
@@ -18,6 +19,7 @@ cost(3,:) = vlyl;
 %% GDPL
 
 notEd = [1:(data.EdInd-1),(data.EdInd+1):lx];
+x     = f(:,1+notEd);
 
 %labour supply: GDP loss due to illness, when businesses are open
 %assume that the symptomatic period is the same duration as the infectious period (though start/end points may be different)
@@ -38,13 +40,12 @@ hospts        = f(:,1+2*lx+5*ln+notEd);
 deaths        = f(:,1+2*lx+6*ln+notEd);
 abs_ill       = isoasyu + isoasyv + isosymu + isosymv + nissym + hospts + deaths;%number of workers absent
 abs_ill_pc    = max(0,abs_ill./data.NNs(notEd)');%proportion of workers absent
-abs_ill_pcop  = abs_ill_pc.*f(:,1+notEd);%proportion of workers absent in open sectors
+abs_ill_pcop  = abs_ill_pc.*x;%proportion of workers absent in open sectors
 abs_ilop_int  = trapz(t,abs_ill_pcop) + (3651-t(end))*max(0,deaths(end,:)./data.NNs(notEd)');%proportion of worker-days of absence, accounting for deaths up to 10 years
 gdpl_lbs      = abs_ilop_int.*data.obj(notEd)';
 cost(4,notEd) = gdpl_lbs;
 
 %labour demand: GDP loss due to business closures
-x             = f(:,1+notEd);%x = w.^data.alp;%proportion of sector open
 x_int         = trapz(t,1-x);%diff(t)'*(1-x(1:end-1,:));%proportion of sector closed (summed)
 gdpl_lbd      = x_int.*data.obj(notEd)';
 cost(5,notEd) = gdpl_lbd;
@@ -85,6 +86,38 @@ cost(7,lx+2) = abs_clos_int;
 vsyl_std     = abs_clos_int*data.vsy;
 cost(8,lx+2) = vsyl_std;
 
+%% OTHER OUTCOMES
+
+susc    = f(:,1+2*lx+8*ln+1+3*ln+[1:ln]);
+hadm    = f(:,1+2*lx+8*ln+1+4*ln+[1:ln]);
+deaths  = f(:,1+2*lx+6*ln+[1:ln]);
+hocc    = f(:,1+2*lx+5*ln+[1:ln]);
+
+%final size by age
+%cumulative hospital admissions by age
+%mortality by age                  
+%peak hospital occupancy demand
+%cumulative hospital bed-days
+%cumulative hospital bed-days above capacity
+fsize  = [data.NNs(lx+1) - susc(end,lx+1), ... 
+          data.NNs(lx+2) - susc(end,lx+2), ...
+          sum(data.NNs([1:lx,lx+adInd])) - sum(susc(end,[1:lx,lx+adInd])), ...
+          data.NNs(lx+4) - susc(end,lx+4)];
+hadms  = trapz(t, [hadm(:,lx+1), hadm(:,lx+2), sum(hadm(:,[1:lx,lx+adInd]),2), hadm(:,lx+4)]);
+morts  = [deaths(end,lx+1), deaths(end,lx+2), sum(deaths(end,[1:lx,lx+adInd]),2), deaths(end,lx+4)]; 
+hpeak  = max(sum(hocc,2));    
+hbdays = trapz(t, sum(hocc,2));
+hbdoc  = trapz(t, max(0, sum(hocc,2) - p2.Hmax));
+
+%worker-days of excess unemployment
+%number of lockdowns/heavy closure configurations
+%flag for successful elimination strategy
+%time spent in lockdowns/heavy closure configurations
+wdunem = trapz(t, sum((1-x).*(data.NNs(notEd)' - deaths(:,notEd)), 2));
+numldn = sum(diff(double(x(:,26) < 0.95)) == 1);%retail sector less than 95% open indicates heavy closure configuration
+elimok = any((x(:,29) > 0.17) & (x(:,29) < 0.20) & (t < data.t_vax));%air transport sector between 17 to 20% open indicates light closure configuration for elimination
+timldn = trapz(t, double(x(:,26) < 0.95));%retail sector less than 95% open indicates heavy closure configuration                                       
+
 %% SUMMARY
 
 c1        = [cost(3,lx+1) cost(3,lx+2) sum(cost(3,[1:lx,lx+3])) cost(3,ln)];
@@ -92,6 +125,7 @@ c2        = sum(cost(4:5,1:lx),1);
 map45to10 = [1,1,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,5,6,7,7,7,7,7,6,8,8,8,9,9,9,9,10,10,10,10,10,10];
 c2        = accumarray(map45to10',c2')';
 c3        = sum(cost(8,:));
-c         = [c1,c2,c3];
+c4        = [fsize,hadms,morts,hpeak,hbdays,hbdoc,wdunem,numldn,elimok,timldn];
+c         = [c1,c2,c3,c4];
 
 end
