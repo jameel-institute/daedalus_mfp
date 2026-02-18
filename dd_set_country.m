@@ -128,6 +128,7 @@ elseif any(strcmp(country_data.country,location));
     data.t_vax   = country_data{1,startsWith(country_data.Properties.VariableNames, 't_vax')};
     data.arate   = country_data{1,startsWith(country_data.Properties.VariableNames, 'arate')};
     data.puptake = country_data{1,startsWith(country_data.Properties.VariableNames, 'puptake')};
+    if any(cellfun(@(x) isnumeric(x) && any(isnan(x(:))), struct2cell(data))), error('Not all country data available!'); end
 end
 
 %vly

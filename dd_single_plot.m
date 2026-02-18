@@ -6,15 +6,17 @@ elseif strcmp(inp3, 'Economic Closures')
     inp3 = 'Reactive-Business/Reactive-School Closures';
 end
 
-%for schematic figure s4
+%for schematic figure s5
+% manually specify income group of country in legend 1
 % add to last no closure event tflag: + max(0,(3*365)-t);
 % add legend 2 to top subfigure only
 % remove dashes in losses barchart for subfig 2 and fix ylmt
-% manually specify income group of country in legend 1
-% dd_single('Rwanda','Influenza 1957','No Closures');
-% dd_single('Argentina', 'Influenza 1918', 'School Closures');
+% change Mexico p2.sda = 1.7; p2.sdc = 0.01; p2.Hmax = 60000;
+% increase Chile p2.Tres = 80;p2.Hmax = 15000;p2.sdc = 0.002;
+% dd_single('India','Influenza 1957','No Closures');
+% dd_single('Mexico', 'Influenza 1918', 'School Closures');
 % dd_single('Thailand', 'Covid Omicron', 'Economic Closures');
-% dd_single('United Kingdom', 'Covid Wildtype', 'Elimination');
+% dd_single('Chile', 'Covid Wildtype', 'Elimination');
 
 ln        = length(data.NNs);
 lx        = length(data.obj);
@@ -146,7 +148,7 @@ ax.YColor = 'k';
 grid on;
 box on;
 % legend([hh1,hh2,hh3,hh4,hh5],'Prevalence (per 10m)','Hospital Occupancy (per 100m)','Hospital Capacity (per 100m)',... %%%%%
-%                          'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','northeast');
+%                              'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','northeast');
 t = text(8,86.6,strvcat(inp1,strrep([inp2 ' X'], ' ', '-'),inp3),'FontSize',fs);
 t.BackgroundColor = [1 1 1];
 t.EdgeColor       = [0 0 0];

@@ -3,9 +3,9 @@ library(purrr)
 library(tidyr)
 library(readr)
 library(stringr)
+library(fBasics)
 library(fitdistrplus)
 library(forecast)
-sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
 library(scam)
 library(ggplot2)
 library(ggh4x)
@@ -16,8 +16,7 @@ library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
-#source("functions/parse_inputs.R")
-#source("functions/voi_fit.R")
+source("functions/parse_inputs.R")
 source("functions/format_table.R")
 
 list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
@@ -60,18 +59,18 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
       geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_SLpc),
                 vjust = 0.4, label = "*", size = 6, color = "black", inherit.aes = FALSE) +
       geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_SLpc),
-                vjust = -1.6, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
+                vjust = -1.5, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
       theme_bw() + 
       scale_x_discrete(labels = c("School Closures" = "Reactive-Business/Sustained-School Closures",
                                   "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
       facetted_pos_scales(y = list(
         scale_y_continuous(limits=c(0,200),  breaks=seq(0,200,50),    expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,320),  breaks=seq(0,320,80),    expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,2400), breaks=seq(0,2400,600),  expand=c(0,0), position="right"),
+        scale_y_continuous(limits=c(0,2000), breaks=seq(0,2000,500),  expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,480),  breaks=seq(0,480,120),   expand=c(0,0), position="right"),
         scale_y_continuous(limits=c(0,1600), breaks=seq(0,1600,400),  expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,800),  breaks=seq(0,800,200),   expand=c(0,0), position="right"),
-        scale_y_continuous(limits=c(0,2800), breaks=seq(0,2800,700),  expand=c(0,0), position="right"))) +
+        scale_y_continuous(limits=c(0,800),  breaks=seq(0,800,200),   expand=c(0,0), position="right"))) +
+        #scale_y_continuous(limits=c(0,2800), breaks=seq(0,2800,700),  expand=c(0,0), position="right"))) +
       theme(panel.spacing = unit(0.75, "lines"), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "", y = "Socioeconomic Loss (% of GDP)") +
       guides(width = "none", linewidth = "none", color = "none", fill = guide_legend(title = NULL), alpha = "none") +
@@ -81,8 +80,8 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
 
 ggsave("figure_2.png", plot = gg, height = 14, width = 10)
 
-output_table <- output_data %>% 
-                group_by(location, disease, strategy) %>% 
+output_table <- output_data %>%
+                group_by(location, disease, strategy) %>%
                 summarise(mean    = sprintf("%.1f", unique(mean_SLpc)),
                           sd      = sprintf("%.1f", sd(SLpc)),
                           q1      = sprintf("%.1f", quantile(SLpc, 0.25)),
@@ -90,17 +89,17 @@ output_table <- output_data %>%
                           q3      = sprintf("%.1f", unique(q3_SLpc)),
                           min_any = unique(min_any),
                           min_med = unique(min_med),
-                          min_q3  = unique(min_q3)) %>% 
+                          min_q3  = unique(min_q3)) %>%
                 mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive-Business/Sustained-School Closures",
                                             strategy == "Economic Closures" ~ "Reactive-Business/Reactive-School Closures",
                                             TRUE ~ strategy)) %>%
                 mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
-                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
-                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%
                 mutate(q3       = if_else(str_detect(strategy, "Elimination"),  paste0(q3,"\\phantom{.}"), q3)) %>%
-                mutate(q3       = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(q3,"\\phantom{.}"), q3)) %>%
+                mutate(q3       = if_else(str_detect(strategy, "Elimination") & disease == "Covid-Wildtype-X",  paste0(q3,"\\phantom{.}"), q3)) %>%
                 dplyr::select(-starts_with("min")) %>%
-                mutate(across(everything(), as.character)) %>%            
+                mutate(across(everything(), as.character)) %>%
                 format_table("location")
 
-write.table(output_table, file = "table_S4.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(output_table, file = "table_S5.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)

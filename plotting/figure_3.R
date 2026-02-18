@@ -3,9 +3,9 @@ library(purrr)
 library(tidyr)
 library(readr)
 library(stringr)
+library(fBasics)
 library(fitdistrplus)
 library(forecast)
-sapply(list.files(path = "functions/voi-master/R/", pattern = "\\.R$", full.names = TRUE), source)
 library(scam)
 library(ggplot2)
 library(ggh4x)
@@ -16,8 +16,7 @@ library(patchwork)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
-#source("functions/parse_inputs.R")
-#source("functions/voi_fit.R")
+source("functions/parse_inputs.R")
 source("functions/format_table.R")
 
 list_files   <- list.files(path = "../output/archetypes/", pattern = "\\.csv$", full.names = TRUE)
@@ -98,32 +97,32 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
       location == "HIC" & disease == "Covid-Delta-X" ~ scale_x_continuous(limits=c(-200,600),breaks=seq(-200,600,200),expand=c(0,0),position="bottom"),
       location == "LLMIC" & disease == "Covid-Wildtype-X" ~ scale_x_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="bottom"),
       location == "UMIC" & disease == "Covid-Wildtype-X" ~ scale_x_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_x_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="bottom"),
-      location == "LLMIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(-500,1500),breaks=seq(-500,1500,500),expand=c(0,0),position="bottom"),
-      location == "UMIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(-500,1500),breaks=seq(-500,1500,500),expand=c(0,0),position="bottom"),
-      location == "HIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(-500,1500),breaks=seq(-500,1500,500),expand=c(0,0),position="bottom")),
+      location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_x_continuous(limits=c(-100,300),breaks=seq(-100,300,100),expand=c(0,0),position="bottom")),
+      #location == "LLMIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(-500,1500),breaks=seq(-500,1500,500),expand=c(0,0),position="bottom"),
+      #location == "UMIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(-500,1500),breaks=seq(-500,1500,500),expand=c(0,0),position="bottom"),
+      #location == "HIC" & disease == "SARS-X" ~ scale_x_continuous(limits=c(-500,1500),breaks=seq(-500,1500,500),expand=c(0,0),position="bottom")),
       y = list(
-      location == "LLMIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
-      location == "UMIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-20,60),breaks=seq(-20,60,20),expand=c(0,0),position="right"),
-      location == "LLMIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-60,180),breaks=seq(-60,180,60),expand=c(0,0),position="right"),
-      location == "UMIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-20,60),breaks=seq(-20,60,20),expand=c(0,0),position="right"),
+      location == "LLMIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
+      location == "UMIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
+      location == "HIC" & disease == "Influenza-2009-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
+      location == "LLMIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
+      location == "UMIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
+      location == "HIC" & disease == "Influenza-1957-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
       location == "LLMIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
       location == "UMIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
-      location == "LLMIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-60,180),breaks=seq(-60,180,60),expand=c(0,0),position="right"),
-      location == "UMIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-40,120),breaks=seq(-40,120,40),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-25,75),breaks=seq(-25,75,25),expand=c(0,0),position="right"),
+      location == "HIC" & disease == "Influenza-1918-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
+      location == "LLMIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
+      location == "UMIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
+      location == "HIC" & disease == "Covid-Omicron-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
       location == "LLMIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
-      location == "UMIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-60,180),breaks=seq(-60,180,60),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
+      location == "UMIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
+      location == "HIC" & disease == "Covid-Delta-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
       location == "LLMIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-80,240),breaks=seq(-80,240,80),expand=c(0,0),position="right"),
       location == "UMIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-50,150),breaks=seq(-50,150,50),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"),
-      location == "LLMIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-200,200),breaks=seq(-200,200,100),expand=c(0,0),position="right"),
-      location == "UMIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-100,100),breaks=seq(-100,100,50),expand=c(0,0),position="right"),
-      location == "HIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-100,100),breaks=seq(-100,100,50),expand=c(0,0),position="right"))) +
+      location == "HIC" & disease == "Covid-Wildtype-X" ~ scale_y_continuous(limits=c(-30,90),breaks=seq(-30,90,30),expand=c(0,0),position="right"))) +
+      #location == "LLMIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-200,200),breaks=seq(-200,200,100),expand=c(0,0),position="right"),
+      #location == "UMIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-100,100),breaks=seq(-100,100,50),expand=c(0,0),position="right"),
+      #location == "HIC" & disease == "SARS-X" ~ scale_y_continuous(limits=c(-100,100),breaks=seq(-100,100,50),expand=c(0,0),position="right"))) +
       theme(panel.spacing = unit(0.75, "lines")) +
       labs(title = "", x = "Decremental VLYL (% of GDP)", y = "Incremental GDPL + VSYL (% of GDP)") +
       guides(color = "none", 
@@ -135,7 +134,7 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
 
 ggsave("figure_3.png", plot = gg, height = 14, width = 10)
 
-output_table <- output_stats %>% 
+output_table <- output_stats %>%
                 mutate(mean_x = sprintf("%.1f", mean_x),
                        q1_x   = sprintf("%.1f", q1_x),
                        q3_x   = sprintf("%.1f", q3_x),
@@ -150,12 +149,12 @@ output_table <- output_stats %>%
                                             strategy == "Economic Closures" ~ "Reactive-Business/Reactive-School Closures",
                                             TRUE ~ strategy)) %>%
                 mutate(strategy = if_else(min_any, paste0("\\bfseries{",strategy,"}"), strategy)) %>%
-                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%       
-                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%    
+                mutate(strategy = if_else(min_med, paste0(strategy,"$^*$"), strategy)) %>%
+                mutate(strategy = if_else(min_q3,  paste0(strategy,"\\textsuperscript\\textdagger"), strategy)) %>%
                 mutate(mean_y   = if_else(str_detect(strategy, "Elimination"),  paste0(mean_y,"\\phantom{.}"), mean_y)) %>%
-                mutate(mean_y   = if_else(str_detect(strategy, "Elimination") & disease == "SARS-X",  paste0(mean_y,"\\phantom{.}"), mean_y)) %>%
+                mutate(mean_y   = if_else(str_detect(strategy, "Elimination") & disease == "Covid-Wildtype-X",  paste0(mean_y,"\\phantom{.}"), mean_y)) %>%
                 dplyr::select(-starts_with("q"),-starts_with("min"),-alpha) %>%
-                mutate(across(everything(), as.character)) %>%            
+                mutate(across(everything(), as.character)) %>%
                 format_table("location")
 
-write.table(output_table, file = "table_S8.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(output_table, file = "table_S9.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
