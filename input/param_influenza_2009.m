@@ -15,7 +15,7 @@ dis.ifr = dis.ps*[0.000276 0.00011 0.00011 0.00012 ...
 
 %Durations
 dis.Tlat  = 1.1;
-dis.Tinc  = 1.4;
+%dis.Tinc  = 1.4;
 dis.Tay   = 2.5;
 dis.Tsr   = 2.5;
 dis.Tsh   = 2.5;

@@ -28,7 +28,7 @@ source("functions/format_table.R")
 
 ctry_data <- read.csv("../input/country_data.csv") %>%
              mutate(igroup = factor(igroup, levels = c("LLMIC","UMIC","HIC")))
-mmp1_data <- ctry_data %>% dplyr::select(igroup,Tres,sda,sdb,sdc) %>%
+mmp1_data <- ctry_data %>% dplyr::select(igroup,country,Tres,sda,sdb,sdc) %>%
              pivot_longer(cols = c(Tres,sda,sdb,sdc), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "Tres" ~ "Distancing: Response Time",
                                          variable == "sda" ~ "Distancing: Multiplier Intercept",
@@ -95,7 +95,7 @@ mmp1_leg  <- mmp1_dist %>%
              mutate(x      = rep(c(0.255, 0.57, 0.885), 4), 
                     y      = rep(seq(0.93, 0.20, length.out = 4), each = 3),
                     legend = paste(candidate, "\n μ =", round(mu,3)))
-mmp2_data <- ctry_data %>% dplyr::select(igroup,t_tit,trate,masc,Hmax) %>%
+mmp2_data <- ctry_data %>% dplyr::select(igroup,country,t_tit,trate,masc,Hmax) %>%
              pivot_longer(cols = c(t_tit,trate,masc,Hmax), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "t_tit" ~ "Surveillance: Testing Start-Time",
                                          variable == "trate" ~ "Surveillance: Testing Rate",
@@ -157,7 +157,7 @@ mmp2_leg  <- mmp2_dist %>%
              mutate(x      = rep(c(0.245, 0.56, 0.875), 4), 
                     y      = rep(seq(0.93, 0.20, length.out = 4), each = 3),
                     legend = paste(candidate, "\n μ =", round(mu,3)))
-mmp3_data <- ctry_data %>% dplyr::select(igroup,t_vax,arate,puptake) %>%
+mmp3_data <- ctry_data %>% dplyr::select(igroup,country,t_vax,arate,puptake) %>%
              pivot_longer(cols = c(t_vax,arate,puptake), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "t_vax" ~ "Vaccination: Administration Start-Time",
                                          variable == "arate" ~ "Vaccination: Administration Rate",
@@ -266,6 +266,79 @@ p3 <- ggdraw(p3) + draw_text(mmp3_leg$legend, x = mmp3_leg$x, y = mmp3_leg$y, hj
 ggsave("figure_S2a.png", plot = p1, height = 14, width = 10)
 ggsave("figure_S2b.png", plot = p2, height = 14, width = 10)
 ggsave("figure_S2c.png", plot = p3, height = 11, width = 10)
+
+###################################################################################################################################
+
+mm_data <- rbind(mmp1_data,mmp2_data,mmp3_data)
+mm_dist <- rbind(mmp1_dist,mmp2_dist,mmp3_dist) %>%
+           group_by(igroup,variable) %>% slice_min(xvalue, n=1) %>% ungroup() %>%
+           dplyr::select(-xmin,-xmax,-fit,-aic,-alpha,-xvalue,-yvalue)
+mm_data <- mm_data %>%
+           left_join(mm_dist, by = c("igroup", "variable")) %>%
+           mutate(qu = case_when(candidate == "norm"    ~ pnorm(value, mean = mean, sd = sd),
+                                 candidate == "lnorm"   ~ plnorm(value, meanlog = meanlog, sdlog = sdlog),
+                                 candidate == "gamma"   ~ pgamma(value, shape = shape, rate = rate),
+                                 candidate == "weibull" ~ pweibull(value, shape = shape, scale = scale),
+                                 candidate == "beta"    ~ pbeta(value, shape1 = shape1, shape2 = shape2))) %>%
+           mutate(zs = qnorm(qu, mean = 0, sd = 1)) %>%
+           dplyr::select(igroup, country, variable, zs) %>%
+           pivot_wider(names_from = variable, values_from = zs) 
+
+
+
+
+
+
+
+
+
+
+
+pair_plot <- ggpairs(
+  mm_data %>% filter(igroup == "LLMIC") %>% dplyr::select(-igroup,-country),
+  lower = list(continuous = wrap("points", alpha = 0.6, size = 1.5)),
+  diag  = list(continuous = wrap("densityDiag", alpha = 0.5)),
+  upper = list(continuous = wrap("cor", size = 3))
+) +
+  theme_minimal()
+
+# Save as PNG
+ggsave(
+  filename = "zsLLMIC.png",
+  plot = pair_plot,
+  width = 12,
+  height = 12,
+  dpi = 300
+)
+
+
+
+
+
+test<- mm_data %>% filter(igroup == "HIC") %>% dplyr::select(-igroup,-country)
+SIG <- cor(test, use = "pairwise.complete.obs")
+
+write.csv(SIG, file = "SIG_correlation_matrix.csv", row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###################################################################################################################################
 
