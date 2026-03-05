@@ -9,7 +9,7 @@ data.tvec  = 1+[0 365*10];%
 
 data       = dd_set_strategy(data,inp3);
 
-[data,f,g] = dd_run_sim(data,dis,p2);
+[p2,f,g]   = dd_run_sim(data,dis,p2);
 
 [cost,~]   = dd_calc_loss(data,dis,p2,f);
 sec        = sum(cost([3,4:5,8],:),'all');

@@ -115,7 +115,7 @@ hbdoc  = trapz(t, max(0, sum(hocc,2) - p2.Hmax));
 %time spent in lockdowns/heavy closure configurations
 wdunem = trapz(t, sum((1-x).*(data.NNs(notEd)' - deaths(:,notEd)), 2));
 numldn = sum(diff(double(x(:,26) < 0.95)) == 1);%retail sector less than 95% open indicates heavy closure configuration
-elimok = any((x(:,29) > 0.17) & (x(:,29) < 0.20) & (t < data.t_vax));%air transport sector between 17 to 20% open indicates light closure configuration for elimination
+elimok = any((x(:,29) > 0.17) & (x(:,29) < 0.20) & (t < (p2.Tres + 180)));%air transport sector between 17 to 20% open indicates light closure configuration for elimination
 timldn = trapz(t, double(x(:,26) < 0.95));%retail sector less than 95% open indicates heavy closure configuration                                       
 
 %% SUMMARY
