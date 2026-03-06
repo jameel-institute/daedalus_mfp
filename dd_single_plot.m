@@ -20,7 +20,7 @@ end
 
 ln        = length(data.NNs);
 lx        = length(data.obj);
-tvec      = p2.tvec;
+tvec      = data.tvec;
 thresh    = p2.Hmax;
 
 t1    = g1(:,1); 

@@ -1,11 +1,10 @@
-function [p2,f,g] = dd_run_sim(data,dis,p2)
+function [data,f,g] = dd_run_sim(data,dis,p2)
 
-t0      = data.tvec(1);
-y0      = dis.y0;
-i       = 1;
-tend    = data.tvec(end);
-p2.tvec = data.tvec;
-output  = struct;
+t0     = data.tvec(1);
+y0     = dis.y0;
+i      = 1;
+tend   = data.tvec(end);
+output = struct;
 
 while i < 6; 
     D = data.Dvec(:,:,i);
@@ -25,15 +24,15 @@ while i < 6;
         t0        = tout(end);
         y0        = yout(end,:)';
         i         = inext;
-        p2.tvec   = [p2.tvec(1:end-1),t0,tend];
+        data.tvec = [data.tvec(1:end-1),t0,tend];
         p2.Tres   = min(p2.Tres,tout(end));
         p2.tmand  = t0-p2.Tres;
         p2.dmand  = output.dmand;
     else
-        i            = inext;
-        p2.tvec(end) = tout(end);
-        f            = output.f;
-        g            = output.g;
+        i              = inext;
+        data.tvec(end) = tout(end);
+        f              = output.f;
+        g              = output.g;
     end    
 end
 

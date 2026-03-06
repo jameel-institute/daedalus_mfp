@@ -54,11 +54,11 @@ for k = 1:lstrat;
     dis  = dis_array{h,i,j};
     p2   = p2_array{h,i,j};
     try
-        [p2,f,~] = dd_run_sim(data,dis,p2);
-        [~,c]    = dd_calc_loss(data,dis,p2,f);
-        sec      = [i,f(end,1)-f(1,1),c];                   
+        [~,f,~] = dd_run_sim(data,dis,p2);
+        [~,c]   = dd_calc_loss(data,dis,p2,f);
+        sec     = [i,f(end,1)-f(1,1),c];                   
     catch
-        sec      = [i,nan(1,35)];
+        sec     = [i,nan(1,35)];
     end
     output = [output;sec];
     end
