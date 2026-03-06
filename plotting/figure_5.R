@@ -26,8 +26,11 @@ output_files <- list_files[!grepl("_data\\.csv$", list_files)]
 output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% order_scenario_cols() %>%
                 (function(x) calc_loss_pc(input_data,x)) 
 
-output_data1 <- output_data %>% filter(!(strategy == "Elimination" & elimok == 0)) %>%
+output_data1 <- output_data %>% 
                 filter(disease == "Covid-Wildtype-X") %>%
+                group_by(location, country) %>%
+                filter(any(elimok == 1)) %>%
+                ungroup() %>%
                 group_by(location, disease, strategy) %>%
                 mutate(med_SLpc  = quantile(SLpc, 0.50),
                        mean_SLpc = mean(SLpc),
@@ -47,7 +50,7 @@ output_data1 <- output_data %>% filter(!(strategy == "Elimination" & elimok == 0
 
 g1 <- ggplot(output_data1, aes(x = strategy, y = SLpc, linewidth = min_any, fill = strategy, alpha = min_any)) + 
       facet_grid2(disease ~ location, switch = "y", scales = "fixed") +
-      geom_violin(data = output_data %>% filter(strategy == "Elimination" & disease == "Covid-Wildtype-X"),
+      geom_violin(data = output_data %>% filter(disease == "Covid-Wildtype-X"),
                   aes(x = strategy, y = SLpc),
                   inherit.aes = FALSE, linewidth = 0.1, fill = NA) +
       geom_violin(color = NA, fill = "white", alpha = 1) +
@@ -79,18 +82,18 @@ output_data2 <- output_data %>% filter(strategy %in% c("School Closures", "Econo
                 mutate(x1 = wdunem, y1 = timldn) %>%
                 mutate(x2 = GDPLpc, y2 = VSYLpc)
 output_stats <- output_data2 %>% #for quicker plotting
-                group_by(location, disease, strategy) %>% 
-                summarise(mean_x1  = mean(x1), 
-                          q1_x1    = quantile(x1, 0.25), 
+                group_by(location, disease, strategy) %>%
+                summarise(mean_x1  = mean(x1),
+                          q1_x1    = quantile(x1, 0.25),
                           q3_x1    = quantile(x1, 0.75),
-                          mean_y1  = mean(y1), 
-                          q1_y1    = quantile(y1, 0.25), 
+                          mean_y1  = mean(y1),
+                          q1_y1    = quantile(y1, 0.25),
                           q3_y1    = quantile(y1, 0.75),
-                          mean_x2  = mean(x2), 
-                          q1_x2    = quantile(x2, 0.25), 
+                          mean_x2  = mean(x2),
+                          q1_x2    = quantile(x2, 0.25),
                           q3_x2    = quantile(x2, 0.75),
-                          mean_y2  = mean(y2), 
-                          q1_y2    = quantile(y2, 0.25), 
+                          mean_y2  = mean(y2),
+                          q1_y2    = quantile(y2, 0.25),
                           q3_y2    = quantile(y2, 0.75))
 
 g2 <- ggplot(output_data2, aes(x = x2, y = y2, color = strategy, fill = strategy)) +
@@ -136,7 +139,7 @@ g3 <- ggplot(output_data2, aes(x = x1, y = y1, color = strategy, fill = strategy
                  location == "HIC"   ~ scale_x_continuous(limits=c(0,120),breaks=seq(0,120,30),expand=c(0,0),position="bottom")),
         y = list(location == "LLMIC" ~ scale_y_continuous(limits=c(0,800),breaks=seq(0,800,200),expand=c(0,0),position="right"),
                  location == "UMIC"  ~ scale_y_continuous(limits=c(0,600),breaks=seq(0,600,150),expand=c(0,0),position="right"),
-                 location == "HIC"   ~ scale_y_continuous(limits=c(0,400),breaks=seq(0,400,100),expand=c(0,0),position="right"))) + 
+                 location == "HIC"   ~ scale_y_continuous(limits=c(0,400),breaks=seq(0,400,100),expand=c(0,0),position="right"))) +
       theme(panel.spacing = unit(0.75, "lines")) +
       labs(title = "", x = "Furlough-Days per Worker", y = "Heavy-Closure Days") +
       theme(legend.position = "none")
@@ -157,27 +160,27 @@ ctry_data    <- read.csv("../input/country_data.csv") %>%
                 group_by(igroup) %>%
                 slice_min(aic, n = 1, with_ties = TRUE) %>%
                 ungroup() %>%
-                transmute(location = igroup, 
+                transmute(location = igroup,
                           ymin     = qlnorm(0.25, meanlog, sdlog),
                           ymax     = qlnorm(0.75, meanlog, sdlog))
 
-g4 <- ggplot(output_data3, aes(x = disease, y = hpeak)) + 
+g4 <- ggplot(output_data3, aes(x = disease, y = hpeak)) +
       facet_grid2(~ location, switch = "y", scales = "fixed") +
-      geom_hline(data = ctry_data, aes(yintercept = ymin), linetype = "dashed", linewidth = 0.25, color = "black") +  
-      geom_hline(data = ctry_data, aes(yintercept = ymax), linetype = "dashed", linewidth = 0.25, color = "black") +  
+      geom_hline(data = ctry_data, aes(yintercept = ymin), linetype = "dashed", linewidth = 0.25, color = "black") +
+      geom_hline(data = ctry_data, aes(yintercept = ymax), linetype = "dashed", linewidth = 0.25, color = "black") +
       geom_boxplot(outlier.shape = NA, coef = 1.5, width = 0.70, linewidth = 0.2, fill = "magenta4") +
-      theme_bw() + 
-      scale_y_log10(limits = c(0.3,3000), breaks = c(0.3,3,30,300,3000), expand = c(0,0), position = "right", 
-                    labels = function(x) ifelse(x < 1, as.character(x), as.character(round(x)))) + 
-      theme(panel.spacing = unit(2.00, "lines"), axis.text.x = element_text(angle = 55, hjust = 1)) + 
+      theme_bw() +
+      scale_y_log10(limits = c(0.3,3000), breaks = c(0.3,3,30,300,3000), expand = c(0,0), position = "right",
+                    labels = function(x) ifelse(x < 1, as.character(x), as.character(round(x)))) +
+      theme(panel.spacing = unit(2.00, "lines"), axis.text.x = element_text(angle = 55, hjust = 1)) +
       labs(title = "", x = "", y = "Peak Hospital Occupancy (per 100k)") +
       theme(legend.position = "none")
 
 lg <- get_legend(g1)
-gg <- (g1 + theme(legend.position="none")) / 
+gg <- (g1 + theme(legend.position="none")) /
       (g2 + theme(legend.position="none")) /
       (g3 + theme(legend.position="none")) /
-      (g4 + theme(legend.position="none")) + 
+      (g4 + theme(legend.position="none")) +
       plot_annotation(tag_levels='A')
 gg <- plot_grid(as_grob(gg), lg, ncol = 1, rel_heights = c(1,0.08))
 ggsave("figure_5.png", plot = gg, height = 14, width = 10)

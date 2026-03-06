@@ -30,10 +30,10 @@ while i < 6;
         p2.tmand  = t0-p2.Tres;
         p2.dmand  = output.dmand;
     else
-        i              = inext;
-        data.tvec(end) = tout(end);
-        f              = output.f;
-        g              = output.g;
+        i            = inext;
+        p2.tvec(end) = tout(end);
+        f            = output.f;
+        g            = output.g;
     end    
 end
 
