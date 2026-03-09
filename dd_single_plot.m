@@ -147,7 +147,7 @@ ax.YColor = 'k';
 
 grid on;
 box on;
-% legend([hh1,hh2,hh3,hh4,hh5],'Prevalence (per 10m)','Hospital Occupancy (per 100m)','Hospital Capacity (per 100m)',... %%%%%
+% legend([hh1,hh2,hh3,hh4,hh5],'Prevalence (per 10m)','Hospital Occupancy (per 100m)','Spare Hospital Beds (per 100m)',... %%%%%
 %                              'Daily Deaths (per 1b)','Vaccine Coverage (\%)','location','northeast');
 t = text(8,86.6,strvcat(inp1,strrep([inp2 ' X'], ' ', '-'),inp3),'FontSize',fs);
 t.BackgroundColor = [1 1 1];

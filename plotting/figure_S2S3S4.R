@@ -35,16 +35,16 @@ ctry_data <- read.csv("../input/country_data.csv") %>%
 mmp1_data <- ctry_data %>% dplyr::select(igroup,country,Tres,sda,sdb,sdc) %>%
              pivot_longer(cols = c(Tres,sda,sdb,sdc), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "Tres" ~ "Distancing: Response Time",
-                                         variable == "sda" ~ "Distancing: Multiplier Intercept",
-                                         variable == "sdb" ~ "Distancing: Death-Sensitivity",
-                                         variable == "sdc" ~ "Distancing: Time-Decay")) %>%
-             mutate(variable = factor(variable, levels = c("Distancing: Response Time", "Distancing: Multiplier Intercept", 
-                                                           "Distancing: Death-Sensitivity", "Distancing: Time-Decay")))
+                                         variable == "sda" ~ "Distancing: Transmission Multiplier Intercept",
+                                         variable == "sdb" ~ "Distancing: Transmission Multiplier Death-Sensitivity",
+                                         variable == "sdc" ~ "Distancing: Transmission Multiplier Time-Decay")) %>%
+             mutate(variable = factor(variable, levels = c("Distancing: Response Time", "Distancing: Transmission Multiplier Intercept", 
+                                                           "Distancing: Transmission Multiplier Death-Sensitivity", "Distancing: Transmission Multiplier Time-Decay")))
 mmp1_dist <- mmp1_data %>% filter(!is.na(value)) %>%
              mutate(candidate = case_when(variable == "Distancing: Response Time"        ~ list(c("lnorm", "gamma", "weibull")),
-                                          variable == "Distancing: Multiplier Intercept" ~ list(c("norm")), 
-                                          variable == "Distancing: Death-Sensitivity"    ~ list(c("lnorm", "gamma", "weibull")),
-                                          variable == "Distancing: Time-Decay"           ~ list(c("lnorm", "gamma", "weibull")))) %>%
+                                          variable == "Distancing: Transmission Multiplier Intercept" ~ list(c("norm")), 
+                                          variable == "Distancing: Transmission Multiplier Death-Sensitivity"    ~ list(c("lnorm", "gamma", "weibull")),
+                                          variable == "Distancing: Transmission Multiplier Time-Decay"           ~ list(c("lnorm", "gamma", "weibull")))) %>%
              unnest_longer(candidate) %>%
              group_by(igroup, variable, candidate) %>%
              summarize(xmin     = min(value),
@@ -73,13 +73,13 @@ mmp1_dist <- mmp1_data %>% filter(!is.na(value)) %>%
              ungroup() %>%
              filter(alpha == 1)
 ### for plot legibility 
-mmp1_dist <- mmp1_dist %>% mutate(yvalue = ifelse(variable == "Distancing: Death-Sensitivity" & xvalue < 0.02 |
-                                                  igroup == "HIC" & variable == "Distancing: Time-Decay" & xvalue < 0.0001, 
+mmp1_dist <- mmp1_dist %>% mutate(yvalue = ifelse(variable == "Distancing: Transmission Multiplier Death-Sensitivity" & xvalue < 0.02 |
+                                                  igroup == "HIC" & variable == "Distancing: Transmission Multiplier Time-Decay" & xvalue < 0.0001, 
                                                   NA, yvalue))
 ###
 mmp1_labs <- data.frame(x      = rep(0.49, 4), 
                         y      = seq(0.742, 0.014, length.out = 4), 
-                        xlabel = c("Seeding-to-Reponse Delay (doubling times)",
+                        xlabel = c("Response Time (doubling times)",
                                    "Transmission Multiplier Intercept Coefficient",
                                    "Transmission Multiplier Death-Sensitivity Coefficient",
                                    "Transmission Multiplier Time-Decay Coefficient"))
@@ -101,17 +101,17 @@ mmp1_leg  <- mmp1_dist %>%
                     legend = paste(candidate, "\n μ =", round(mu,3)))
 mmp2_data <- ctry_data %>% dplyr::select(igroup,country,t_tit,trate,masc,Hmax) %>%
              pivot_longer(cols = c(t_tit,trate,masc,Hmax), names_to = "variable", values_to = "value") %>%
-             mutate(variable = case_when(variable == "t_tit" ~ "Surveillance: Testing Start-Time",
-                                         variable == "trate" ~ "Surveillance: Testing Rate",
-                                         variable == "masc"  ~ "Surveillance: Ascertainment Ratio",
-                                         variable == "Hmax"  ~ "Healthcare: Hospital Capacity")) %>%
-             mutate(variable = factor(variable, levels = c("Surveillance: Testing Start-Time", "Surveillance: Testing Rate", 
-                                                           "Surveillance: Ascertainment Ratio", "Healthcare: Hospital Capacity")))
+             mutate(variable = case_when(variable == "t_tit" ~ "Case Isolation: Testing Start-Time",
+                                         variable == "trate" ~ "Case Isolation: Testing Rate",
+                                         variable == "masc"  ~ "Case Isolation: Maximum Infection Ascertainment Ratio",
+                                         variable == "Hmax"  ~ "Hospital Capacity: Spare Hospital Beds")) %>%
+             mutate(variable = factor(variable, levels = c("Case Isolation: Testing Start-Time", "Case Isolation: Testing Rate", 
+                                                           "Case Isolation: Maximum Infection Ascertainment Ratio", "Hospital Capacity: Spare Hospital Beds")))
 mmp2_dist <- mmp2_data %>% filter(!is.na(value)) %>%
-             mutate(candidate = case_when(variable == "Surveillance: Testing Start-Time"  ~ list(c("lnorm", "gamma", "weibull")),
-                                          variable == "Surveillance: Testing Rate"        ~ list(c("lnorm", "gamma", "weibull")), 
-                                          variable == "Surveillance: Ascertainment Ratio" ~ list(c("beta")),
-                                          variable == "Healthcare: Hospital Capacity"     ~ list(c("lnorm", "gamma", "weibull")))) %>%
+             mutate(candidate = case_when(variable == "Case Isolation: Testing Start-Time"  ~ list(c("lnorm", "gamma", "weibull")),
+                                          variable == "Case Isolation: Testing Rate"        ~ list(c("lnorm", "gamma", "weibull")), 
+                                          variable == "Case Isolation: Maximum Infection Ascertainment Ratio" ~ list(c("beta")),
+                                          variable == "Hospital Capacity: Spare Hospital Beds"     ~ list(c("lnorm", "gamma", "weibull")))) %>%
              unnest_longer(candidate) %>%
              group_by(igroup, variable, candidate) %>%
              summarize(xmin     = min(value),
@@ -141,9 +141,9 @@ mmp2_dist <- mmp2_data %>% filter(!is.na(value)) %>%
              filter(alpha == 1)
 mmp2_labs <- data.frame(x      = rep(0.49, 4), 
                         y      = seq(0.742, 0.014, length.out = 4), 
-                        xlabel = c("Seeding-to-Testing-Start Delay (doubling times)",
-                                   "Tests Administered Daily (per 100k/day)",
-                                   "Symptomatic Infection Ascertainment Ratio (%)",
+                        xlabel = c("Testing Start-Time (doubling times)",
+                                   "Testing Rate (per 100k/day)",
+                                   "Maximum Infection Ascertainment Ratio (%)",
                                    "Spare Hospital Beds (per 100k)"))
 mmp2_leg  <- mmp2_dist %>% 
              group_by(variable, igroup) %>%
@@ -202,8 +202,8 @@ mmp3_dist <- mmp3_data %>% filter(!is.na(value)) %>%
              filter(alpha == 1)
 mmp3_labs <- data.frame(x      = rep(0.49, 3), 
                         y      = seq(0.66, 0.015, length.out = 3), 
-                        xlabel = c("Seeding-to-Vaccination-Start Delay (days)",
-                                   "Vaccines Administered Daily (per 100k/day)",
+                        xlabel = c("Administration Start-Time (days)",
+                                   "Administration Rate (per 100k/day)",
                                    "Population-Level Vaccination Coverage (%)"))
 mmp3_leg  <- mmp3_dist %>% 
              group_by(variable, igroup) %>%
@@ -223,11 +223,13 @@ mmp3_leg  <- mmp3_dist %>%
                     legend = paste(candidate, "\n μ =", round(mu,3)))
 
 p1 <- ggplot(mmp1_data, aes(x = value, fill = variable)) +
-      facet_grid2(variable ~ igroup, switch = "y", scales = "free", independent = "all") +
+      facet_grid2(variable ~ igroup, switch = "y", scales = "free", independent = "all",
+                  labeller = labeller(variable = c("Distancing: Transmission Multiplier Death-Sensitivity" =
+                                                   "Distancing:\nTransmission Multiplier Death-Sensitivity"))) +
       geom_histogram(aes(y = ..density..), color = "black") + 
       geom_line(data = mmp1_dist, aes(x = xvalue, y = yvalue), linewidth = 1, color = "black") +
-      scale_fill_manual(values = c("Distancing: Response Time" = "slategray2", "Distancing: Multiplier Intercept" = "slategray2", 
-                                   "Distancing: Death-Sensitivity" = "slategray2", "Distancing: Time-Decay" = "slategray2")) + 
+      scale_fill_manual(values = c("Distancing: Response Time" = "slategray2", "Distancing: Transmission Multiplier Intercept" = "slategray2", 
+                                   "Distancing: Transmission Multiplier Death-Sensitivity" = "slategray2", "Distancing: Transmission Multiplier Time-Decay" = "slategray2")) + 
       theme_bw() +
       scale_x_continuous(expand = c(0,0), position = "bottom", labels = scales::label_parse()) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right") +
@@ -237,14 +239,16 @@ p1 <- ggdraw(p1) + draw_text(mmp1_labs$xlabel, x = mmp1_labs$x, y = mmp1_labs$y,
 p1 <- ggdraw(p1) + draw_text(mmp1_leg$legend, x = mmp1_leg$x, y = mmp1_leg$y, hjust = 0.5, vjust = 0.5, size = 9)
 
 p2 <- ggplot(mmp2_data, aes(x = value, fill = variable)) +
-      facet_grid2(variable ~ igroup, switch = "y", scales = "free", independent = "all") +
+      facet_grid2(variable ~ igroup, switch = "y", scales = "free", independent = "all",
+                  labeller = labeller(variable = c("Case Isolation: Maximum Infection Ascertainment Ratio" =
+                                                   "Case Isolation:\nMaximum Infection Ascertainment Ratio"))) +
       geom_histogram(aes(y = ..density..), color = "black") + 
       geom_line(data = mmp2_dist, aes(x = xvalue, y = yvalue), linewidth = 1, color = "black") +
-      scale_fill_manual(values = c("Surveillance: Testing Start-Time" = "palegreen", "Surveillance: Testing Rate" = "palegreen", 
-                                   "Surveillance: Ascertainment Ratio" = "palegreen", "Healthcare: Hospital Capacity" = "purple")) +
+      scale_fill_manual(values = c("Case Isolation: Testing Start-Time" = "palegreen", "Case Isolation: Testing Rate" = "palegreen", 
+                                   "Case Isolation: Maximum Infection Ascertainment Ratio" = "palegreen", "Hospital Capacity: Spare Hospital Beds" = "purple")) +
       theme_bw() +
       scale_x_continuous(expand = c(0,0), position = "bottom", labels = scales::label_parse()) +
-      facetted_pos_scales(x = list(variable == "Surveillance: Ascertainment Ratio" ~ scale_x_continuous(labels = scales::label_number(scale = 100, suffix = "")))) +   
+      facetted_pos_scales(x = list(variable == "Case Isolation: Maximum Infection Ascertainment Ratio" ~ scale_x_continuous(labels = scales::label_number(scale = 100, suffix = "")))) +   
       scale_y_continuous(expand = expansion(mult = c(0, 0.05)), position = "right") +
       theme(panel.spacing.y = unit(2.25, "lines"), legend.position = "none") + 
       labs(title = "", x = "", y = "Relative Frequency")
@@ -288,7 +292,7 @@ mm_data <- mm_data %>%
            dplyr::select(igroup, country, variable, zs) %>%
            pivot_wider(names_from = variable, values_from = zs) 
 
-p4 <- ggpairs(mm_data %>% filter(igroup == "LLMIC") %>% dplyr::select(-igroup,-country),
+p4 <- ggpairs(mm_data %>% filter(igroup == "LLMIC") %>% dplyr::select(-igroup,-country) %>% rename_with(~ gsub(": ", ":\n", .x)),
               lower = list(continuous = wrap("points", shape = 21, size = 1, stroke = 0.2, color = "black", fill = "orange")),
               diag  = list(continuous = wrap("blankDiag")),
               upper = list(continuous = wrap("cor", size = 3)),
@@ -303,7 +307,7 @@ p4 <- ggpairs(mm_data %>% filter(igroup == "LLMIC") %>% dplyr::select(-igroup,-c
             axis.title.y.left = element_blank()) + 
       labs(title = "", x = "Z-Score", y = "Z-Score")
 
-p5 <- ggpairs(mm_data %>% filter(igroup == "UMIC") %>% dplyr::select(-igroup,-country),
+p5 <- ggpairs(mm_data %>% filter(igroup == "UMIC") %>% dplyr::select(-igroup,-country) %>% rename_with(~ gsub(": ", ":\n", .x)),
               lower = list(continuous = wrap("points", shape = 21, size = 1, stroke = 0.2, color = "black", fill = "turquoise")),
               diag  = list(continuous = wrap("blankDiag")),
               upper = list(continuous = wrap("cor", size = 3)),
@@ -318,7 +322,7 @@ p5 <- ggpairs(mm_data %>% filter(igroup == "UMIC") %>% dplyr::select(-igroup,-co
             axis.title.y.left = element_blank()) + 
       labs(title = "", x = "Z-Score", y = "Z-Score")
 
-p6 <- ggpairs(mm_data %>% filter(igroup == "HIC") %>% dplyr::select(-igroup,-country),
+p6 <- ggpairs(mm_data %>% filter(igroup == "HIC") %>% dplyr::select(-igroup,-country) %>% rename_with(~ gsub(": ", ":\n", .x)),
               lower = list(continuous = wrap("points", shape = 21, size = 1, stroke = 0.2, color = "black", fill = "azure4")),
               diag  = list(continuous = wrap("blankDiag")),
               upper = list(continuous = wrap("cor", size = 3)),
@@ -369,13 +373,13 @@ mmd   <- mmp1_dist %>%
          pivot_wider(names_from = "variable", values_from = "value") %>%
          crossing(dvalue = 10^seq(-2,0), 
                   xvalue = seq(0, 1000, by = 250)) %>%
-         mutate(yvalue = 1/(1 + exp(`Distancing: Multiplier Intercept` 
-                                    + `Distancing: Death-Sensitivity` * log10(dvalue) 
-                                    - `Distancing: Time-Decay` * (xvalue)))) %>%
+         mutate(yvalue = 1/(1 + exp(`Distancing: Transmission Multiplier Intercept` 
+                                    + `Distancing: Transmission Multiplier Death-Sensitivity` * log10(dvalue) 
+                                    - `Distancing: Transmission Multiplier Time-Decay` * (xvalue)))) %>%
          dplyr::select(igroup,sample,dvalue,xvalue,yvalue) %>%
          mutate(variable = "Distancing", 
                 dvalue = factor(dvalue, levels = c("1","0.1","0.01")))
-mms <-   mmp2_dist %>% filter(variable != "Healthcare: Hospital Capacity") %>% 
+mms <-   mmp2_dist %>% filter(variable != "Hospital Capacity: Spare Hospital Beds") %>% 
          group_by(igroup,variable) %>% slice_min(xvalue,n=1) %>% ungroup() %>%
          dplyr::select(-xmin,-xmax,-fit,-aic,-alpha,-xvalue,-yvalue) %>%
          group_by(igroup) %>%
@@ -397,10 +401,10 @@ mms <-   mmp2_dist %>% filter(variable != "Healthcare: Hospital Capacity") %>%
          dplyr::select(igroup,variable,sample,value) %>%
          pivot_wider(names_from = "variable", values_from = "value") %>%
          crossing(xvalue = seq(0, 100)) %>%
-         mutate(yvalue = `Surveillance: Ascertainment Ratio` * Heaviside(xvalue, a = `Surveillance: Testing Start-Time`)) %>%
+         mutate(yvalue = `Case Isolation: Maximum Infection Ascertainment Ratio` * Heaviside(xvalue, a = `Case Isolation: Testing Start-Time`)) %>%
          dplyr::select(igroup,sample,xvalue,yvalue) %>%
-         mutate(variable = "Surveillance")
-mmh <-   mmp2_dist %>% filter(variable == "Healthcare: Hospital Capacity") %>% 
+         mutate(variable = "Case Isolation")
+mmh <-   mmp2_dist %>% filter(variable == "Hospital Capacity: Spare Hospital Beds") %>% 
          group_by(igroup,variable) %>% slice_min(xvalue,n=1) %>% ungroup() %>%
          dplyr::select(-xmin,-xmax,-fit,-aic,-alpha,-xvalue,-yvalue) %>%
          crossing(sample = seq(1, 100)) %>%
@@ -412,9 +416,9 @@ mmh <-   mmp2_dist %>% filter(variable == "Healthcare: Hospital Capacity") %>%
          dplyr::select(igroup,variable,sample,value) %>%
          pivot_wider(names_from = "variable", values_from = "value") %>%
          crossing(xvalue = seq(0, 1000, by = 1000)) %>%
-         mutate(yvalue = `Healthcare: Hospital Capacity`) %>%
+         mutate(yvalue = `Hospital Capacity: Spare Hospital Beds`) %>%
          dplyr::select(igroup,sample,xvalue,yvalue) %>%
-         mutate(variable = "Healthcare")
+         mutate(variable = "Hospital Capacity")
 mmv <-   mmp3_dist %>% 
          group_by(igroup,variable) %>% slice_min(xvalue,n=1) %>% ungroup() %>%
          dplyr::select(-xmin,-xmax,-fit,-aic,-alpha,-xvalue,-yvalue) %>%
@@ -442,20 +446,20 @@ mmv <-   mmp3_dist %>%
          dplyr::select(igroup,sample,xvalue,yvalue) %>%
          mutate(variable = "Vaccination")
 mm  <-   bind_rows(mmd,mms,mmh,mmv) %>%
-         mutate(variable =  factor(variable, levels = c("Distancing", "Surveillance", "Healthcare", "Vaccination")))
+         mutate(variable =  factor(variable, levels = c("Distancing", "Case Isolation", "Hospital Capacity", "Vaccination")))
 mm_labs <- data.frame(x      = rep(0.49, 4), 
                       y      = seq(0.742, 0.014, length.out = 4), 
                       xlabel = c("Time since Response Time (days)",
-                                 "Time since Seeding (doubling times)",
-                                 "Time since Seeding (days)",
-                                 "Time since Seeding (days)"))
+                                 "Time since Outbreak (doubling times)",
+                                 "Time since Outbreak (days)",
+                                 "Time since Outbreak (days)"))
 
 p7 <- ggplot(mm, aes(x = xvalue, y = yvalue, color = variable, group = sample)) +
       facet_grid2(variable ~ igroup, switch = "y", scales = "free", independent = "x",
                   labeller = labeller(variable = c("Distancing" = "Distancing:\nTransmission Multiplier",
-                                                   "Surveillance" = "Surveillance:\nSymptomatic Infection Ascertainment Ratio (%)",
-                                                   "Healthcare"  = "Healthcare:\nSpare Hospital Beds (per 100k)", 
-                                                   "Vaccination"   = "Vaccination:\nPopulation-Level Coverage (%)"))) +
+                                                   "Case Isolation" = "Case Isolation:\nMaximum Infection Ascertainment Ratio (%)",
+                                                   "Hospital Capacity"  = "Hospital Capacity:\nSpare Hospital Beds (per 100k)", 
+                                                   "Vaccination"   = "Vaccination:\nPopulation-Level Vaccination Coverage (%)"))) +
       geom_boxplot_pattern(data = subset(mm, variable == "Distancing"), 
                            aes(group = interaction(dvalue, xvalue), pattern = dvalue),   
                            position = position_dodge(width = 100), outlier.shape = NA, coef = 1.5, width = 80, 
@@ -463,12 +467,12 @@ p7 <- ggplot(mm, aes(x = xvalue, y = yvalue, color = variable, group = sample)) 
                            pattern_density = 0.35, pattern_colour = "white", pattern_fill = "white") + 
       scale_pattern_manual(values = c("0.01" = "none", "0.1" = "stripe", "1" = "circle")) +
       geom_line(data = subset(mm, variable != "Distancing"), linewidth = 0.2) +
-      scale_color_manual(values = c("Surveillance" = "palegreen", "Healthcare" = "purple", "Vaccination" = "lightsalmon")) +
+      scale_color_manual(values = c("Case Isolation" = "palegreen", "Hospital Capacity" = "purple", "Vaccination" = "lightsalmon")) +
       theme_bw() +
       scale_x_continuous(expand = c(0,0), position = "bottom", labels = scales::label_parse()) +
       facetted_pos_scales(y = list(variable == "Distancing" ~ scale_y_continuous(limits=c(0,1), expand = c(0,0), position = "right"),
-                                   variable == "Surveillance" ~ scale_y_continuous(limits=c(0,1), expand = c(0,0), labels = scales::label_number(scale = 100, suffix = ""), position = "right"),
-                                   variable == "Healthcare" ~ scale_y_log10(limits = c(3,300), expand = c(0,0), position = "right"),
+                                   variable == "Case Isolation" ~ scale_y_continuous(limits=c(0,1), expand = c(0,0), labels = scales::label_number(scale = 100, suffix = ""), position = "right"),
+                                   variable == "Hospital Capacity" ~ scale_y_log10(limits = c(3,300), expand = c(0,0), position = "right"),
                                    variable == "Vaccination" ~ scale_y_continuous(limits=c(0,1), expand = c(0,0), labels = scales::label_number(scale = 100, suffix = ""), position = "right"))) + 
       guides(color = "none", pattern = guide_legend(title = "Daily Deaths per 100k")) +
       theme(panel.spacing.x = unit(1.25, "lines"), panel.spacing.y = unit(2.25, "lines"), 
