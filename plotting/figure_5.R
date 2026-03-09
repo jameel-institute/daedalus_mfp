@@ -96,31 +96,7 @@ output_stats <- output_data2 %>% #for quicker plotting
                           q1_y2    = quantile(y2, 0.25),
                           q3_y2    = quantile(y2, 0.75))
 
-g2 <- ggplot(output_data2, aes(x = x2, y = y2, color = strategy, fill = strategy)) +
-      facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
-      geom_point(shape = 19, size = 0.02, stroke = 0.2) +
-      geom_linerange(data = output_stats, aes(x = mean_x2, y = mean_y2, xmin = q1_x2, xmax = q3_x2), linewidth = 0.25, color = "black") +
-      geom_linerange(data = output_stats, aes(x = mean_x2, y = mean_y2, ymin = q1_y2, ymax = q3_y2), linewidth = 0.25, color = "black") +
-      geom_point(data = output_stats, aes(x = mean_x2, y = mean_y2), shape = 21, size = 2, stroke = 0.2, color = "black") +
-      scale_color_manual(values = c("School Closures" = "navy", "Economic Closures" = "darkgreen"),
-                         labels = c("School Closures"   = "Reactive-Business/Sustained-School Closures",
-                                    "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
-      scale_fill_manual(values = c("School Closures" = "navy", "Economic Closures" = "darkgreen"),
-                        labels = c("School Closures"   = "Reactive-Business/Sustained-School Closures",
-                                   "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
-      theme_bw() +
-      facetted_pos_scales(
-        x = list(location == "LLMIC" ~ scale_x_continuous(limits=c(0,120),breaks=seq(0,120,30),expand=c(0,0),position="bottom"),
-                 location == "UMIC"  ~ scale_x_continuous(limits=c(0,80),breaks=seq(0,80,20),expand=c(0,0),position="bottom"),
-                 location == "HIC"   ~ scale_x_continuous(limits=c(0,40),breaks=seq(0,40,10),expand=c(0,0),position="bottom")),
-        y = list(location == "LLMIC" ~ scale_y_continuous(limits=c(0,200),breaks=seq(0,200,50),expand=c(0,0),position="right"),
-                 location == "UMIC"  ~ scale_y_continuous(limits=c(0,120),breaks=seq(0,120,30),expand=c(0,0),position="right"),
-                 location == "HIC"   ~ scale_y_continuous(limits=c(0,40),breaks=seq(0,40,10),expand=c(0,0),position="right"))) +
-      theme(panel.spacing = unit(0.75, "lines")) +
-      labs(title = "", x = "GDPL (% of GDP)", y = "VSYL (% of GDP)") +
-      theme(legend.position = "none")
-
-g3 <- ggplot(output_data2, aes(x = x1, y = y1, color = strategy, fill = strategy)) +
+g2 <- ggplot(output_data2, aes(x = x1, y = y1, color = strategy, fill = strategy)) +
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
       geom_point(shape = 19, size = 0.02, stroke = 0.2) +
       geom_linerange(data = output_stats, aes(x = mean_x1, y = mean_y1, xmin = q1_x1, xmax = q3_x1), linewidth = 0.25, color = "black") +
@@ -142,6 +118,30 @@ g3 <- ggplot(output_data2, aes(x = x1, y = y1, color = strategy, fill = strategy
                  location == "HIC"   ~ scale_y_continuous(limits=c(0,400),breaks=seq(0,400,100),expand=c(0,0),position="right"))) +
       theme(panel.spacing = unit(0.75, "lines")) +
       labs(title = "", x = "Furlough-Days per Worker", y = "Heavy-Closure Days") +
+      theme(legend.position = "none")
+
+g3 <- ggplot(output_data2, aes(x = x2, y = y2, color = strategy, fill = strategy)) +
+      facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
+      geom_point(shape = 19, size = 0.02, stroke = 0.2) +
+      geom_linerange(data = output_stats, aes(x = mean_x2, y = mean_y2, xmin = q1_x2, xmax = q3_x2), linewidth = 0.25, color = "black") +
+      geom_linerange(data = output_stats, aes(x = mean_x2, y = mean_y2, ymin = q1_y2, ymax = q3_y2), linewidth = 0.25, color = "black") +
+      geom_point(data = output_stats, aes(x = mean_x2, y = mean_y2), shape = 21, size = 2, stroke = 0.2, color = "black") +
+      scale_color_manual(values = c("School Closures" = "navy", "Economic Closures" = "darkgreen"),
+                         labels = c("School Closures"   = "Reactive-Business/Sustained-School Closures",
+                                    "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
+      scale_fill_manual(values = c("School Closures" = "navy", "Economic Closures" = "darkgreen"),
+                        labels = c("School Closures"   = "Reactive-Business/Sustained-School Closures",
+                                   "Economic Closures" = "Reactive-Business/Reactive-School Closures")) +
+      theme_bw() +
+      facetted_pos_scales(
+        x = list(location == "LLMIC" ~ scale_x_continuous(limits=c(0,120),breaks=seq(0,120,30),expand=c(0,0),position="bottom"),
+                 location == "UMIC"  ~ scale_x_continuous(limits=c(0,80),breaks=seq(0,80,20),expand=c(0,0),position="bottom"),
+                 location == "HIC"   ~ scale_x_continuous(limits=c(0,40),breaks=seq(0,40,10),expand=c(0,0),position="bottom")),
+        y = list(location == "LLMIC" ~ scale_y_continuous(limits=c(0,200),breaks=seq(0,200,50),expand=c(0,0),position="right"),
+                 location == "UMIC"  ~ scale_y_continuous(limits=c(0,120),breaks=seq(0,120,30),expand=c(0,0),position="right"),
+                 location == "HIC"   ~ scale_y_continuous(limits=c(0,40),breaks=seq(0,40,10),expand=c(0,0),position="right"))) +
+      theme(panel.spacing = unit(0.75, "lines")) +
+      labs(title = "", x = "GDPL (% of GDP)", y = "VSYL (% of GDP)") +
       theme(legend.position = "none")
 
 output_data3 <- output_data %>% filter(strategy == "No Closures")
