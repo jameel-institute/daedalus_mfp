@@ -1,16 +1,17 @@
 function dd_main
-    
-parpool;
 
-taskdir = './';%strcat('output/',datestr(now,'yyyy-mm-dd_HH-MM-SS'),'/');
-%mkdir(taskdir);
+addpath('input');
+outdir = './output/archetypes/';
+mkdir(outdir);
+
+parpool;
 
 locations  = {'LLMIC','UMIC','HIC'};
 diseases   = {'Influenza 2009','Influenza 1957','Influenza 1918','Covid Omicron','Covid Delta','Covid Wildtype'};
 strategies = {'No Closures','School Closures','Economic Closures','Elimination'};
 
 lloc       = length(locations);
-nsamples   = 5000;
+nsamples   = 50;%5000;
 ldis       = length(diseases);
 lstrat     = length(strategies);
 
@@ -27,7 +28,7 @@ for h = 1:lloc;
     samples = table();
     parfor i = 1:nsamples;
         ldata   = data;
-        ldata   = dd_set_country(ldata,country_data,inp1);%for l  = 1:2;if l==2;ldata.t_vax = min(ldata.t_vax,100);end
+        ldata   = dd_set_country(ldata,country_data,inp1);
         row     = dd_store_input(i,ldata);
         samples = [samples;row];
         for j = 1:ldis;
@@ -42,7 +43,7 @@ for h = 1:lloc;
             data_array{h,i,k} = ldata;
         end
     end
-    writetable(samples,strcat(taskdir,string(locations{h}),'_data.csv'));
+    writetable(samples,strcat(outdir,string(locations{h}),'_data.csv'));
 end
 
 for h = 1:lloc;
@@ -62,7 +63,7 @@ for k = 1:lstrat;
     end
     output = [output;sec];
     end
-    dd_store_output(output,strcat(string(locations{h}),'_',string(diseases{j}),'_',string(strategies{k})),taskdir);
+    dd_store_output(output,strcat(string(locations{h}),'_',string(diseases{j}),'_',string(strategies{k})),outdir);
     %p2Plot(data,g,p2,f,cost,inp1,inp2,inp3);
     %disp([h,j,k,i]);
 end

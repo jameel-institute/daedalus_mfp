@@ -6,7 +6,6 @@ adInd = 3;
 
 %% DISEASE PARAMETERS:
 
-%addpath('input');
 dis = feval(strcat('param_',lower(strrep(inp2,' ','_'))));
 
 %Population by Age
