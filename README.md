@@ -76,7 +76,7 @@ This will:
 
 ### Generate Figures (RStudio)
 
-The figures should be plotted using the model output with 5000 samples (see below), but for the demo, previously computed output is available in the file `/output/archetypes/output_data.zip`, which should be unzipped.
+The figures should be plotted using the model output with 5000 samples (see below), but for the demo, previously computed output is available in the files `/output/archetypes/llmic_output.zip`, `/output/archetypes/umic_output.zip` and `/output/archetypes/hic_output.zip`, which should be unzipped.
 
 Open RStudio, navigate to the `/plotting` directory, and run:
 
