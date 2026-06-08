@@ -6,7 +6,8 @@ add_scenario_cols <- function(path) {
     parts[2] <- NA_character_
     parts[3] <- NA_character_
   }
-  df    <- read.csv(path) %>% mutate(location = parts[1], disease = parts[2], strategy = parts[3])
+  df    <- read.csv(path,  colClasses = c(hthres = "character")) %>% 
+           mutate(location = parts[1], disease = parts[2], strategy = parts[3])
   return(df)
   
 }

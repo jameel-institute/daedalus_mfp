@@ -1,75 +1,75 @@
 \textit{LLMIC},,,,,,
-Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.9,3.0,1.8,2.2,2.8
-,Reactive-Business/Sustained-School Closures,55.0,66.0,2.0,3.0,123.5
-,\bfseries{Reactive-Business/Reactive-School Closures},9.9,11.0,2.0,3.1,16.2
-,Elimination,142.6,68.1,134.1,160.3,184.7\phantom{.}
-Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,7.6,10.3,2.6,3.5,7.2
-,Reactive-Business/Sustained-School Closures,86.3,66.7,3.3,112.5,140.8
-,\bfseries{Reactive-Business/Reactive-School Closures},20.6,21.8,3.3,15.7,26.6
-,Elimination,172.2,48.2,154.9,175.4,200.9\phantom{.}
-Influenza-1918-X,No Closures,595.8,367.8,224.4,630.6,890.2
-,\bfseries{Reactive-Business/Sustained-School Closures},542.2,294.2,274.5,503.5,788.9
-,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,439.5,331.0,166.4,297.9,700.7
-,Elimination,824.1,363.6,527.1,828.4,1134.4\phantom{.}
-Covid-Omicron-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,56.2,44.2,18.1,42.0,89.9
-,Reactive-Business/Sustained-School Closures,94.1,55.7,48.3,90.5,132.0
-,\bfseries{Reactive-Business/Reactive-School Closures},68.0,41.5,36.7,58.4,93.0
-,Elimination,145.4,71.7,88.2,150.3,196.9\phantom{.}
-Covid-Delta-X,\bfseries{No Closures},316.5,185.0,166.1,326.1,431.2
-,Reactive-Business/Sustained-School Closures,359.6,163.7,227.2,356.2,456.1
-,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,329.9,163.1,205.4,320.7,429.2
-,Elimination,395.1,155.3,276.1,377.1,488.2\phantom{.}
-Covid-Wildtype-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,110.8,81.6,35.0,104.7,167.4
-,Reactive-Business/Sustained-School Closures,179.0,73.0,133.6,171.9,222.5
-,\bfseries{Reactive-Business/Reactive-School Closures},146.8,78.4,90.3,138.5,193.2
-,Elimination,223.9,86.8,164.3,212.0,277.6\phantom{.}\phantom{.}
+Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.9,2.9,1.8,2.2,2.8
+,Reactive-Business/Sustained-School Closures,54.6,65.9,2.0,3.0,123.4
+,\bfseries{Reactive-Business/Reactive-School Closures},9.8,11.0,2.0,3.0,16.1
+,Elimination,142.1,68.3,133.3,160.2,184.4\phantom{.}
+Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,7.6,10.2,2.6,3.5,7.2
+,Reactive-Business/Sustained-School Closures,86.1,66.7,3.3,112.2,140.8
+,\bfseries{Reactive-Business/Reactive-School Closures},20.5,21.8,3.3,15.6,26.5
+,Elimination,172.1,48.1,154.7,175.2,200.5\phantom{.}
+Influenza-1918-X,No Closures,594.8,367.4,222.8,629.5,887.7
+,\bfseries{Reactive-Business/Sustained-School Closures},541.4,293.8,274.5,502.0,787.8
+,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,439.1,330.9,165.8,296.7,699.6
+,Elimination,822.4,363.6,526.4,828.8,1132.0\phantom{.}
+Covid-Omicron-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,56.4,44.2,18.3,42.0,90.0
+,Reactive-Business/Sustained-School Closures,94.2,55.8,48.3,90.5,132.1
+,\bfseries{Reactive-Business/Reactive-School Closures},68.1,41.6,36.8,58.7,93.0
+,Elimination,145.4,71.7,88.3,149.7,196.7\phantom{.}
+Covid-Delta-X,\bfseries{No Closures},316.8,185.3,166.8,325.4,431.5
+,Reactive-Business/Sustained-School Closures,360.3,164.0,228.5,356.1,457.8
+,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,330.6,163.5,205.5,321.3,429.6
+,Elimination,395.5,155.6,275.9,377.5,489.2\phantom{.}
+Covid-Wildtype-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,110.9,81.7,35.1,104.4,167.6
+,Reactive-Business/Sustained-School Closures,179.4,72.9,134.2,172.7,222.7
+,\bfseries{Reactive-Business/Reactive-School Closures},147.1,78.5,90.7,138.6,193.8
+,Elimination,224.0,87.0,164.4,212.4,277.8\phantom{.}\phantom{.}
 \textit{UMIC},,,,,,
 Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,2.3,0.8,1.7,2.2,2.7
-,Reactive-Business/Sustained-School Closures,7.8,18.8,1.8,2.3,3.0
+,Reactive-Business/Sustained-School Closures,7.9,18.9,1.8,2.3,3.0
 ,\bfseries{Reactive-Business/Reactive-School Closures},3.3,3.6,1.8,2.3,3.0
-,Elimination,75.6,46.5,5.6,95.0,109.1\phantom{.}
+,Elimination,75.7,46.5,5.8,95.0,109.2\phantom{.}
 Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,7.1,10.2,3.1,4.3,6.5
-,Reactive-Business/Sustained-School Closures,38.4,38.0,3.6,7.8,77.8
-,\bfseries{Reactive-Business/Reactive-School Closures},11.2,9.1,3.6,8.7,17.1
-,Elimination,107.7,28.8,100.7,111.5,122.2\phantom{.}
-Influenza-1918-X,No Closures,364.4,330.5,97.9,205.8,608.5
-,\bfseries{Reactive-Business/Sustained-School Closures},247.2,147.9,152.5,195.6,299.6
-,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,135.7,83.2,95.1,117.3,145.9
-,Elimination,384.9,229.2,201.7,308.9,514.4\phantom{.}
-Covid-Omicron-X,\bfseries{No Closures}$^*$,49.8,48.8,14.9,29.2,67.9
-,Reactive-Business/Sustained-School Closures,76.5,49.5,30.8,80.4,105.8
-,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,50.6,40.3,23.2,38.7,65.6
-,Elimination,117.7,44.0,97.2,123.8,141.9\phantom{.}
-Covid-Delta-X,No Closures,425.2,293.7,153.0,404.4,634.9
-,\bfseries{Reactive-Business/Sustained-School Closures},422.9,267.4,191.9,370.5,608.3
-,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,359.4,250.8,157.6,289.5,522.5
-,Elimination,444.8,227.0,260.8,410.4,588.3\phantom{.}
-Covid-Wildtype-X,\bfseries{No Closures}$^*$,124.9,116.9,31.4,78.4,194.1
-,Reactive-Business/Sustained-School Closures,141.5,87.0,90.3,116.4,170.4
-,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,94.7,66.3,48.4,79.4,118.8
-,Elimination,166.6,80.3,113.2,149.7,207.6\phantom{.}\phantom{.}
+,Reactive-Business/Sustained-School Closures,38.5,38.1,3.6,7.8,77.8
+,\bfseries{Reactive-Business/Reactive-School Closures},11.2,9.1,3.6,8.6,17.2
+,Elimination,107.7,29.0,100.6,111.5,122.4\phantom{.}
+Influenza-1918-X,No Closures,363.2,329.5,98.2,204.7,606.3
+,\bfseries{Reactive-Business/Sustained-School Closures},246.9,146.7,152.7,196.5,300.2
+,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,135.6,82.9,95.1,117.3,146.3
+,Elimination,385.3,229.3,201.4,309.4,515.2\phantom{.}
+Covid-Omicron-X,\bfseries{No Closures}$^*$,49.8,49.0,14.9,29.2,67.5
+,Reactive-Business/Sustained-School Closures,76.4,49.6,30.7,80.1,105.8
+,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,50.6,40.3,23.2,38.7,65.4
+,Elimination,117.6,44.3,97.1,123.8,142.2\phantom{.}
+Covid-Delta-X,No Closures,425.8,294.2,153.6,405.6,634.9
+,\bfseries{Reactive-Business/Sustained-School Closures},423.4,268.0,192.4,371.4,608.5
+,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,360.3,251.6,158.0,291.3,522.9
+,Elimination,445.3,228.3,260.5,410.3,588.7\phantom{.}
+Covid-Wildtype-X,\bfseries{No Closures}$^*$,125.1,117.2,31.6,78.5,194.0
+,Reactive-Business/Sustained-School Closures,141.6,87.0,90.4,116.6,169.9
+,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,94.8,66.3,48.6,79.6,118.7
+,Elimination,166.6,80.8,112.9,149.3,207.6\phantom{.}\phantom{.}
 \textit{HIC},,,,,,
 Influenza-2009-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,1.9,0.9,1.2,1.8,2.4
-,Reactive-Business/Sustained-School Closures,2.6,4.2,1.3,1.8,2.5
+,Reactive-Business/Sustained-School Closures,2.5,4.2,1.3,1.8,2.5
 ,\bfseries{Reactive-Business/Reactive-School Closures},2.2,2.0,1.3,1.8,2.5
-,Elimination,48.9,23.6,43.0,55.6,63.5\phantom{.}
+,Elimination,48.9,23.5,43.1,55.6,63.4\phantom{.}
 Influenza-1957-X,\bfseries{No Closures}$^*$\textsuperscript\textdagger,5.5,7.5,2.7,4.1,5.9
-,Reactive-Business/Sustained-School Closures,14.6,14.5,3.0,5.3,30.9
+,Reactive-Business/Sustained-School Closures,14.6,14.5,3.0,5.3,31.0
 ,\bfseries{Reactive-Business/Reactive-School Closures},8.2,6.6,3.0,5.3,14.0
-,Elimination,62.9,13.7,56.9,63.2,69.5\phantom{.}
-Influenza-1918-X,No Closures,143.7,198.5,44.0,67.4,117.0
-,\bfseries{Reactive-Business/Sustained-School Closures},85.8,60.8,56.6,74.0,96.1
-,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,67.9,33.6,47.3,66.1,84.0
-,Elimination,118.1,53.9,89.9,103.8,125.6\phantom{.}
-Covid-Omicron-X,\bfseries{No Closures}$^*$,54.4,48.7,19.2,34.3,74.5
-,Reactive-Business/Sustained-School Closures,63.5,41.4,40.1,55.5,79.0
-,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,46.7,34.2,25.0,36.6,56.8
-,Elimination,86.7,26.4,73.1,82.5,95.1\phantom{.}
-Covid-Delta-X,No Closures,431.1,307.1,127.5,403.5,681.3
-,Reactive-Business/Sustained-School Closures,360.1,274.8,122.3,257.3,571.9
-,\bfseries{Reactive-Business/Reactive-School Closures}$^*$,288.4,230.2,112.1,188.2,429.6
-,\bfseries{Elimination}\textsuperscript\textdagger,309.8,213.2,136.6,235.5,428.7\phantom{.}
-Covid-Wildtype-X,No Closures$^*$,96.2,100.5,27.6,48.6,135.5
-,\bfseries{Reactive-Business/Sustained-School Closures},77.8,59.4,46.5,61.5,87.3
-,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,56.4,34.8,34.7,49.5,70.2
-,Elimination,90.0,35.6,71.0,82.7,100.4\phantom{.}\phantom{.}
+,Elimination,62.9,13.7,56.9,63.3,69.4\phantom{.}
+Influenza-1918-X,No Closures,143.8,198.1,44.0,67.8,118.1
+,\bfseries{Reactive-Business/Sustained-School Closures},85.8,60.4,56.8,74.3,96.2
+,\bfseries{Reactive-Business/Reactive-School Closures}$^*$\textsuperscript\textdagger,68.0,33.5,47.4,66.2,84.0
+,Elimination,118.1,53.4,89.9,103.9,125.5\phantom{.}
+Covid-Omicron-X,\bfseries{No Closures}$^*$,54.7,48.9,19.4,34.7,75.1
+,Reactive-Business/Sustained-School Closures,63.9,41.5,40.8,55.7,79.1
+,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,46.9,34.3,25.2,36.8,56.9
+,Elimination,86.8,26.4,73.2,82.6,95.2\phantom{.}
+Covid-Delta-X,No Closures,433.6,307.8,129.3,409.9,681.7
+,Reactive-Business/Sustained-School Closures,361.9,275.6,122.9,262.2,574.1
+,\bfseries{Reactive-Business/Reactive-School Closures}$^*$,289.7,230.8,112.8,190.3,431.1
+,\bfseries{Elimination}\textsuperscript\textdagger,310.9,214.1,137.0,236.9,430.3\phantom{.}
+Covid-Wildtype-X,No Closures$^*$,96.7,101.0,27.7,49.1,136.6
+,\bfseries{Reactive-Business/Sustained-School Closures},77.9,59.3,46.8,61.7,87.5
+,\bfseries{Reactive-Business/Reactive-School Closures}\textsuperscript\textdagger,56.5,34.7,34.8,49.8,70.3
+,Elimination,90.0,35.3,71.0,82.8,100.4\phantom{.}\phantom{.}

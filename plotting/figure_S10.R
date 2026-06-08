@@ -10,6 +10,7 @@ library(scam)
 library(ggplot2)
 library(ggh4x)
 library(ggdensity)
+library(GGally)
 library(cowplot)
 library(ggpattern)
 library(patchwork)
@@ -50,7 +51,7 @@ output_stats <- output_data %>% #for quicker plotting
                 # mutate(alpha = ifelse(min_any, 1, 0.25))
 output_grid  <- output_stats %>%
                 group_by(location, disease) %>%
-                summarise(intercept = seq(0, max(bound_x) + max(bound_y), length.out = 20)) 
+                reframe(intercept = seq(0, max(bound_x) + max(bound_y), length.out = 20)) 
 
 gg <- ggplot(output_data, aes(x = x, y = y, fill = strategy)) +
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +

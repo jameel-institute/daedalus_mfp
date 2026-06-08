@@ -1,4 +1,4 @@
-function [cost,c] = dd_calc_loss(data,dis,p2,f)
+function [cost,c,hthres] = dd_calc_loss(data,dis,p2,f)
 
 ln    = length(data.NNs);
 lx    = length(data.obj);
@@ -109,6 +109,7 @@ morts  = [deaths(end,lx+1), deaths(end,lx+2), sum(deaths(end,[1:lx,lx+adInd]),2)
 hpeak  = max(sum(hocc,2));    
 hbdays = trapz(t, sum(hocc,2));
 hbdoc  = trapz(t, max(0, sum(hocc,2) - p2.Hmax));
+hthres = jsonencode(sum(hocc([logical(0); diff(double(x(:,26) < 0.95)) == 1], :), 2) ./ p2.Hmax);%retail sector less than 95% open indicates heavy closure configuration
 
 %worker-days of excess unemployment
 %number of lockdowns/heavy closure configurations
