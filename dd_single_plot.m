@@ -6,7 +6,7 @@ elseif strcmp(inp3, 'Economic Closures')
     inp3 = 'Reactive-Business/Reactive-School Closures';
 end
 
-%for schematic figure s5
+%for schematic figure s7
 % manually specify income group of country in legend 1
 % add to last no closure event tflag: + max(0,(3*365)-t);
 % add legend 2 to top subfigure only
