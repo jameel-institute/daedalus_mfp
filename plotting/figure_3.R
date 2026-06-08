@@ -136,12 +136,7 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
 ggsave("figure_3.png", plot = gg, height = 14, width = 10)
 
 output_table <- output_stats %>%
-                mutate(mean_x = sprintf("%.1f", mean_x),
-                       q1_x   = sprintf("%.1f", q1_x),
-                       q3_x   = sprintf("%.1f", q3_x),
-                       mean_y = sprintf("%.1f", mean_y),
-                       q1_y   = sprintf("%.1f", q1_y),
-                       q3_y   = sprintf("%.1f", q3_y)) %>%
+                mutate(across(c(mean_x,q1_x,q3_x,mean_y,q1_y,q3_y), ~ ifelse(.x < 10, sprintf("%.1f", .x), sprintf("%.0f", .x)))) %>%
                 mutate(mean_x = paste0(mean_x," (",q1_x,"; ",q3_x,")"),
                        mean_y = paste0(mean_y," (",q1_y,"; ",q3_y,")")) %>%
                 # mutate(mean_x = if_else(min_any, paste0("\\bfseries{",mean_x,"}"), mean_x),#

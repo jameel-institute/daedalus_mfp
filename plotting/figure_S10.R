@@ -70,14 +70,15 @@ ggsave("figure_S10.png", plot = gg, height = 14, width = 10)
 
 output_table <- output_data %>%
                 group_by(location, disease, strategy) %>%
-                summarise(mean    = sprintf("%.1f", unique(mean_SLpc)),
-                          sd      = sprintf("%.1f", sd(VSYLpc)),
-                          q1      = sprintf("%.1f", quantile(VSYLpc, 0.25)),
-                          q2      = sprintf("%.1f", unique(med_SLpc)),
-                          q3      = sprintf("%.1f", unique(q3_SLpc)),
+                summarise(mean    = unique(mean_SLpc),
+                          sd      = sd(VSYLpc),
+                          q1      = quantile(VSYLpc, 0.25),
+                          q2      = unique(med_SLpc),
+                          q3      = unique(q3_SLpc),
                           min_any = unique(min_any),
                           min_med = unique(min_med),
                           min_q3  = unique(min_q3)) %>%
+                mutate(across(c(mean, sd, q1, q2, q3), ~ ifelse(.x < 10, sprintf("%.1f", .x), sprintf("%.0f", .x)))) %>%
                 mutate(strategy = case_when(strategy == "School Closures" ~ "Reactive-Business/Sustained-School Closures",
                                             strategy == "Economic Closures" ~ "Reactive-Business/Reactive-School Closures",
                                             TRUE ~ strategy)) %>%
