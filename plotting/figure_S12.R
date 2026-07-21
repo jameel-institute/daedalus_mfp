@@ -79,3 +79,4 @@ gg <- ggplot(output_data, aes(x = mean_vsy_range, y = proportion, fill = strateg
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S12.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S12.pdf", plot = gg, height = 14, width = 10)

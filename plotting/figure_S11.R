@@ -112,3 +112,4 @@ gg <- ggplot(output_data, aes(x = x, y = y, fill = strategy)) +
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S11.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S11.pdf", plot = gg, height = 14, width = 10)

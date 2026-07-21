@@ -52,3 +52,4 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = chad)) +
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S14.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S14.pdf", plot = gg, height = 14, width = 10)

@@ -62,11 +62,24 @@ wfh_data  <- ctry_data %>% dplyr::select(igroup, country, starts_with("wfh_")) %
              pivot_longer(cols = starts_with("wfh_"), names_to = "wfh", values_to = "value") %>%
              mutate(wfh = parse_number(wfh)) %>%
              mutate(value = ifelse(value < 0.0001, 0.0001, value))
+npop_lab  <- npop_data %>% filter(Npop == 1) %>% filter(!is.na(value)) %>%
+             count(igroup) %>% with(setNames(paste0(igroup, " (n = ", n, ")"), igroup))
+lfex_lab  <- lfex_data %>% filter(la == 1) %>% filter(!is.na(value)) %>%
+             count(igroup) %>% with(setNames(paste0(igroup, " (n = ", n, ")"), igroup))
+ctry_lab  <- ctry_data %>% dplyr::select(igroup, country, matAL_1) %>% filter(!is.na(matAL_1)) %>%
+             count(igroup) %>% with(setNames(paste0(igroup, " (n = ", n, ")"), igroup))
+nns_lab   <- nns_data %>% filter(NNs == 1) %>% filter(!is.na(value)) %>%
+             count(igroup) %>% with(setNames(paste0(igroup, " (n = ", n, ")"), igroup))
+gvaw_lab  <- gvaw_data %>% filter(obj == 1) %>% filter(!is.na(value)) %>%
+             count(igroup) %>% with(setNames(paste0(igroup, " (n = ", n, ")"), igroup))
+wfh_lab   <- wfh_data %>% filter(wfh == 1) %>% filter(!is.na(value)) %>%
+             count(igroup) %>% with(setNames(paste0(igroup, " (n = ", n, ")"), igroup))
 
 p1 <- ggplot(npop_data, aes(x = Npop, y = value, group = country, color = igroup)) +
       facet_wrap(~ "Population by Age") +
       geom_line(linewidth = 0.5, alpha = 0.50) +
-      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                         labels = npop_lab) +  
       theme_bw() +
       scale_x_continuous(breaks = 1:21, expand = c(0,0), position = "bottom",
                          labels = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", 
@@ -81,7 +94,8 @@ p1 <- ggplot(npop_data, aes(x = Npop, y = value, group = country, color = igroup
 p2 <- ggplot(lfex_data, aes(x = la, y = value, group = country, color = igroup)) +
       facet_wrap(~ "Life Expectancy by Age") +
       geom_line(linewidth = 0.5, alpha = 0.50) +
-      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                         labels = lfex_lab) +    
       theme_bw() +
       scale_x_continuous(breaks = 1:18, expand = c(0,0), position = "bottom",
                          labels = c("0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", 
@@ -96,59 +110,64 @@ p2 <- ggplot(lfex_data, aes(x = la, y = value, group = country, color = igroup))
 p3 <- ggplot(ctry_data, aes(x = AL_wavg, fill = igroup)) +
       facet_wrap(~ "Household Contacts") +
       geom_histogram(aes(y = ..density..), position = "stack", color = "black") + 
-      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                        labels = ctry_lab) +    
       theme_bw() +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
       scale_y_continuous(limits = c(0,3), breaks = seq(0,3,1), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Population-Average Household Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.30, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p4 <- ggplot(ctry_data, aes(x = AHT_wavg, fill = igroup)) +
       facet_wrap(~ "Other-Location Contacts") +
       geom_histogram(aes(y = ..density..), position = "stack", color = "black") + 
-      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                        labels = ctry_lab) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
       scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Population-Average Other-Location Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.30, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p5 <- ggplot(ctry_data, aes(x = AS_wavg, fill = igroup)) +
       facet_wrap(~ "School Contacts") +
       geom_histogram(aes(y = ..density..), position = "stack", color = "black") + 
-      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                        labels = ctry_lab) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,15), breaks = seq(0,15,3), expand = c(0,0), position = "bottom") +
       scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "School-Age School Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.30, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p6 <- ggplot(ctry_data, aes(x = workp, fill = igroup)) +
       facet_wrap(~ "Workplace Contacts") +
       geom_histogram(aes(y = ..density..), position = "stack", color = "black") + 
-      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_fill_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                        labels = ctry_lab) +  
       theme_bw() +
       scale_x_continuous(limits = c(0,10), breaks = seq(0,10,2), expand = c(0,0), position = "bottom") +
       scale_y_continuous(limits = c(0,1.5), breaks = seq(0,1.5,0.5), expand = c(0,0), position = "left", labels = scales::label_parse()) +
       # theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
       labs(title = "", x = "Working-Age Workplace Contacts (#/person/day)", y = "Relative Frequency") +
       guides(fill = guide_legend(title = NULL)) +
-      theme(legend.position = c(0.202, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.30, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p7 <- ggplot(nns_data, aes(x = NNs, y = value, group = country, color = igroup)) +
       facet_wrap(~ "Adult Population by Sector") +
       geom_line(linewidth = 0.5, alpha = 0.50) +
-      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                         labels = nns_lab) +
       theme_bw() +
       scale_x_continuous(breaks = 1:46, expand = c(0,0), position = "bottom",
                          labels = c("1: Agri, Hunting, Forestry", "2: Fishing & Aquaculture", "3: Mining & Energy Products",
@@ -169,13 +188,14 @@ p7 <- ggplot(nns_data, aes(x = NNs, y = value, group = country, color = igroup))
       theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "Economic Sector", y = "Percentage of Adult Population (%)") +
       guides(color = guide_legend(title = NULL, ncol = 3)) +
-      theme(legend.position = c(0.263, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.40, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p8 <- ggplot(gvaw_data, aes(x = obj, y = value, group = country, color = igroup)) +
       facet_wrap(~ "GVA per Worker by Sector") +
       geom_line(linewidth = 0.5, alpha = 0.50) +
-      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                         labels = gvaw_lab) +
       theme_bw() +
       scale_x_continuous(breaks = 1:45, expand = c(0,0), position = "bottom",
                          labels = c("1: Agri, Hunting, Forestry", "2: Fishing & Aquaculture", "3: Mining & Energy Products",
@@ -196,13 +216,14 @@ p8 <- ggplot(gvaw_data, aes(x = obj, y = value, group = country, color = igroup)
       theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "Economic Sector", y = "Annual GVA per Worker ($)") +
       guides(color = guide_legend(title = NULL, ncol = 3)) +
-      theme(legend.position = c(0.263, 0.217), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.40, 0.217), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
 p9 <- ggplot(wfh_data, aes(x = wfh, y = value, group = country, color = igroup)) +
       facet_wrap(~ "Home-Working by Sector") +
       geom_line(linewidth = 0.5, alpha = 0.50) +
-      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4")) +  
+      scale_color_manual(values = c("LLMIC" = "orange", "UMIC" = "turquoise", "HIC" = "azure4"),
+                         labels = wfh_lab) +  
       theme_bw() +
       scale_x_continuous(breaks = 1:45, expand = c(0,0), position = "bottom",
                          labels = c("1: Agri, Hunting, Forestry", "2: Fishing & Aquaculture", "3: Mining & Energy Products",
@@ -224,10 +245,14 @@ p9 <- ggplot(wfh_data, aes(x = wfh, y = value, group = country, color = igroup))
       theme(panel.grid.minor.x = element_blank(), axis.text.x = element_text(angle = 55, hjust = 1)) + 
       labs(title = "", x = "Economic Sector", y = "Percentage of Workers Capable of Home-Working (%)") +
       guides(color = guide_legend(title = NULL, ncol = 3)) +
-      theme(legend.position = c(0.263, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
+      theme(legend.position = c(0.40, 0.995), legend.justification = c(1, 1), legend.box.just = "right", 
             legend.key.size = unit(0.80, "cm"), legend.text = element_text(size = 8))
 
-patchwork <- p1 / p2 / (p3 + p4) / (p5 + p6)
-ggsave("figure_S1a.png", plot = patchwork, height = 14, width = 10)
-patchwork <- p7 / p8 / p9
-ggsave("figure_S1b.png", plot = patchwork, height = 14, width = 10)
+patchwork_a <- p1 / p2 / (p3 + p4) / (p5 + p6)
+ggsave("figure_S1a.png", plot = patchwork_a, height = 14, width = 10)
+patchwork_b <- p7 / p8 / p9
+ggsave("figure_S1b.png", plot = patchwork_b, height = 14, width = 10)
+pdf("figure_S1.pdf", height = 14, width = 10)
+print(patchwork_a)
+print(patchwork_b)
+dev.off()

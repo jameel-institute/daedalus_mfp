@@ -71,6 +71,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = gdpl)) + #, alpha 
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S17.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S17.pdf", plot = gg, height = 14, width = 10)
 
 output_table <- output_data %>%
                 pivot_wider(names_from = gdpl, values_from = value) %>%

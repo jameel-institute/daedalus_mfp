@@ -134,6 +134,7 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_3.png", plot = gg, height = 14, width = 10)
+ggsave("figure_3.pdf", plot = gg, height = 14, width = 10)
 
 output_table <- output_stats %>%
                 mutate(across(c(mean_x,q1_x,q3_x,mean_y,q1_y,q3_y), ~ ifelse(abs(.x) < 10, sprintf("%.1f", .x), sprintf("%.0f", .x)))) %>%

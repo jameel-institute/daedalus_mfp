@@ -50,3 +50,4 @@ gg <- ggplot(output_data, aes(x = strategy, y = rt, fill = strategy)) +
       guides(fill = "none")
 
 ggsave("figure_S5.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S5.pdf", plot = gg, height = 14, width = 10)

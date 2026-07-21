@@ -68,6 +68,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = value, fill = vlyl)) + #, alpha 
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_S16.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S16.pdf", plot = gg, height = 14, width = 10)
 
 output_table <- output_data %>%
                 pivot_wider(names_from = vlyl, values_from = value) %>%

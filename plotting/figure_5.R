@@ -185,3 +185,4 @@ gg <- (g1 + theme(legend.position="none")) /
       plot_annotation(tag_levels='A')
 gg <- plot_grid(as_grob(gg), lg, ncol = 1, rel_heights = c(1,0.08))
 ggsave("figure_5.png", plot = gg, height = 14, width = 10)
+ggsave("figure_5.pdf", plot = gg, height = 14, width = 10)

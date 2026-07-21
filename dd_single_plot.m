@@ -7,16 +7,17 @@ elseif strcmp(inp3, 'Economic Closures')
 end
 
 %for schematic figure s7
-% manually specify income group of country in legend 1
 % add to last no closure event tflag: + max(0,(3*365)-t);
-% add legend 2 to top subfigure only
-% remove dashes in losses barchart for subfig 2 and fix ylmt
 % change Mexico p2.sda = 1.7; p2.sdc = 0.01; p2.Hmax = 60000;
 % increase Chile p2.Tres = 80;p2.Hmax = 15000;p2.sdc = 0.002;
+% manually specify income group of country in legend 1
+% add legend 2 to top subfigure only
+% remove dashes in losses barchart for subfig 2 and fix ylmt
 % dd_single('India','Influenza 1957','No Closures');
 % dd_single('Mexico', 'Influenza 1918', 'School Closures');
 % dd_single('Thailand', 'Covid Omicron', 'Economic Closures');
 % dd_single('Chile', 'Covid Wildtype', 'Elimination');
+% uncomment saving code below and update file names accordingly
 
 ln        = length(data.NNs);
 lx        = length(data.obj);
@@ -155,6 +156,9 @@ t.EdgeColor       = [0 0 0];
 set(gca,'FontSize',fs);
 yyaxis left;
 
+% set(gcf,'PaperPositionMode','auto');
+% exportgraphics(gcf,'./plotting/figure_S7g.pdf','ContentType','vector');
+
 %% MITIGATION MEASURES
 
 % f = figure('Units','centimeters','Position',[0 0 10 10]);
@@ -255,5 +259,8 @@ plot(px,py2,'k','LineWidth',2);hold all;
 fill([px flip(px)],[py1 flip(py2)],'w','EdgeColor','none');
 box off;
 axis off;
+
+% set(gcf,'PaperPositionMode','auto');
+% exportgraphics(gcf,'./plotting/figure_S7h.pdf','ContentType','vector');
 
 end

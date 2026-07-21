@@ -84,6 +84,7 @@ mmp1_labs <- data.frame(x      = rep(0.49, 4),
                                    "Transmission Multiplier Intercept Coefficient",
                                    "Transmission Multiplier Death-Sensitivity Coefficient",
                                    "Transmission Multiplier Time-Decay Coefficient"))
+mmp1_ss   <- mmp1_data %>% group_by(variable, igroup) %>% filter(!is.na(value)) %>% summarise(n = n(), .groups = "drop")
 mmp1_leg  <- mmp1_dist %>% 
              group_by(variable, igroup) %>%
              slice_min(xvalue, n = 1) %>%
@@ -97,9 +98,10 @@ mmp1_leg  <- mmp1_dist %>%
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
                                              candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
-             mutate(x      = rep(c(0.255, 0.57, 0.885), 4), 
+             left_join(mmp1_ss, by = c("variable", "igroup")) %>%
+             mutate(x      = rep(c(0.275, 0.59, 0.90), 4), 
                     y      = rep(seq(0.93, 0.20, length.out = 4), each = 3),
-                    legend = paste(candidate, "\n μ =", round(mu,3)))
+                    legend = paste0(candidate, "\n μ = ", round(mu, 3), "\n (n = ", n, ")"))
 mmp2_data <- ctry_data %>% dplyr::select(igroup,country,t_tit,trate,masc,Hmax) %>%
              pivot_longer(cols = c(t_tit,trate,masc,Hmax), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "t_tit" ~ "Case Isolation: Testing Start-Time",
@@ -146,6 +148,7 @@ mmp2_labs <- data.frame(x      = rep(0.49, 4),
                                    "Testing Rate (per 100k/day)",
                                    "Maximum Infection Ascertainment Ratio (%)",
                                    "Spare Hospital Beds (per 100k)"))
+mmp2_ss   <- mmp2_data %>% group_by(variable, igroup) %>% filter(!is.na(value)) %>% summarise(n = n(), .groups = "drop")
 mmp2_leg  <- mmp2_dist %>% 
              group_by(variable, igroup) %>%
              slice_min(xvalue, n = 1) %>%
@@ -159,9 +162,10 @@ mmp2_leg  <- mmp2_dist %>%
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
                                              candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
-             mutate(x      = rep(c(0.245, 0.56, 0.875), 4), 
+             left_join(mmp2_ss, by = c("variable", "igroup")) %>%
+             mutate(x      = rep(c(0.265, 0.57, 0.88), 4), 
                     y      = rep(seq(0.93, 0.20, length.out = 4), each = 3),
-                    legend = paste(candidate, "\n μ =", round(mu,3)))
+                    legend = paste0(candidate, "\n μ = ", round(mu, 3), "\n (n = ", n, ")"))
 mmp3_data <- ctry_data %>% dplyr::select(igroup,country,t_vax,arate,puptake) %>%
              pivot_longer(cols = c(t_vax,arate,puptake), names_to = "variable", values_to = "value") %>%
              mutate(variable = case_when(variable == "t_vax" ~ "Vaccination: Administration Start-Time",
@@ -206,6 +210,7 @@ mmp3_labs <- data.frame(x      = rep(0.49, 3),
                         xlabel = c("Administration Start-Time (days)",
                                    "Administration Rate (per 100k/day)",
                                    "Population-Level Vaccination Coverage (%)"))
+mmp3_ss   <- mmp3_data %>% group_by(variable, igroup) %>% filter(!is.na(value)) %>% summarise(n = n(), .groups = "drop")
 mmp3_leg  <- mmp3_dist %>% 
              group_by(variable, igroup) %>%
              slice_min(xvalue, n = 1) %>%
@@ -219,9 +224,10 @@ mmp3_leg  <- mmp3_dist %>%
                                              candidate == "gamma"   ~ "Gamma",
                                              candidate == "weibull" ~ "Weibull",
                                              candidate == "beta"    ~ "Beta"), .groups = "drop") %>%
-             mutate(x      = rep(c(0.245, 0.56, 0.875), 3), 
+             left_join(mmp3_ss, by = c("variable", "igroup")) %>%
+             mutate(x      = rep(c(0.26, 0.58, 0.89), 3), 
                     y      = rep(seq(0.915, 0.27, length.out = 3), each = 3),
-                    legend = paste(candidate, "\n μ =", round(mu,3)))
+                    legend = paste0(candidate, "\n μ = ", round(mu, 3), "\n (n = ", n, ")"))
 
 p1 <- ggplot(mmp1_data, aes(x = value, fill = variable)) +
       facet_grid2(variable ~ igroup, switch = "y", scales = "free", independent = "all",
@@ -275,6 +281,14 @@ p3 <- ggdraw(p3) + draw_text(mmp3_leg$legend, x = mmp3_leg$x, y = mmp3_leg$y, hj
 ggsave("figure_S2a.png", plot = p1, height = 14, width = 10)
 ggsave("figure_S2b.png", plot = p2, height = 14, width = 10)
 ggsave("figure_S2c.png", plot = p3, height = 11, width = 10)
+pdf("figure_S2.pdf", height = 14, width = 10)
+print(p1)
+print(p2)
+grid.newpage()
+pushViewport(viewport(height = unit(11/14, "npc"), y = 1, just = "top"))
+print(p3, newpage = FALSE)
+popViewport()
+dev.off()
 
 ###################################################################################################################################
 
@@ -293,10 +307,24 @@ mm_data <- mm_data %>%
            dplyr::select(igroup, country, variable, zs) %>%
            pivot_wider(names_from = variable, values_from = zs) 
 
+#this is just a formatting function for the upper panels
+cor_n <- function(data, mapping, ...) {
+      x  <- GGally::eval_data_col(data, mapping$x)
+      y  <- GGally::eval_data_col(data, mapping$y)
+      ok <- complete.cases(x, y)
+      n  <- sum(ok)
+      r  <- if (n > 1) cor(x[ok], y[ok]) else NA_real_
+      ggplot(data.frame(x = 0.5, y = 0.5), aes(x, y)) +
+      geom_text(label = if (is.na(r)) sprintf("r = NA\n(n = %d)", n) else 
+                sprintf("r = %.2f\n(n = %d)", r, n), size = 2.6, lineheight = 0.9) +
+      coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
+      theme_void()
+}
+
 p4 <- ggpairs(mm_data %>% filter(igroup == "LLMIC") %>% dplyr::select(-igroup,-country) %>% rename_with(~ gsub(": ", ":\n", .x)),
               lower = list(continuous = wrap("points", shape = 21, size = 1, stroke = 0.2, color = "black", fill = "orange")),
               diag  = list(continuous = wrap("blankDiag")),
-              upper = list(continuous = wrap("cor", size = 3)),
+              upper = list(continuous = cor_n),
               switch = "y") +
       theme_minimal() +
       scale_x_continuous(limits = c(-3, 3), breaks = seq(-3, 3, by = 2), expand = c(0,0)) +
@@ -311,7 +339,7 @@ p4 <- ggpairs(mm_data %>% filter(igroup == "LLMIC") %>% dplyr::select(-igroup,-c
 p5 <- ggpairs(mm_data %>% filter(igroup == "UMIC") %>% dplyr::select(-igroup,-country) %>% rename_with(~ gsub(": ", ":\n", .x)),
               lower = list(continuous = wrap("points", shape = 21, size = 1, stroke = 0.2, color = "black", fill = "turquoise")),
               diag  = list(continuous = wrap("blankDiag")),
-              upper = list(continuous = wrap("cor", size = 3)),
+              upper = list(continuous = cor_n),
               switch = "y") +
       theme_minimal() +
       scale_x_continuous(limits = c(-3, 3), breaks = seq(-3, 3, by = 2), expand = c(0,0)) +
@@ -326,7 +354,7 @@ p5 <- ggpairs(mm_data %>% filter(igroup == "UMIC") %>% dplyr::select(-igroup,-co
 p6 <- ggpairs(mm_data %>% filter(igroup == "HIC") %>% dplyr::select(-igroup,-country) %>% rename_with(~ gsub(": ", ":\n", .x)),
               lower = list(continuous = wrap("points", shape = 21, size = 1, stroke = 0.2, color = "black", fill = "azure4")),
               diag  = list(continuous = wrap("blankDiag")),
-              upper = list(continuous = wrap("cor", size = 3)),
+              upper = list(continuous = cor_n),
               switch = "y") +
       theme_minimal() +
       scale_x_continuous(limits = c(-3, 3), breaks = seq(-3, 3, by = 2), expand = c(0,0)) +
@@ -341,6 +369,11 @@ p6 <- ggpairs(mm_data %>% filter(igroup == "HIC") %>% dplyr::select(-igroup,-cou
 ggsave("figure_S3a.png", plot = p4, height = 14, width = 10)
 ggsave("figure_S3b.png", plot = p5, height = 14, width = 10)
 ggsave("figure_S3c.png", plot = p6, height = 14, width = 10)
+pdf("figure_S3.pdf", height = 14, width = 10)
+print(p4)
+print(p5)
+print(p6)
+dev.off()
 
 ###################################################################################################################################
 
@@ -483,3 +516,4 @@ p7 <- ggplot(mm, aes(x = xvalue, y = yvalue, color = variable, group = sample)) 
 p7 <- ggdraw(p7) + draw_text(mm_labs$xlabel, x = mm_labs$x, y = mm_labs$y, hjust = 0.5, vjust = 0.5, size = 9)
 
 ggsave("figure_S4.png", plot = p7, height = 14, width = 10)
+ggsave("figure_S4.pdf", plot = p7, height = 14, width = 10)

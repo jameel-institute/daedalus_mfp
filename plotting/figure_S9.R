@@ -67,6 +67,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = GDPLpc)) + # , linewidth = min_a
       # guides(linewidth = "none", alpha = "none")
 
 ggsave("figure_S9.png", plot = gg, height = 14, width = 10)
+ggsave("figure_S9.pdf", plot = gg, height = 14, width = 10)
 
 output_table <- output_data %>%
                 group_by(location, disease, strategy) %>%

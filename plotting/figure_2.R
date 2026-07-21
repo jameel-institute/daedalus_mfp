@@ -80,6 +80,7 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
             legend.margin = margin(0, 0, 0, 0))
 
 ggsave("figure_2.png", plot = gg, height = 14, width = 10)
+ggsave("figure_2.pdf", plot = gg, height = 14, width = 10)
 
 output_table <- output_data %>%
                 group_by(location, disease, strategy) %>%
