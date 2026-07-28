@@ -45,6 +45,14 @@ output_data  <- lapply(output_files, add_scenario_cols) %>% bind_rows() %>% orde
                        pGDPL = mean(GDPLpc/SLpc),
                        pSYL  = mean(VSYLpc/SLpc)) %>% 
                 ungroup()
+min_med_lab  <- output_data %>% 
+                filter(min_med == TRUE) %>%
+                group_by(location, disease, strategy) %>%
+                summarise(max_SLpc = max(max_SLpc), .groups = "drop")
+min_q3_lab   <- output_data %>% 
+                filter(min_q3 == TRUE) %>%
+                group_by(location, disease, strategy) %>%
+                summarise(max_SLpc = max(max_SLpc), .groups = "drop")
 
 gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), alpha = min_any), color = "black") + 
       facet_grid2(disease ~ location, switch = "y", scales = "free_y") +
@@ -57,9 +65,9 @@ gg <- ggplot(output_data, aes(x = strategy, y = SLpc, fill = factor(..fill..), a
       scale_fill_manual(values = c("red" = "red", "white" = "white", "yellow" = "yellow", "blue" = "blue"), 
                         breaks = c("red", "yellow", "blue"), labels = c("VLYL", "GDPL", "VSYL")) +
       scale_alpha_manual(values = c("FALSE" = 0.25, "TRUE" = 1)) +
-      geom_text(data = output_data %>% filter(min_med == TRUE), aes(x = strategy, y = max_SLpc),
+      geom_text(data = min_med_lab, aes(x = strategy, y = max_SLpc),
                 vjust = 0.4, label = "*", size = 6, color = "black", inherit.aes = FALSE) +
-      geom_text(data = output_data %>% filter(min_q3  == TRUE), aes(x = strategy, y = max_SLpc),
+      geom_text(data = min_q3_lab, aes(x = strategy, y = max_SLpc),
                 vjust = -1.5, label = "†", size = 3.5, color = "black", inherit.aes = FALSE) +
       theme_bw() + 
       scale_x_discrete(labels = c("School Closures" = "Reactive-Business/Sustained-School Closures",

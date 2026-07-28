@@ -14,6 +14,7 @@ library(GGally)
 library(cowplot)
 library(ggpattern)
 library(patchwork)
+library(ggrastr)
 source("functions/add_scenario_cols.R")
 source("functions/order_scenario_cols.R")
 source("functions/calc_loss_pc.R")
@@ -64,7 +65,7 @@ gg <- ggplot(output_data, aes(x = x, y = y, color = strategy, fill = strategy, a
       facet_grid2(disease ~ location, switch = "y", scales = "free", independent = "all") +
       geom_hline(yintercept = 0, linewidth = 0.10, color = "black") +  
       geom_vline(xintercept = 0, linewidth = 0.10, color = "black") +  
-      geom_point(shape = 19, size = 0.02, stroke = 0.2) +
+      ggrastr::geom_point_rast(shape = 19, size = 0.02, stroke = 0.2, dpi = 600) +
       geom_abline(slope = 1, linetype = "dashed", linewidth = 0.25, color = "black") +  
       geom_linerange(data = output_stats, aes(x = mean_x, y = mean_y, xmin = q1_x, xmax = q3_x), linewidth = 0.25, color = "black") +
       geom_linerange(data = output_stats, aes(x = mean_x, y = mean_y, ymin = q1_y, ymax = q3_y), linewidth = 0.25, color = "black") +
